@@ -11,7 +11,7 @@ import java.util.*
 
 data class Response(
     @JsonProperty("message")
-    val message: String,
+    var message: String,
     @JsonProperty("status")
     val status: HttpStatus = OK,
     @JsonProperty("code")
@@ -20,6 +20,9 @@ data class Response(
     val details: Any? = null
 ) {
     fun build(): ResponseEntity<Response> {
+        this.apply {
+            message = source().getMessage(message, null, locale())
+        }
         return ResponseEntity(this, status)
     }
 
