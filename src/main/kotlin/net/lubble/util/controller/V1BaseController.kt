@@ -1,5 +1,6 @@
 package net.lubble.util.controller
 
+import jakarta.validation.Valid
 import net.lubble.util.AppContextUtil
 import net.lubble.util.Response
 import org.springframework.context.MessageSource
@@ -22,16 +23,16 @@ import java.util.*
  */
 interface V1BaseController<C, U, P, ID> {
     @PostMapping
-    fun create(@RequestBody create: C): ResponseEntity<Response>
+    fun create(@RequestBody @Valid create: C): ResponseEntity<Response>
 
     @GetMapping("{id}")
     fun findById(@PathVariable id: ID): ResponseEntity<Response>
 
     @GetMapping
-    fun findAll(@RequestParam(required = false) params: P): ResponseEntity<Response>
+    fun findAll(@Valid params: P): ResponseEntity<Response>
 
     @PutMapping("{id}")
-    fun update(@PathVariable id: ID, @RequestBody update: U): ResponseEntity<Response>
+    fun update(@PathVariable id: ID, @RequestBody @Valid update: U): ResponseEntity<Response>
 
     @DeleteMapping("{id}")
     fun delete(@PathVariable id: ID): ResponseEntity<Response>

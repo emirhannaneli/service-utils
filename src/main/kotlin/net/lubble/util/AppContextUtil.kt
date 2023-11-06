@@ -13,16 +13,16 @@ class AppContextUtil(context: ApplicationContext) {
         }
 
          fun <T> bean(clazz: Class<T>): T {
-            return instance?.context?.getBean(clazz) ?: throw RuntimeException("Could not get bean")
+            return instance?.context?.getBean(clazz) ?: throw RuntimeException("Could not get bean (${clazz.name})")
         }
 
         fun <T> bean(name: String, clazz: Class<T>): T {
-            return instance?.context?.getBean(name, clazz) ?: throw RuntimeException("Could not get bean")
+            return instance?.context?.getBean(name, clazz) ?: throw RuntimeException("Could not get bean (${clazz.name})")
         }
 
         @Suppress("UNCHECKED_CAST")
         fun <T> bean(name: String): T {
-            return instance?.context?.getBean(name) as T ?: throw RuntimeException("Could not get bean")
+            return instance?.context?.getBean(name) as T ?: throw RuntimeException("Could not get bean ($name)")
         }
     }
 }

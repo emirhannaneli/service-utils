@@ -10,18 +10,13 @@ import net.lubble.util.spec.CookieUtil
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Import
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.context.annotation.*
 import org.springframework.stereotype.Component
-
-@Import(
-    RestExceptionHandler::class,
-    CookieUtil::class
+@Configuration
+@ComponentScans(
+    ComponentScan("net.lubble.util"),
 )
-@Component
-class EnableLubbleUtilsConfig {
+open class EnableLubbleUtilsConfig {
 
     @Autowired
     private lateinit var context: ApplicationContext
@@ -36,17 +31,12 @@ class EnableLubbleUtilsConfig {
     }
 
     @Bean
-    fun mapper(): ObjectMapper {
+    open fun mapper(): ObjectMapper {
         val mapper = ObjectMapper()
 
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
 
         return mapper
-    }
-
-    @Bean
-    fun encoder(): PasswordEncoder {
-        return BCryptPasswordEncoder()
     }
 }

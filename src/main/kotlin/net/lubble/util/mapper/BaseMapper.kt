@@ -46,12 +46,4 @@ interface BaseMapper<T, R, RB, U> {
     fun map(source: Collection<T>): List<R>
 
     fun rbMap(source: Collection<T>): List<RB>
-
-    fun source(): MessageSource {
-        return AppContextUtil.bean(MessageSource::class.java)
-    }
-
-    fun locale(): Locale {
-        return LocaleContextHolder.getLocale()
-    }
 }

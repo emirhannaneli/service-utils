@@ -22,13 +22,14 @@ data class Response(
     fun build(): ResponseEntity<Response> {
         return ResponseEntity(this, status)
     }
+
     companion object {
         @Suppress("unused")
         fun ofPage(key: String, message: String, page: Page<*>, data: List<*>): Response {
             return Response(
                 message = source().getMessage(message, null, locale()),
                 details = mapOf(
-                    "current" to page.number,
+                    "current" to page.number + 1,
                     "size" to page.size,
                     "totalItems" to page.totalElements,
                     "totalPages" to page.totalPages,
