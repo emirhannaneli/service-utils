@@ -1,5 +1,10 @@
 package net.lubble.util.mapper
 
+import net.lubble.util.AppContextUtil
+import org.springframework.context.MessageSource
+import org.springframework.context.i18n.LocaleContextHolder
+import java.util.*
+
 /**
  * BaseMapper interface for mapping between DTOs and Entities.
  * @param T Entity
@@ -41,4 +46,12 @@ interface BaseMapper<T, R, RB, U> {
     fun map(source: Collection<T>): List<R>
 
     fun rbMap(source: Collection<T>): List<RB>
+
+    fun source(): MessageSource {
+        return AppContextUtil.bean(MessageSource::class.java)
+    }
+
+    fun locale(): Locale {
+        return LocaleContextHolder.getLocale()
+    }
 }
