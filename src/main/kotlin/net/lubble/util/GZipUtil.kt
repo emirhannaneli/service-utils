@@ -1,4 +1,4 @@
-package net.lubble.util.spec
+package net.lubble.util
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream

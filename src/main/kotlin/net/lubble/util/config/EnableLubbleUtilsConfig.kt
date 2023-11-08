@@ -5,13 +5,14 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.annotation.PostConstruct
 import net.lubble.util.AppContextUtil
-import net.lubble.util.handler.RestExceptionHandler
-import net.lubble.util.spec.CookieUtil
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
-import org.springframework.context.annotation.*
-import org.springframework.stereotype.Component
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.ComponentScans
+import org.springframework.context.annotation.Configuration
+
 @Configuration
 @ComponentScans(
     ComponentScan("net.lubble.util"),

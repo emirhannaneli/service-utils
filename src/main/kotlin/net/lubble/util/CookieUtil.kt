@@ -1,11 +1,13 @@
-package net.lubble.util.spec
+package net.lubble.util
 
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.stereotype.Component
 import java.util.*
 
 @Component
+@ConditionalOnClass(Cookie::class)
 class CookieUtil(private var response: HttpServletResponse) {
 
     fun create(name: String, value: String, maxAge: Int, path: String, secure: Boolean, httpOnly: Boolean, gzip: Boolean): Cookie {
