@@ -16,16 +16,16 @@ interface EnumHelper {
     val icon: String?
 
     companion object {
-        inline fun <reified T : Enum<T>> findByName(name: String): T {
+        inline fun <reified T> findByName(name: String): T where T : Enum<T>, T : EnumHelper {
             return enumValues<T>().find { it.name == name }
                 ?: throw InvalidParamException(
-                    "Invalid enum value (" + T::class.java.getSimpleName() + ")",
+                    "Invalid enum value (${T::class.java.simpleName})",
                     name,
-                    T::class.java.enumConstants
+                    enumValues<T>().map { it.value }
                 )
         }
 
-        inline fun <reified T> fromValue(value: String): T where T : Enum<T>, T : EnumHelper {
+        inline fun <reified T> findByValue(value: String): T where T : Enum<T>, T : EnumHelper {
             return enumValues<T>().find { it.value == value }
                 ?: throw InvalidParamException(
                     "Invalid enum value (${T::class.java.simpleName})",
