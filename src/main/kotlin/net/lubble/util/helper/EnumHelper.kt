@@ -21,9 +21,19 @@ interface EnumHelper {
                 ?: throw InvalidParamException(
                     "Invalid enum value (" + T::class.java.getSimpleName() + ")",
                     name,
-                    T::class.java.getEnumConstants()
+                    T::class.java.enumConstants
                 )
         }
+
+        inline fun <reified T> fromValue(value: String): T where T : Enum<T>, T : EnumHelper {
+            return enumValues<T>().find { it.value == value }
+                ?: throw InvalidParamException(
+                    "Invalid enum value (${T::class.java.simpleName})",
+                    value,
+                    enumValues<T>().map { it.value }
+                )
+        }
+
     }
 
     fun toConstant(): EnumConstant {

@@ -36,14 +36,4 @@ interface V1BaseController<C, U, P, ID> {
 
     @DeleteMapping("{id}")
     fun delete(@PathVariable id: ID): ResponseEntity<Response>
-
-    @Suppress("unused")
-    fun source(): MessageSource {
-        return AppContextUtil.bean(MessageSource::class.java)
-    }
-
-    @Suppress("unused")
-    fun locale(): Locale {
-        return LocaleContextHolder.getLocale()
-    }
 }
