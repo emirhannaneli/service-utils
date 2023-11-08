@@ -1,8 +1,7 @@
 package net.lubble.util.model
 
-import jakarta.validation.constraints.Max
-import jakarta.validation.constraints.Min
 import net.lubble.util.helper.EnumHelper
+import net.lubble.util.spec.PaginationSpec
 
 /**
  * ParameterModel
@@ -12,19 +11,12 @@ import net.lubble.util.helper.EnumHelper
  * @param sort String?
  * @param order String?
  * */
-open class ParameterModel {
+open class ParameterModel : PaginationSpec() {
     var search: String? = null
-
-    @Min(1)
-    var page: Int? = 1
-
-    @Min(1)
-    @Max(200)
-    var size: Int? = 10
 
     var sort: String? = null
 
-    var order: String? = null
+    var order: SortOrder? = null
 }
 
 enum class SortOrder : EnumHelper {
