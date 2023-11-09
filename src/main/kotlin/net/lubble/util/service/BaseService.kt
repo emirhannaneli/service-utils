@@ -8,7 +8,7 @@ import org.springframework.data.domain.Page
  * @param C Create DTO
  * @param U Update DTO
  * @param S Specification
- * @param UUID Entity ID type
+ * @param ID Entity ID type
  * @property create Create Entity
  * @property save Save Entity
  * @property find Find Entity by Specification
@@ -17,14 +17,14 @@ import org.springframework.data.domain.Page
  * @property update Update Entity
  * @property delete Delete Entity
  */
-interface BaseService<T, C, U, S, UUID> {
+interface BaseService<T, C, U, S, ID> {
     fun create(create: C)
 
     fun save(base: T): T
 
     fun find(spec: S): T
 
-    fun findById(id: UUID): T
+    fun findById(id: ID): T
 
     fun findAll(spec: S): Page<T>
 
