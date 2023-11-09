@@ -16,7 +16,7 @@ import java.util.*
 @MappedSuperclass
 open class BaseMongoModel(
     @Id
-    private val id: ObjectId = ObjectId.get(),
+    val id: ObjectId = ObjectId.get(),
 
     @Indexed
     val createdAt: Date = Date(),
