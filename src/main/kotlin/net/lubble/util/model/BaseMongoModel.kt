@@ -16,10 +16,10 @@ import java.util.*
 @MappedSuperclass
 open class BaseMongoModel(
     @Id
-    val id: ObjectId = ObjectId.get(),
+    var id: ObjectId? = null,
 
     @Indexed
-    val createdAt: Date = Date(),
+    var createdAt: Date = Date(),
 
     @Indexed
     var updatedAt: Date = Date()

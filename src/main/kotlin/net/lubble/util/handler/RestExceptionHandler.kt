@@ -1,5 +1,6 @@
 package net.lubble.util.handler
 
+import jakarta.servlet.http.HttpServlet
 import net.lubble.util.Response
 import net.lubble.util.exception.AlreadyExistsException
 import net.lubble.util.exception.InvalidParamException
@@ -21,7 +22,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.util.*
 
 @Component("utilsRestExceptionHandler")
-@ConditionalOnClass(ControllerAdvice::class)
+@ConditionalOnClass(HttpServlet::class)
 class RestExceptionHandler {
     @Autowired
     private lateinit var source: MessageSource
