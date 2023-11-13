@@ -18,7 +18,7 @@ import org.springframework.data.domain.Page
  * @property delete Delete Entity
  */
 interface BaseService<T, C, U, S, ID> {
-    fun create(create: C)
+    fun create(create: C): T
 
     fun save(base: T): T
 

@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono
  * @property delete Delete Entity
  */
 interface BaseReactiveService<T, C, U, S, ID> {
-    fun create(create: C): Mono<Void>
+    fun create(create: C): Mono<T>
 
     fun save(base: T): Mono<T>
 
