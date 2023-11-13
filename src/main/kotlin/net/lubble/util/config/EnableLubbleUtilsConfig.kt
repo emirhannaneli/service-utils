@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.ComponentScans
 import org.springframework.context.annotation.Configuration
+import java.net.http.HttpClient
 
 @Configuration
 @ComponentScans(
@@ -39,5 +40,10 @@ open class EnableLubbleUtilsConfig {
         mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
 
         return mapper
+    }
+
+    @Bean
+    open fun http(): HttpClient {
+        return HttpClient.newHttpClient()
     }
 }
