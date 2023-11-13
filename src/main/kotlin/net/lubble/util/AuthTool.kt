@@ -1,13 +1,13 @@
 package net.lubble.util
 
-import org.apache.catalina.User
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.User
 
 class AuthTool {
     companion object {
-        fun user(): User? {
+        fun principal(): User? {
             if (isAnonymous()) return null
             return SecurityContextHolder.getContext().authentication.principal as User
         }
@@ -33,7 +33,7 @@ class AuthTool {
 
         fun authorize(vararg givenAuthorities: String) {
             val authorities = ArrayList<GrantedAuthority>()
-            val user: User? = user()
+            val user: User? = principal()
             val credentials: String? = credentials()
 
             for (authority in givenAuthorities)
