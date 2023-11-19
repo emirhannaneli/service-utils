@@ -1,4 +1,4 @@
-package net.lubble.util.config
+package net.lubble.util.config.utils
 
 import org.springframework.context.annotation.Import
 
@@ -7,4 +7,5 @@ import org.springframework.context.annotation.Import
 )
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.CLASS)
-annotation class EnableLubbleUtils()
+annotation class EnableLubbleUtils() {
+}

@@ -1,4 +1,4 @@
-package net.lubble.util.config
+package net.lubble.util.config.utils
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -7,6 +7,7 @@ import jakarta.annotation.PostConstruct
 import net.lubble.util.AppContextUtil
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
@@ -16,8 +17,9 @@ import java.net.http.HttpClient
 
 @Configuration
 @ComponentScans(
-    ComponentScan("net.lubble.util"),
+    ComponentScan(COMPONENT_SCAN),
 )
+@ConfigurationPropertiesScan(CONFIGURATION_PROPERTIES_SCAN)
 open class EnableLubbleUtilsConfig {
 
     @Autowired
@@ -29,7 +31,7 @@ open class EnableLubbleUtilsConfig {
     fun init() {
         AppContextUtil.initialize(context)
 
-        log.info("Lubble Utils initialized.")
+        log.info("LubbleConfig Utils initialized with <3")
     }
 
     @Bean
@@ -47,3 +49,6 @@ open class EnableLubbleUtilsConfig {
         return HttpClient.newHttpClient()
     }
 }
+
+private const val COMPONENT_SCAN = "net.lubble.util"
+private const val CONFIGURATION_PROPERTIES_SCAN = "net.lubble.util.config.lubble"

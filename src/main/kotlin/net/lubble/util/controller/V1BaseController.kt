@@ -1,13 +1,12 @@
 package net.lubble.util.controller
 
 import jakarta.validation.Valid
-import net.lubble.util.AppContextUtil
 import net.lubble.util.Response
-import org.springframework.context.MessageSource
-import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.http.ResponseEntity
+import org.springframework.messaging.handler.annotation.DestinationVariable
+import org.springframework.messaging.handler.annotation.MessageMapping
+import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.web.bind.annotation.*
-import java.util.*
 
 /**
  * Base controller for all controllers.
@@ -21,12 +20,22 @@ import java.util.*
  * @property delete Delete function
 
  */
-interface V1BaseController<C, U, P, ID> {
+interface V1BaseController<C, U, R, P, ID> {
     @PostMapping
     fun create(@RequestBody @Valid create: C): ResponseEntity<Response>
 
+    @MessageMapping("create")
+    fun createRSocket(@Payload create: String): C {
+        throw UnsupportedOperationException()
+    }
+
     @GetMapping("{id}")
     fun findById(@PathVariable id: ID): ResponseEntity<Response>
+
+    @MessageMapping("find.{id}")
+    fun findRSocket(@DestinationVariable id: ID): R {
+        throw UnsupportedOperationException()
+    }
 
     @GetMapping
     fun findAll(@Valid params: P): ResponseEntity<Response>
@@ -34,6 +43,16 @@ interface V1BaseController<C, U, P, ID> {
     @PutMapping("{id}")
     fun update(@PathVariable id: ID, @RequestBody @Valid update: U): ResponseEntity<Response>
 
+    @MessageMapping("update.{id}")
+    fun updateRSocket(@DestinationVariable id: ID, @Payload update: String): R {
+        throw UnsupportedOperationException()
+    }
+
     @DeleteMapping("{id}")
     fun delete(@PathVariable id: ID): ResponseEntity<Response>
+
+    @MessageMapping("delete.{id}")
+    fun deleteRSocket(@DestinationVariable id: ID): R {
+        throw UnsupportedOperationException()
+    }
 }
