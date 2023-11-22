@@ -3,14 +3,18 @@ package net.lubble.util.config.lubble
 import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "lubble")
-class LubbleConfig {
-    var contentService: Service = Service()
-    var phoneService: Service = Service()
-    var userService: Service = Service()
-    var addressService: Service = Service()
-    var mailService: Service = Service()
+open class LubbleConfig {
+    var services: Services = Services()
 
-    class Service {
+    open class Services {
+        var contentService: Service = Service()
+        var phoneService: Service = Service()
+        var userService: Service = Service()
+        var addressService: Service = Service()
+        var mailService: Service = Service()
+    }
+
+    open class Service {
         var host: String? = null
         var port: Int? = null
         var username: String? = null

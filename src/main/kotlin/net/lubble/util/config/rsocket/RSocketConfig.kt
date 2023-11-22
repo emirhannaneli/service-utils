@@ -16,7 +16,7 @@ import org.springframework.util.MimeTypeUtils
 import reactor.util.retry.Retry
 import java.time.Duration
 
-@Configuration
+@Configuration("lubbleRSocketConfig")
 @ConditionalOnClass(RSocketServer::class)
 open class RSocketConfig(val mapper: ObjectMapper, val config: LubbleConfig) {
     fun rSocketRequesterBuilder(): RSocketRequester.Builder {
@@ -33,37 +33,45 @@ open class RSocketConfig(val mapper: ObjectMapper, val config: LubbleConfig) {
     }
 
     @Bean("rSocketPhoneClient")
-    @ConditionalOnProperty(prefix = "lubble.phone-service", name = ["host"])
-    fun rSocketPhoneClient(): RSocketRequester {
+    @ConditionalOnProperty(prefix = "lubble.services.phone-service", name = ["host"])
+    open fun rSocketPhoneClient(): RSocketRequester {
         return rSocketRequesterBuilder()
-            .tcp(config.phoneService.host!!, config.phoneService.port!!)
+            .tcp(config.services.phoneService.host!!, config.services.phoneService.port!!)
     }
 
     @Bean("rSocketUserClient")
-    @ConditionalOnProperty(prefix = "lubble.user-service", name = ["host"])
-    fun rSocketUserClient(): RSocketRequester {
+    @ConditionalOnProperty(prefix = "lubble.services.user-service", name = ["host"])
+    open fun rSocketUserClient(): RSocketRequester {
         return rSocketRequesterBuilder()
-            .tcp(config.userService.host!!, config.userService.port!!)
+            .tcp(config.services.userService.host!!, config.services.userService.port!!)
     }
 
     @Bean("rSocketAddressClient")
-    @ConditionalOnProperty(prefix = "lubble.address-service", name = ["host"])
-    fun rSocketAddressClient(): RSocketRequester {
+    @ConditionalOnProperty(prefix = "lubble.services.address-service", name = ["host"])
+    open fun rSocketAddressClient(): RSocketRequester {
         return rSocketRequesterBuilder()
-            .tcp(config.addressService.host!!, config.addressService.port!!)
+            .tcp(config.services.addressService.host!!, config.services.addressService.port!!)
     }
 
     @Bean("rSocketContentClient")
-    @ConditionalOnProperty(prefix = "lubble.content-service", name = ["host"])
-    fun rSocketContentClient(): RSocketRequester {
+    @ConditionalOnProperty(prefix = "lubble.services.content-service", name = ["host"])
+    open fun rSocketContentClient(): RSocketRequester {
         return rSocketRequesterBuilder()
-            .tcp(config.contentService.host!!, config.contentService.port!!)
+            .tcp(config.services.contentService.host!!, config.services.contentService.port!!)
     }
 
     @Bean("rSocketMailClient")
-    @ConditionalOnProperty(prefix = "lubble.mail-service", name = ["host"])
-    fun rSocketMailClient(): RSocketRequester {
+    @ConditionalOnProperty(prefix = "lubble.services.mail-service", name = ["host"])
+    open fun rSocketMailClient(): RSocketRequester {
         return rSocketRequesterBuilder()
-            .tcp(config.mailService.host!!, config.mailService.port!!)
+            .tcp(config.services.mailService.host!!, config.services.mailService.port!!)
     }
+}
+
+enum class RSocketService(val beanName: String) {
+    PHONE("rSocketPhoneClient"),
+    USER("rSocketUserClient"),
+    ADDRESS("rSocketAddressClient"),
+    CONTENT("rSocketContentClient"),
+    MAIL("rSocketMailClient");
 }

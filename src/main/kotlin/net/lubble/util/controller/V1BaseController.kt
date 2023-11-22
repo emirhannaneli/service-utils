@@ -25,7 +25,7 @@ interface V1BaseController<C, U, R, P, ID> {
     fun create(@RequestBody @Valid create: C): ResponseEntity<Response>
 
     @MessageMapping("create")
-    fun createRSocket(@Payload create: String): C {
+    fun createRSocket(@Payload create: C): R {
         throw UnsupportedOperationException()
     }
 
@@ -44,7 +44,7 @@ interface V1BaseController<C, U, R, P, ID> {
     fun update(@PathVariable id: ID, @RequestBody @Valid update: U): ResponseEntity<Response>
 
     @MessageMapping("update.{id}")
-    fun updateRSocket(@DestinationVariable id: ID, @Payload update: String): R {
+    fun updateRSocket(@DestinationVariable id: ID, @Payload update: U): R {
         throw UnsupportedOperationException()
     }
 
