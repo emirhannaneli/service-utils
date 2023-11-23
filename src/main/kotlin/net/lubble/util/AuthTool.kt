@@ -4,12 +4,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.User
+import org.springframework.security.core.userdetails.UserDetails
 
 class AuthTool {
     companion object {
-        fun principal(): User? {
+        fun principal(): UserDetails? {
             if (isAnonymous()) return null
-            return SecurityContextHolder.getContext().authentication.principal as User
+            return SecurityContextHolder.getContext().authentication.principal as UserDetails
         }
 
         fun credentials(): String? {
@@ -27,13 +28,13 @@ class AuthTool {
         fun isAnonymous(): Boolean {
             return SecurityContextHolder.getContext().authentication == null
                     || SecurityContextHolder.getContext().authentication.principal == null
-                    || SecurityContextHolder.getContext().authentication.principal !is User
+                    || SecurityContextHolder.getContext().authentication.principal !is UserDetails
                     || !SecurityContextHolder.getContext().authentication.isAuthenticated
         }
 
         fun authorize(vararg givenAuthorities: String) {
             val authorities = ArrayList<GrantedAuthority>()
-            val user: User? = principal()
+            val user: UserDetails? = principal()
             val credentials: String? = credentials()
 
             for (authority in givenAuthorities)

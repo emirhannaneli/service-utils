@@ -1,6 +1,6 @@
 package net.lubble.util.enum
 
-enum class Cookie {
+enum class CookieType {
     AUTHENTICATION {
         override val value: String
             get() = prefix + "auth"
