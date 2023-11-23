@@ -8,9 +8,10 @@ import org.springframework.security.core.userdetails.UserDetails
 
 class AuthTool {
     companion object {
-        fun principal(): UserDetails? {
+        @Suppress("UNCHECKED_CAST")
+        fun <T> principal(): T? {
             if (isAnonymous()) return null
-            return SecurityContextHolder.getContext().authentication.principal as UserDetails
+            return SecurityContextHolder.getContext().authentication.principal as T
         }
 
         fun credentials(): String? {
@@ -28,7 +29,7 @@ class AuthTool {
         fun isAnonymous(): Boolean {
             return SecurityContextHolder.getContext().authentication == null
                     || SecurityContextHolder.getContext().authentication.principal == null
-                    || SecurityContextHolder.getContext().authentication.principal !is UserDetails
+                    || SecurityContextHolder.getContext().authentication.principal !is User
                     || !SecurityContextHolder.getContext().authentication.isAuthenticated
         }
 

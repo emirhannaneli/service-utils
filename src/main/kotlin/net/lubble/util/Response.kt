@@ -1,12 +1,15 @@
 package net.lubble.util
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.MessageSource
 import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.OK
 import org.springframework.http.ResponseEntity
+import java.nio.charset.StandardCharsets
 import java.util.*
 
 data class Response(
@@ -24,6 +27,14 @@ data class Response(
             message = source().getMessage(message, null, locale())
         }
         return ResponseEntity(this, status)
+    }
+
+    fun servletHandler(res: HttpServletResponse) {
+        res.status = status.value()
+        res.writer.write(mapper().writeValueAsString(this))
+        res.characterEncoding = StandardCharsets.UTF_8.name()
+        res.contentType = "application/json;charset=UTF-8"
+        res.writer.flush()
     }
 
     companion object {
@@ -49,6 +60,10 @@ data class Response(
 
         private fun locale(): Locale {
             return LocaleContextHolder.getLocale()
+        }
+
+        private fun mapper(): ObjectMapper {
+            return AppContextUtil.bean(ObjectMapper::class.java)
         }
     }
 }
