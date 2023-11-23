@@ -22,4 +22,14 @@ open class BaseJPAModel(
 
     @Column(nullable = false)
     var updatedAt: Date = Date(),
-)
+) {
+    @PrePersist
+    fun prePersist() {
+        updatedAt = Date()
+    }
+
+    @PreUpdate
+    fun preUpdate() {
+        updatedAt = Date()
+    }
+}
