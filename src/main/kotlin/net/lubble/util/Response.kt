@@ -29,12 +29,12 @@ data class Response(
         return ResponseEntity(this, status)
     }
 
-    fun servletHandler(res: HttpServletResponse) {
-        res.status = status.value()
-        res.writer.write(mapper().writeValueAsString(this))
-        res.characterEncoding = StandardCharsets.UTF_8.name()
-        res.contentType = "application/json;charset=UTF-8"
-        res.writer.flush()
+    fun servletHandler(response: HttpServletResponse) {
+        response.status = status.value()
+        response.writer.write(mapper().writeValueAsString(this))
+        response.characterEncoding = StandardCharsets.UTF_8.name()
+        response.contentType = "application/json;charset=UTF-8"
+        response.writer.flush()
     }
 
     companion object {
