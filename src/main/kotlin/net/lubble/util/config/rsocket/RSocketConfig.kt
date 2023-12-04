@@ -1,10 +1,10 @@
 package net.lubble.util.config.rsocket
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.rsocket.RSocket
 import net.lubble.util.config.lubble.LubbleConfig
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.rsocket.server.RSocketServer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.buffer.DefaultDataBufferFactory
@@ -17,7 +17,7 @@ import reactor.util.retry.Retry
 import java.time.Duration
 
 @Configuration("lubbleRSocketConfig")
-@ConditionalOnClass(RSocketServer::class)
+@ConditionalOnClass(RSocket::class)
 open class RSocketConfig(val mapper: ObjectMapper, val config: LubbleConfig) {
     fun rSocketRequesterBuilder(): RSocketRequester.Builder {
         val strategies = RSocketStrategies.builder()
