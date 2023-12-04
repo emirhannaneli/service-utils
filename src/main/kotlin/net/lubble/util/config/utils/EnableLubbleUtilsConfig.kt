@@ -31,7 +31,7 @@ open class EnableLubbleUtilsConfig {
     fun init() {
         AppContextUtil.initialize(context)
 
-        log.info("LubbleConfig Utils initialized with <3")
+        log.info("Lubble Utils initialized with <3")
     }
 
     @Bean
