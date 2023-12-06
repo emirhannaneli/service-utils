@@ -12,14 +12,14 @@ class JWTTool(
 ) {
     private val algorithm: Algorithm = Algorithm.HMAC256(secret)
 
-    fun generate(subject: String, claims: Array<String>): String {
-        return JWT.create()
+    fun generate(subject: String, claims: Map<String, String>): String {
+        val jwt = JWT.create()
             .withSubject(subject)
             .withIssuer(issuer)
             .withAudience(*audience)
-            .withArrayClaim("claims", claims)
             .withExpiresAt(DateTime.now().plus(expiration).toDate())
-            .sign(algorithm)
+        claims.forEach { (key, value) -> jwt.withClaim(key, value) }
+        return jwt.sign(algorithm)
     }
 
     fun generate(subject: String, expiration: Long, claims: Array<String>): String {
