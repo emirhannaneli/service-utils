@@ -22,15 +22,13 @@ class AuthTool {
         fun isAuthenticated(): Boolean {
             return SecurityContextHolder.getContext().authentication != null
                     && SecurityContextHolder.getContext().authentication.principal != null
-                    && SecurityContextHolder.getContext().authentication.principal is User
-                    && SecurityContextHolder.getContext().authentication.isAuthenticated
+                    && SecurityContextHolder.getContext().authentication.principal is UserDetails
         }
 
         fun isAnonymous(): Boolean {
             return SecurityContextHolder.getContext().authentication == null
                     || SecurityContextHolder.getContext().authentication.principal == null
-                    || SecurityContextHolder.getContext().authentication.principal !is User
-                    || !SecurityContextHolder.getContext().authentication.isAuthenticated
+                    || SecurityContextHolder.getContext().authentication.principal !is UserDetails
         }
 
         fun authorize(vararg givenAuthorities: String) {
