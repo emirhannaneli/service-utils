@@ -1,39 +1,35 @@
 package net.lubble.util.handler
 
-import jakarta.servlet.http.HttpServlet
 import net.lubble.util.Response
 import net.lubble.util.config.utils.EnableLubbleUtils
 import net.lubble.util.exception.AlreadyExistsException
 import net.lubble.util.exception.InvalidParamException
 import net.lubble.util.exception.NotFoundException
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
-import org.springframework.context.MessageSource
-import org.springframework.context.i18n.LocaleContextHolder
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
-import org.springframework.stereotype.Component
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
+import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
-import java.util.*
 
-@Component("utilsRestExceptionHandler")
-@ConditionalOnClass(HttpServlet::class)
-class RestExceptionHandler(val source: MessageSource) {
+@ControllerAdvice
+@ConditionalOnProperty(prefix = "lubble", name = ["exception-handling"], havingValue = "true", matchIfMissing = true)
+class LubbleRestExceptionHandler {
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
     init {
-        log.info("Lubble Utils RestExceptionHandler initialized.")
+        log.info("Lubble Utils LubbleRestExceptionHandler initialized.")
     }
 
     @ExceptionHandler(Exception::class)
     fun handleException(e: Exception): ResponseEntity<Response> {
         val response = Response(
-            source.getMessage("global.exception.internal.error", null, locale()),
+            "global.exception.internal.error",
             INTERNAL_SERVER_ERROR,
             "0x000500-0",
             mapOf(
@@ -44,10 +40,10 @@ class RestExceptionHandler(val source: MessageSource) {
         return response.build()
     }
 
-    @ExceptionHandler(UnsupportedOperationException::class)
+    @ExceptionHandler(java.lang.UnsupportedOperationException::class)
     fun handleUnsupportedOperationException(e: UnsupportedOperationException): ResponseEntity<Response> {
         val response = Response(
-            source.getMessage("global.exception.unsupported.operation", null, locale()),
+            "global.exception.unsupported.operation",
             INTERNAL_SERVER_ERROR,
             "0x000500-1",
             mapOf(
@@ -61,7 +57,7 @@ class RestExceptionHandler(val source: MessageSource) {
     @ExceptionHandler(InvalidParamException::class)
     fun handleInvalidParamException(e: InvalidParamException): ResponseEntity<Response> {
         val response = Response(
-            source.getMessage("global.exception.invalid.param", null, locale()),
+            "global.exception.invalid.param",
             e.status(),
             e.code(),
             e.details()
@@ -78,8 +74,7 @@ class RestExceptionHandler(val source: MessageSource) {
             val message = it.defaultMessage ?: "unknown"
             details[field] = message
         }
-        val defaultMessage = source.getMessage("global.exception.invalid.param", null, locale())
-        val message = details["unknown"] ?: defaultMessage
+        val message = details["unknown"] ?: "global.exception.invalid.param"
         val response = Response(
             message.toString(),
             BAD_REQUEST,
@@ -92,7 +87,7 @@ class RestExceptionHandler(val source: MessageSource) {
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): ResponseEntity<Response> {
         val response = Response(
-            source.getMessage("global.exception.invalid.payload", null, locale()),
+            "global.exception.invalid.payload",
             BAD_REQUEST,
             "0x000400-2",
             mapOf(
@@ -105,7 +100,7 @@ class RestExceptionHandler(val source: MessageSource) {
     @ExceptionHandler(MissingServletRequestParameterException::class)
     fun handleMissingServletRequestParameterException(e: MissingServletRequestParameterException): ResponseEntity<Response> {
         val response = Response(
-            source.getMessage("global.exception.invalid.param", null, locale()),
+            "global.exception.invalid.param",
             BAD_REQUEST,
             "0x000400-3",
             mapOf(
@@ -118,7 +113,7 @@ class RestExceptionHandler(val source: MessageSource) {
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
     fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<Response> {
         val response = Response(
-            source.getMessage("global.exception.invalid.param", null, locale()),
+            "global.exception.invalid.param",
             BAD_REQUEST,
             "0x000400-4",
             mapOf(
@@ -148,9 +143,5 @@ class RestExceptionHandler(val source: MessageSource) {
             e.details()
         )
         return response.build()
-    }
-
-    private fun locale(): Locale {
-        return LocaleContextHolder.getLocale()
     }
 }

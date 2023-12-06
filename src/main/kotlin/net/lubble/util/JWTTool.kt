@@ -5,7 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import org.joda.time.DateTime
 
 class JWTTool(
-    private val secret: String,
+    secret: String,
     private val issuer: String,
     private val expiration: Long,
     private val audience: Array<String>,
