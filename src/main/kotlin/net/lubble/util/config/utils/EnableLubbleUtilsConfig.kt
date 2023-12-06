@@ -25,7 +25,7 @@ open class EnableLubbleUtilsConfig {
     @Autowired
     private lateinit var context: ApplicationContext
 
-    private val log = LoggerFactory.getLogger(EnableLubbleUtilsConfig::class.java)
+    private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
     @PostConstruct
     fun init() {

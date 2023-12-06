@@ -2,10 +2,11 @@ package net.lubble.util.handler
 
 import jakarta.servlet.http.HttpServlet
 import net.lubble.util.Response
+import net.lubble.util.config.utils.EnableLubbleUtils
 import net.lubble.util.exception.AlreadyExistsException
 import net.lubble.util.exception.InvalidParamException
 import net.lubble.util.exception.NotFoundException
-import org.springframework.beans.factory.annotation.Autowired
+import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.context.MessageSource
 import org.springframework.context.i18n.LocaleContextHolder
@@ -16,16 +17,18 @@ import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
-import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import java.util.*
 
 @Component("utilsRestExceptionHandler")
 @ConditionalOnClass(HttpServlet::class)
-class RestExceptionHandler {
-    @Autowired
-    private lateinit var source: MessageSource
+class RestExceptionHandler(val source: MessageSource) {
+    private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
+
+    init {
+        log.info("Lubble Utils RestExceptionHandler initialized.")
+    }
 
     @ExceptionHandler(Exception::class)
     fun handleException(e: Exception): ResponseEntity<Response> {

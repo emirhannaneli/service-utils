@@ -3,6 +3,8 @@ package net.lubble.util.config.rsocket
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.rsocket.RSocket
 import net.lubble.util.config.lubble.LubbleConfig
+import net.lubble.util.config.utils.EnableLubbleUtils
+import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
@@ -19,6 +21,10 @@ import java.time.Duration
 @Configuration("lubbleRSocketConfig")
 @ConditionalOnClass(RSocket::class)
 open class RSocketConfig(val mapper: ObjectMapper, val config: LubbleConfig) {
+    private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
+    init {
+        log.info("Lubble Utils RSocketConfig initialized.")
+    }
     fun rSocketRequesterBuilder(): RSocketRequester.Builder {
         val strategies = RSocketStrategies.builder()
             .decoder(Jackson2JsonDecoder(mapper))

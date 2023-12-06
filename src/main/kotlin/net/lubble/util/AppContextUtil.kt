@@ -1,9 +1,15 @@
 package net.lubble.util
 
+import net.lubble.util.config.utils.EnableLubbleUtils
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 
 class AppContextUtil(context: ApplicationContext) {
     private var context: ApplicationContext? = context
+    private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
+    init {
+        log.info("Lubble Utils AppContextUtil initialized.")
+    }
 
     companion object {
         private var instance: AppContextUtil? = null
