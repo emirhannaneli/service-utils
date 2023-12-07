@@ -5,6 +5,7 @@ import net.lubble.util.config.utils.EnableLubbleUtils
 import net.lubble.util.exception.AlreadyExistsException
 import net.lubble.util.exception.InvalidParamException
 import net.lubble.util.exception.NotFoundException
+import net.lubble.util.exception.WrongCredentials
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.HttpStatus.BAD_REQUEST
@@ -141,6 +142,16 @@ class LubbleRestExceptionHandler {
             e.status(),
             e.code(),
             e.details()
+        )
+        return response.build()
+    }
+
+    @ExceptionHandler(WrongCredentials::class)
+    fun handleWrongCredentials(e: WrongCredentials): ResponseEntity<Response> {
+        val response = Response(
+            e.message(),
+            e.status(),
+            e.code()
         )
         return response.build()
     }

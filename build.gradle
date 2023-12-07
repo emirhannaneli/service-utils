@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.4.9-SNAPSHOT'
+version = '1.5.0-SNAPSHOT'
 
 publishing {
     repositories {
@@ -33,6 +33,7 @@ repositories {
 dependencies {
     implementation 'com.auth0:java-jwt:4.4.0'
     implementation 'joda-time:joda-time:2.12.5'
+    implementation 'com.google.api-client:google-api-client:2.2.0'
     compileOnly 'org.springframework.boot:spring-boot-starter-rsocket:3.1.5'
     compileOnly 'io.projectreactor:reactor-core:3.5.11'
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.15.3'
