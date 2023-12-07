@@ -30,6 +30,7 @@ data class Response(
     }
 
     fun servletHandler(response: HttpServletResponse) {
+        this.apply { message = source().getMessage(message, null, locale()) }
         response.status = status.value()
         response.writer.write(mapper().writeValueAsString(this))
         response.characterEncoding = StandardCharsets.UTF_8.name()

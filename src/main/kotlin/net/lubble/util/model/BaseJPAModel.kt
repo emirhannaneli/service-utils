@@ -13,13 +13,16 @@ import java.util.*
 @MappedSuperclass
 open class BaseJPAModel(
     @Id
+    @JvmField
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
     val id: UUID = UUID.randomUUID(),
 
+    @JvmField
     @Column(nullable = false, updatable = false)
     val createdAt: Date = Date(),
 
+    @JvmField
     @Column(nullable = false)
     var updatedAt: Date = Date(),
 ) {
