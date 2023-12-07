@@ -27,7 +27,6 @@ open class LubbleConfig {
     }
 
     open class OAuth2Credentials {
-        var enabled: Boolean = false
         var clientId: String? = null
         var clientSecret: String? = null
         var issuers: List<String> = listOf()
