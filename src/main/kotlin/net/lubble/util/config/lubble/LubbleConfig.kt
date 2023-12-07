@@ -23,6 +23,10 @@ open class LubbleConfig {
     }
 
     open class OAuth2 {
+        var google: OAuth2Credentials = OAuth2Credentials()
+    }
+
+    open class OAuth2Credentials {
         var enabled: Boolean = false
         var clientId: String? = null
         var clientSecret: String? = null
