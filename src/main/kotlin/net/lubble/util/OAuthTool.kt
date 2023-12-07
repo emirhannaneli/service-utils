@@ -29,8 +29,8 @@ class OAuthTool(val config: LubbleConfig) {
     fun retrieveGoogleData(credentials: String): Map<String, Any> {
         val factory = GsonFactory.getDefaultInstance()
         val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), factory)
-            .setAudience(listOf(config.oauth2.clientId))
-            .setIssuers(config.oauth2.issuers)
+            .setAudience(listOf(config.oauth2.google.clientId))
+            .setIssuers(config.oauth2.google.issuers)
             .build()
 
         val idToken = verifier.verify(credentials) ?: throw WrongCredentials()
