@@ -4,14 +4,19 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import net.lubble.util.config.lubble.LubbleConfig
+import net.lubble.util.config.utils.EnableLubbleUtils
 import net.lubble.util.exception.WrongCredentials
+import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 @Component
 @ConditionalOnProperty(prefix = "lubble.oauth2", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class OAuthTool(val config: LubbleConfig) {
-
+    private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
+    init {
+        log.info("Lubble Utils OAuthTool initialized.")
+    }
     /**
      * Retrieves the user data from Google.
      * @param credentials The credentials to verify.
