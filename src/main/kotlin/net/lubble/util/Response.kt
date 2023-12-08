@@ -9,7 +9,6 @@ import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.OK
 import org.springframework.http.ResponseEntity
-import java.nio.charset.StandardCharsets
 import java.util.*
 
 data class Response(
@@ -33,7 +32,7 @@ data class Response(
         this.apply { message = source().getMessage(message, null, locale()) }
         response.status = status.value()
         response.writer.write(mapper().writeValueAsString(this))
-        response.characterEncoding = StandardCharsets.UTF_8.name()
+        response.characterEncoding = "UTF-8"
         response.contentType = "application/json;charset=UTF-8"
         response.writer.flush()
     }

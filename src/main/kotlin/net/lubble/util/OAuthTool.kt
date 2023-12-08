@@ -31,7 +31,7 @@ class OAuthTool(val config: LubbleConfig) {
      * - givenName: String?
      * @throws WrongCredentials If the credentials are invalid.
      */
-    fun retrieveGoogleData(credentials: String): Map<String, Any> {
+    fun retrieveGoogleData(credentials: String): Map<String, Any?> {
         val factory = GsonFactory.getDefaultInstance()
         val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), factory)
             .setAudience(listOf(config.oauth2.google.clientId))
@@ -44,11 +44,11 @@ class OAuthTool(val config: LubbleConfig) {
         val userId = payload.subject
         val email = payload.email
         val emailVerified = payload.emailVerified
-        val name = payload["name"] as String
-        val pictureUrl = payload["picture"] as String
-        val locale = payload["locale"] as String
-        val familyName = payload["family_name"] as String
-        val givenName = payload["given_name"] as String
+        val name = payload["name"] as String?
+        val pictureUrl = payload["picture"] as String?
+        val locale = payload["locale"] as String?
+        val familyName = payload["family_name"] as String?
+        val givenName = payload["given_name"] as String?
 
         return mapOf(
             "userId" to userId,
