@@ -1,6 +1,5 @@
 package net.lubble.util.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import net.lubble.util.helper.EnumHelper
 import net.lubble.util.spec.PaginationSpec
@@ -17,9 +16,9 @@ import net.lubble.util.spec.PaginationSpec
 open class ParameterModel : PaginationSpec() {
     var search: String? = null
 
-    var sort: String? = null
+    var sortBy: String? = null
 
-    var order: SortOrder? = null
+    var sortOrder: SortOrder? = null
 }
 
 enum class SortOrder : EnumHelper {
