@@ -9,8 +9,8 @@ import net.lubble.util.spec.PaginationSpec
  * @param search String?
  * @param page Int?
  * @param size Int?
- * @param sort String?
- * @param order String?
+ * @param sortBy String?
+ * @param order SortOrder?
  * */
 @JsonIgnoreProperties(value = ["page", "size", "sort", "order" ,"search"])
 open class ParameterModel : PaginationSpec() {
