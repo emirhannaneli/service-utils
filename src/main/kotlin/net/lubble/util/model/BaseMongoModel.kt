@@ -10,6 +10,7 @@ import java.util.*
  * Base class for all MongoDB models.
  * It provides the following fields:
  * - id: ObjectId
+ * - deleted: Boolean
  * - createdAt: Date
  * - updatedAt: Date
  * */
@@ -17,6 +18,8 @@ import java.util.*
 open class BaseMongoModel(
     @Id
     var id: ObjectId? = null,
+
+    var deleted: Boolean = false,
 
     @Indexed
     var createdAt: Date = Date(),

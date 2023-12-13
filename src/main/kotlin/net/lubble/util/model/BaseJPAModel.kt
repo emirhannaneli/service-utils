@@ -7,6 +7,7 @@ import java.util.*
  * Base class for all JPA models.
  * It provides the following fields:
  * - id: UUID
+ * - deleted: Boolean
  * - createdAt: Date
  * - updatedAt: Date
  * */
@@ -19,6 +20,10 @@ open class BaseJPAModel(
     val id: UUID = UUID.randomUUID(),
 
     @JvmField
+    @Column(nullable = false)
+    var deleted: Boolean = false,
+
+    @JvmField
     @Column(nullable = false, updatable = false)
     val createdAt: Date = Date(),
 
@@ -26,6 +31,19 @@ open class BaseJPAModel(
     @Column(nullable = false)
     var updatedAt: Date = Date(),
 ) {
+
+    fun getId(): UUID {
+        return id
+    }
+
+    fun getCreatedAt(): Date {
+        return createdAt
+    }
+
+    fun getUpdatedAt(): Date {
+        return updatedAt
+    }
+
     @PrePersist
     fun prePersist() {
         updatedAt = Date()
