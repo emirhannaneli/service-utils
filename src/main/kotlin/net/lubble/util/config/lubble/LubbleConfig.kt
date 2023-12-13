@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "lubble")
 open class LubbleConfig {
+    var security: Security = Security()
     var services: Services = Services()
     var oauth2: OAuth2 = OAuth2()
 
@@ -30,5 +31,12 @@ open class LubbleConfig {
         var clientId: String? = null
         var clientSecret: String? = null
         var issuers: List<String> = listOf()
+    }
+
+    open class Security {
+        var cookie: Cookie = Cookie()
+        open class Cookie {
+            var prefix: String? = null
+        }
     }
 }
