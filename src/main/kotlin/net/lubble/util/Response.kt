@@ -1,6 +1,7 @@
 package net.lubble.util
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.MessageSource
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus.OK
 import org.springframework.http.ResponseEntity
 import java.util.*
 
+@JsonPropertyOrder("message", "status", "code", "details")
 data class Response(
     @JsonProperty("message")
     var message: String,
@@ -39,18 +41,15 @@ data class Response(
 
     companion object {
         @Suppress("unused")
-        fun ofPage(key: String, message: String, page: Page<*>, data: List<*>): Response {
-            return Response(
-                message = source().getMessage(message, null, locale()),
-                details = mapOf(
-                    "current" to page.number + 1,
-                    "size" to page.size,
-                    "totalItems" to page.totalElements,
-                    "totalPages" to page.totalPages,
-                    "hasNext" to page.hasNext(),
-                    "hasPrevious" to page.hasPrevious(),
-                    key to data
-                )
+        fun ofPage(page: Page<*>, data: List<*>): PageResponse {
+            return PageResponse(
+                current = page.number + 1,
+                size = page.size,
+                totalItems = page.totalElements,
+                totalPages = page.totalPages,
+                hasNext = page.hasNext(),
+                hasPrevious = page.hasPrevious(),
+                items = data
             )
         }
 
@@ -65,5 +64,27 @@ data class Response(
         private fun mapper(): ObjectMapper {
             return AppContextUtil.bean(ObjectMapper::class.java)
         }
+    }
+}
+
+@JsonPropertyOrder("current", "size", "totalItems", "totalPages", "hasNext", "hasPrevious", "items")
+data class PageResponse(
+    @JsonProperty("current")
+    val current: Int,
+    @JsonProperty("size")
+    val size: Int,
+    @JsonProperty("totalItems")
+    val totalItems: Long,
+    @JsonProperty("totalPages")
+    val totalPages: Int,
+    @JsonProperty("hasNext")
+    val hasNext: Boolean,
+    @JsonProperty("hasPrevious")
+    val hasPrevious: Boolean,
+    @JsonProperty("items")
+    val items: List<*>
+) {
+    fun build(): ResponseEntity<PageResponse> {
+        return ResponseEntity(this, OK)
     }
 }
