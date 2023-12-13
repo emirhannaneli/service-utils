@@ -5,14 +5,14 @@ import org.springframework.data.domain.Example
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.mongodb.core.query.Query
 
-open class BaseSpec<T : ParameterModel>(base: T) : ParameterModel() {
+open class BaseSpec(base: ParameterModel) : ParameterModel() {
 
     init {
         this.page = base.page
         this.size = base.size
         this.search = base.search
-        this.sort = base.sort
-        this.order = base.order
+        this.sortBy = base.sortBy
+        this.sortOrder = base.sortOrder
     }
 
     interface JPAModel<T> {
