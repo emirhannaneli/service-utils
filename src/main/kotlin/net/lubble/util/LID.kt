@@ -16,9 +16,9 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
     private var randomPartInt3 = 0
 
 
-    constructor() : this(UUID.randomUUID().toString())
+    constructor() : this(UUID.randomUUID().toString(), 0, 0, 0, 0, 0, 0)
 
-    constructor(byte: ByteArray) : this(String(byte))
+    constructor(byte: ByteArray) : this(String(byte), 0, 0, 0, 0, 0, 0)
 
     constructor(
         seed: String,
