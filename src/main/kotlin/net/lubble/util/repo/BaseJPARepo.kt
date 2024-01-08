@@ -6,5 +6,5 @@ import org.springframework.data.repository.NoRepositoryBean
 import java.util.UUID
 
 @NoRepositoryBean
-interface BaseJPA<T>: JpaRepository<T,UUID>, JpaSpecificationExecutor<T> {
+interface BaseJPARepo<T>: JpaRepository<T,UUID>, JpaSpecificationExecutor<T> {
 }

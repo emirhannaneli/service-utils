@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.6.0-SNAPSHOT'
+version = '1.7.0'
 
 publishing {
     repositories {
@@ -34,13 +34,13 @@ dependencies {
     implementation 'com.auth0:java-jwt:4.4.0'
     implementation 'joda-time:joda-time:2.12.5'
     implementation 'com.google.api-client:google-api-client:2.2.0'
-    compileOnly 'org.springframework.boot:spring-boot-starter-rsocket:3.1.5'
+    compileOnly 'org.springframework.boot:spring-boot-starter-rsocket:3.2.1'
     compileOnly 'io.projectreactor:reactor-core:3.5.11'
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.15.3'
     compileOnly 'org.springframework.boot:spring-boot-starter-data-mongodb:3.1.5'
     compileOnly 'org.springframework.data:spring-data-jpa:3.1.5'
     compileOnly 'org.springframework.boot:spring-boot-starter-security:3.1.5'
-    compileOnly 'org.springframework.boot:spring-boot-starter-web:3.1.5'
+    compileOnly 'org.springframework.boot:spring-boot-starter-web:3.2.1'
     compileOnly 'org.springframework.data:spring-data-commons:3.1.5'
     compileOnly 'jakarta.validation:jakarta.validation-api:3.0.2'
     compileOnly 'jakarta.persistence:jakarta.persistence-api:3.1.0'

@@ -1,5 +1,10 @@
 package net.lubble.util
 
+import org.apache.commons.codec.digest.DigestUtils
+import org.bson.types.ObjectId
+import java.security.SecureRandom
+import java.util.*
+
 class Generator {
     companion object {
         private val NUMBERS = "0123456789"

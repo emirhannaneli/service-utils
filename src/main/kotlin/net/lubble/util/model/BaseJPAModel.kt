@@ -1,12 +1,13 @@
 package net.lubble.util.model
 
 import jakarta.persistence.*
+import net.lubble.util.LID
 import java.util.*
 
 /**
  * Base class for all JPA models.
  * It provides the following fields:
- * - id: UUID
+ * - pk: UUID
  * - deleted: Boolean
  * - createdAt: Date
  * - updatedAt: Date
@@ -16,8 +17,12 @@ open class BaseJPAModel(
     @Id
     @JvmField
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
-    val id: UUID = UUID.randomUUID(),
+    @Column(name = "pk", unique = true, updatable = false, nullable = false)
+    val pk: UUID = UUID.randomUUID(),
+
+    @JvmField
+    @Column(name = "id", unique = true, nullable = false, updatable = false)
+    val id: LID = LID(),
 
     @JvmField
     @Column(nullable = false)
@@ -32,8 +37,16 @@ open class BaseJPAModel(
     var updatedAt: Date = Date(),
 ) {
 
-    fun getId(): UUID {
+    fun getPk(): UUID {
+        return pk
+    }
+
+    fun getId(): LID {
         return id
+    }
+
+    fun getDeleted(): Boolean {
+        return deleted
     }
 
     fun getCreatedAt(): Date {
@@ -58,12 +71,12 @@ open class BaseJPAModel(
         if (this === other) return true
         if (other !is BaseJPAModel) return false
 
-        if (id != other.id) return false
+        if (pk != other.pk) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        return id.hashCode()
+        return pk.hashCode()
     }
 }
