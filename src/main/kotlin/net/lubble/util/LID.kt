@@ -42,24 +42,29 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         val unified: StringBuilder = StringBuilder()
         val sha1Digest = DigestUtils.getSha1Digest()
         val sha256Digest = DigestUtils.getSha256Digest()
+        val sha512 = DigestUtils.getSha512Digest()
 
         val hashSha1 = DigestUtils.digest(sha1Digest, seed.toByteArray())
         val hashSha256 = DigestUtils.digest(sha256Digest, hashSha1)
-        val encoded = Base64.getEncoder().encodeToString(hashSha256)
+        val hashSha512 = DigestUtils.digest(sha512, hashSha256)
+        val encoded = Base64.getEncoder().encodeToString(hashSha512)
         val flatBase64 = encoded
-            .replace("=",  this.randomInt1.toString())
-            .replace("+",  this.randomInt2.toString())
-            .replace("/",  this.randomInt3.toString())
+            .replace("=", this.randomInt1.toString())
+            .replace("+", this.randomInt2.toString())
+            .replace("/", this.randomInt3.toString())
         unified.append(flatBase64)
 
-        val parts = unified.toString().chunked(4)
+        val parts = unified.toString().chunked(6)
+            .plus(unified.toString().chunked(this.randomInt1))
+            .plus(unified.toString().chunked(this.randomInt2))
+            .plus(unified.toString().chunked(this.randomInt3))
         if (randomPartInt1 == 0) this.randomPartInt1 = SecureRandom().nextInt(0, parts.size)
         if (randomPartInt2 == 0) this.randomPartInt2 = SecureRandom().nextInt(0, parts.size)
         if (randomPartInt3 == 0) this.randomPartInt3 = SecureRandom().nextInt(0, parts.size)
         val final = StringBuilder()
-        final.append(parts[ this.randomPartInt1])
-        final.append(parts[ this.randomPartInt2])
-        final.append(parts[ this.randomPartInt3])
+        final.append(parts[this.randomPartInt1])
+        final.append(parts[this.randomPartInt2])
+        final.append(parts[this.randomPartInt3])
         value = final.toString()
     }
 
@@ -91,5 +96,13 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         result = 31 * result + seed.hashCode()
         result = 31 * result + value.hashCode()
         return result
+    }
+
+    companion object{
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val lid = LID()
+            println("lid: $lid")
+        }
     }
 }
