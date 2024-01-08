@@ -42,12 +42,10 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         val unified: StringBuilder = StringBuilder()
         val sha1Digest = DigestUtils.getSha1Digest()
         val sha256Digest = DigestUtils.getSha256Digest()
-        val md5Digest = DigestUtils.getMd5Digest()
 
         val hashSha1 = DigestUtils.digest(sha1Digest, seed.toByteArray())
         val hashSha256 = DigestUtils.digest(sha256Digest, hashSha1)
-        val hashMD5 = DigestUtils.digest(md5Digest, hashSha256)
-        val encoded = Base64.getEncoder().encodeToString(hashMD5)
+        val encoded = Base64.getEncoder().encodeToString(hashSha256)
         val flatBase64 = encoded
             .replace("=", randomInt1.toString())
             .replace("+", randomInt2.toString())
