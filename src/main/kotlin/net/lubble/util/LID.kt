@@ -36,9 +36,9 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         this.randomPartInt2 = randomPartInt2
         this.randomPartInt3 = randomPartInt3
 
-        if (randomInt1 == 0) this.randomInt1 = SecureRandom().nextInt(1, 10)
-        if (randomInt2 == 0) this.randomInt2 = SecureRandom().nextInt(1, 10)
-        if (randomInt3 == 0) this.randomInt3 = SecureRandom().nextInt(1, 10)
+        if (this.randomInt1 == 0) this.randomInt1 = SecureRandom().nextInt(1, 10)
+        if (this.randomInt2 == 0) this.randomInt2 = SecureRandom().nextInt(1, 10)
+        if (this.randomInt3 == 0) this.randomInt3 = SecureRandom().nextInt(1, 10)
         val unified: StringBuilder = StringBuilder()
         val sha1Digest = DigestUtils.getSha1Digest()
         val sha256Digest = DigestUtils.getSha256Digest()
@@ -47,9 +47,9 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         val hashSha256 = DigestUtils.digest(sha256Digest, hashSha1)
         val encoded = Base64.getEncoder().encodeToString(hashSha256)
         val flatBase64 = encoded
-            .replace("=", randomInt1.toString())
-            .replace("+", randomInt2.toString())
-            .replace("/", randomInt3.toString())
+            .replace("=",  this.randomInt1.toString())
+            .replace("+",  this.randomInt2.toString())
+            .replace("/",  this.randomInt3.toString())
         unified.append(flatBase64)
 
         val parts = unified.toString().chunked(4)
@@ -57,9 +57,9 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         if (randomPartInt2 == 0) this.randomPartInt2 = SecureRandom().nextInt(0, parts.size)
         if (randomPartInt3 == 0) this.randomPartInt3 = SecureRandom().nextInt(0, parts.size)
         val final = StringBuilder()
-        final.append(parts[randomPartInt1])
-        final.append(parts[randomPartInt2])
-        final.append(parts[randomPartInt3])
+        final.append(parts[ this.randomPartInt1])
+        final.append(parts[ this.randomPartInt2])
+        final.append(parts[ this.randomPartInt3])
         value = final.toString()
     }
 
