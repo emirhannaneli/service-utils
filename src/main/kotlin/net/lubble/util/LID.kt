@@ -55,7 +55,7 @@ class LID(private var value: String) : Comparable<LID>, Serializable {
     }
 
     override fun toString(): String {
-        return value
+        return "LID(value='$value', uuid=$uuid)"
     }
 
     override fun equals(other: Any?): Boolean {
