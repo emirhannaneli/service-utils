@@ -19,6 +19,6 @@ class LIDCodec : Codec<LID> {
 
     override fun decode(reader: BsonReader?, decoderContext: DecoderContext?): LID {
         val bytes = reader?.readBinaryData()?.data
-        return LID(bytes)
+        return LID(bytes ?: ByteArray(0))
     }
 }
