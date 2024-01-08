@@ -45,23 +45,16 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         val md5Digest = DigestUtils.getMd5Digest()
 
         val hashSha1 = DigestUtils.digest(sha1Digest, seed.toByteArray())
-        println("hashSha1: ${String(hashSha1)}")
         val hashSha256 = DigestUtils.digest(sha256Digest, hashSha1)
-        println("hashSha256: ${String(hashSha256)}")
         val hashMD5 = DigestUtils.digest(md5Digest, hashSha256)
-        println("hashMD5: ${String(hashMD5)}")
         val encoded = Base64.getEncoder().encodeToString(hashMD5)
-        println("encoded: $encoded")
         val flatBase64 = encoded
             .replace("=", randomInt1.toString())
             .replace("+", randomInt2.toString())
             .replace("/", randomInt3.toString())
-        println("flatBase64: $flatBase64")
         unified.append(flatBase64)
-        println("unified: $unified")
 
         val parts = unified.toString().chunked(4)
-        println("parts: $parts")
         if (randomPartInt1 == 0) this.randomPartInt1 = SecureRandom().nextInt(0, parts.size)
         if (randomPartInt2 == 0) this.randomPartInt2 = SecureRandom().nextInt(0, parts.size)
         if (randomPartInt3 == 0) this.randomPartInt3 = SecureRandom().nextInt(0, parts.size)
@@ -69,7 +62,6 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         final.append(parts[randomPartInt1])
         final.append(parts[randomPartInt2])
         final.append(parts[randomPartInt3])
-        println("final: $final")
         value = final.toString()
     }
 
