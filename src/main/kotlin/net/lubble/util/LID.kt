@@ -98,11 +98,4 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         return result
     }
 
-    companion object{
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val lid = LID()
-            println("lid: $lid")
-        }
-    }
 }
