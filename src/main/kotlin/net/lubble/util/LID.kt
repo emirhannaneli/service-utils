@@ -5,40 +5,73 @@ import java.io.Serializable
 import java.security.SecureRandom
 import java.util.*
 
-class LID(private val seed: String? = UUID.randomUUID().toString()) : Comparable<LID>, Serializable {
+class LID(private val seed: String) : Comparable<LID>, Serializable {
     private var value: String = ""
 
-    init {
+    private var randomInt1 = 0
+    private var randomInt2 = 0
+    private var randomInt3 = 0
+    private var randomPartInt1 = 0
+    private var randomPartInt2 = 0
+    private var randomPartInt3 = 0
+
+
+    constructor() : this(UUID.randomUUID().toString())
+
+    constructor(byte: ByteArray) : this(String(byte))
+
+    constructor(
+        seed: String,
+        randomInt1: Int,
+        randomInt2: Int,
+        randomInt3: Int,
+        randomPartInt1: Int,
+        randomPartInt2: Int,
+        randomPartInt3: Int
+    ) : this(seed) {
+        this.randomInt1 = randomInt1
+        this.randomInt2 = randomInt2
+        this.randomInt3 = randomInt3
+        this.randomPartInt1 = randomPartInt1
+        this.randomPartInt2 = randomPartInt2
+        this.randomPartInt3 = randomPartInt3
+
+        if (randomInt1 == 0) this.randomInt1 = SecureRandom().nextInt(1, 10)
+        if (randomInt2 == 0) this.randomInt2 = SecureRandom().nextInt(1, 10)
+        if (randomInt3 == 0) this.randomInt3 = SecureRandom().nextInt(1, 10)
         val unified: StringBuilder = StringBuilder()
         val sha1Digest = DigestUtils.getSha1Digest()
         val sha256Digest = DigestUtils.getSha256Digest()
         val md5Digest = DigestUtils.getMd5Digest()
 
-        for (i in 1..6) {
-            val random = SecureRandom()
-            val hashCode = seed.hashCode()
-            val hashSha1 = DigestUtils.digest(sha1Digest, hashCode.toString().toByteArray())
-            val hashSha256 = DigestUtils.digest(sha256Digest, hashSha1)
-            val hashMD5 = DigestUtils.digest(md5Digest, hashSha256)
-            val encoded = Base64.getEncoder().encodeToString(hashMD5)
-            val flatBase64 = encoded
-                .replace("=", random.nextInt(1, 10).toString())
-                .replace("+", random.nextInt(1, 10).toString())
-                .replace("/", random.nextInt(1, 10).toString())
-            unified.append(flatBase64)
-        }
-        val parts = unified.toString().chunked(5)
+        val hashSha1 = DigestUtils.digest(sha1Digest, seed.toByteArray())
+        println("hashSha1: ${String(hashSha1)}")
+        val hashSha256 = DigestUtils.digest(sha256Digest, hashSha1)
+        println("hashSha256: ${String(hashSha256)}")
+        val hashMD5 = DigestUtils.digest(md5Digest, hashSha256)
+        println("hashMD5: ${String(hashMD5)}")
+        val encoded = Base64.getEncoder().encodeToString(hashMD5)
+        println("encoded: $encoded")
+        val flatBase64 = encoded
+            .replace("=", randomInt1.toString())
+            .replace("+", randomInt2.toString())
+            .replace("/", randomInt3.toString())
+        println("flatBase64: $flatBase64")
+        unified.append(flatBase64)
+        println("unified: $unified")
+
+        val parts = unified.toString().chunked(4)
+        println("parts: $parts")
+        if (randomPartInt1 == 0) this.randomPartInt1 = SecureRandom().nextInt(0, parts.size)
+        if (randomPartInt2 == 0) this.randomPartInt2 = SecureRandom().nextInt(0, parts.size)
+        if (randomPartInt3 == 0) this.randomPartInt3 = SecureRandom().nextInt(0, parts.size)
         val final = StringBuilder()
-        for (i in 1..3) {
-            val part = parts[(Math.random() * parts.size).toInt()]
-            final.append(part)
-        }
+        final.append(parts[randomPartInt1])
+        final.append(parts[randomPartInt2])
+        final.append(parts[randomPartInt3])
+        println("final: $final")
         value = final.toString()
     }
-
-    constructor() : this(null)
-
-    constructor(byte: ByteArray) : this(String(byte))
 
     fun toByteArray(): ByteArray {
         return value.toByteArray()
@@ -53,7 +86,7 @@ class LID(private val seed: String? = UUID.randomUUID().toString()) : Comparable
     }
 
     override fun toString(): String {
-        return "LID(value='$value', seed=$seed)"
+        return "LID(\nvalue='$value', \nseed='$seed', \nrandomInt1=$randomInt1, \nrandomInt2=$randomInt2, \nrandomInt3=$randomInt3, \nrandomPartInt1=$randomPartInt1, \nrandomPartInt2=$randomPartInt2, \nrandomPartInt3=$randomPartInt3)"
     }
 
     override fun equals(other: Any?): Boolean {
@@ -69,6 +102,4 @@ class LID(private val seed: String? = UUID.randomUUID().toString()) : Comparable
         result = 31 * result + value.hashCode()
         return result
     }
-
-
 }
