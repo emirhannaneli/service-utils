@@ -18,11 +18,15 @@ import java.util.*
 @MappedSuperclass
 open class BaseMongoModel(
     @Id
-    var id: ObjectId? = null,
+    var id: ObjectId = ObjectId(),
 
     @Indexed
-    val lid: LID = LID(),
+    val sk: LID = LID(),
 
+    @Indexed
+    var pk: Long = UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE,
+
+    @Indexed
     var deleted: Boolean = false,
 
     @Indexed
@@ -36,14 +40,16 @@ open class BaseMongoModel(
         if (other !is BaseMongoModel) return false
 
         if (id != other.id) return false
-        if (lid != other.lid) return false
+        if (sk != other.sk) return false
+        if (pk != other.pk) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = id?.hashCode() ?: 0
-        result = 31 * result + lid.hashCode()
+        result = 31 * result + sk.hashCode()
+        result = 31 * result + pk.hashCode()
         return result
     }
 }

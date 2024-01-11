@@ -8,6 +8,7 @@ import java.util.*
  * Base class for all JPA models.
  * It provides the following fields:
  * - pk: UUID
+ * - id: Long
  * - deleted: Boolean
  * - createdAt: Date
  * - updatedAt: Date
@@ -21,8 +22,12 @@ open class BaseJPAModel(
     val pk: UUID = UUID.randomUUID(),
 
     @JvmField
+    @Column(name = "sk", unique = true, updatable = false, nullable = false)
+    val sk: LID = LID(),
+
+    @JvmField
     @Column(name = "id", unique = true, nullable = false, updatable = false)
-    val id: LID = LID(),
+    val id: Long = pk.leastSignificantBits and Long.MAX_VALUE,
 
     @JvmField
     @Column(nullable = false)
@@ -41,7 +46,11 @@ open class BaseJPAModel(
         return pk
     }
 
-    fun getId(): LID {
+    fun getSk(): LID {
+        return sk
+    }
+
+    fun getId(): Long {
         return id
     }
 
