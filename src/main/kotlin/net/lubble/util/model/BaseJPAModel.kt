@@ -40,6 +40,10 @@ open class BaseJPAModel(
     @JvmField
     @Column(nullable = false)
     var updatedAt: Date = Date(),
+
+    @Transient
+    @JvmField
+    var params: SearchParams
 ) {
 
     fun getPk(): UUID {
@@ -88,4 +92,6 @@ open class BaseJPAModel(
     override fun hashCode(): Int {
         return pk.hashCode()
     }
+
+    open class SearchParams : ParameterModel()
 }

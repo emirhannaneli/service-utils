@@ -2,6 +2,7 @@ package net.lubble.util.model
 
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
+import jakarta.persistence.Transient
 import net.lubble.util.LID
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.index.Indexed
@@ -33,7 +34,10 @@ open class BaseMongoModel(
     var createdAt: Date = Date(),
 
     @Indexed
-    var updatedAt: Date = Date()
+    var updatedAt: Date = Date(),
+
+    @Transient
+    var params: SearchParams
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -47,9 +51,11 @@ open class BaseMongoModel(
     }
 
     override fun hashCode(): Int {
-        var result = id?.hashCode() ?: 0
+        var result = id.hashCode()
         result = 31 * result + sk.hashCode()
         result = 31 * result + pk.hashCode()
         return result
     }
+
+    open class SearchParams : ParameterModel()
 }

@@ -3,11 +3,10 @@ package net.lubble.util.controller
 import jakarta.validation.Valid
 import net.lubble.util.PageResponse
 import net.lubble.util.Response
-import net.lubble.util.model.ParameterModel
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
-interface BaseController<C, U, R, ID> {
+interface BaseController<C, U, R, P, ID> {
     @PostMapping
     fun create(@RequestBody @Valid create: C): ResponseEntity<R>
 
@@ -15,7 +14,7 @@ interface BaseController<C, U, R, ID> {
     fun findById(@PathVariable id: ID): ResponseEntity<R>
 
     @GetMapping
-    fun findAll(@Valid params: ParameterModel): ResponseEntity<PageResponse>
+    fun findAll(@Valid params: P): ResponseEntity<PageResponse>
 
     @PutMapping("{id}")
     fun update(@PathVariable id: ID, @RequestBody @Valid update: U): ResponseEntity<R>
