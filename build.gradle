@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.8.3'
+version = '1.8.4'
 
 publishing {
     repositories {

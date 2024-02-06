@@ -12,6 +12,8 @@ import java.util.*
  * Base class for all MongoDB models.
  * It provides the following fields:
  * - id: ObjectId
+ * - sk: LID
+ * - pk: Long
  * - deleted: Boolean
  * - createdAt: Date
  * - updatedAt: Date
@@ -30,10 +32,8 @@ open class BaseMongoModel(
     @Indexed
     var deleted: Boolean = false,
 
-    @Indexed
     var createdAt: Date = Date(),
 
-    @Indexed
     var updatedAt: Date = Date(),
 
     @Transient
@@ -58,4 +58,16 @@ open class BaseMongoModel(
     }
 
     open class SearchParams : ParameterModel()
+
+    constructor(params: SearchParams) : this(
+        id = ObjectId(),
+        sk = LID(),
+        pk = UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE,
+        deleted = false,
+        createdAt = Date(),
+        updatedAt = Date(),
+        params = params
+    )
+
+    constructor() : this(params = SearchParams())
 }
