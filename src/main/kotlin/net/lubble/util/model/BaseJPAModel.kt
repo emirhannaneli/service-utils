@@ -8,6 +8,7 @@ import java.util.*
  * Base class for all JPA models.
  * It provides the following fields:
  * - pk: UUID
+ * - sk: LID
  * - id: Long
  * - deleted: Boolean
  * - createdAt: Date
@@ -42,31 +43,30 @@ open class BaseJPAModel(
     var updatedAt: Date = Date(),
 
     @Transient
-    @JvmField
-    var params: SearchParams
+    open var params: SearchParams
 ) {
 
-    fun getPk(): UUID {
+    open fun getPk(): UUID {
         return pk
     }
 
-    fun getSk(): LID {
+    open fun getSk(): LID {
         return sk
     }
 
-    fun getId(): Long {
+    open fun getId(): Long {
         return id
     }
 
-    fun getDeleted(): Boolean {
+    open fun getDeleted(): Boolean {
         return deleted
     }
 
-    fun getCreatedAt(): Date {
+    open fun getCreatedAt(): Date {
         return createdAt
     }
 
-    fun getUpdatedAt(): Date {
+    open fun getUpdatedAt(): Date {
         return updatedAt
     }
 
@@ -84,8 +84,7 @@ open class BaseJPAModel(
         if (this === other) return true
         if (other !is BaseJPAModel) return false
 
-        if (pk != other.pk) return false
-
+        if (pk != other.pk || sk != other.sk || id != other.id) return false
         return true
     }
 
