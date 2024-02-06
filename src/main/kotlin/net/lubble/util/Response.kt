@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletResponse
+import net.lubble.util.model.ExceptionModel
 import org.springframework.context.MessageSource
 import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.domain.Page
@@ -23,6 +24,19 @@ data class Response(
     @JsonProperty("details")
     val details: Any? = null
 ) {
+    constructor(ex: ExceptionModel) : this(
+        message = ex.message(),
+        status = ex.status(),
+        code = ex.code(),
+    )
+
+    constructor(ex: ExceptionModel, details: Any) : this(
+        message = ex.message(),
+        status = ex.status(),
+        code = ex.code(),
+        details = details
+    )
+
     fun build(): ResponseEntity<Response> {
         this.apply {
             message = source().getMessage(message, null, locale())
