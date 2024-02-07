@@ -3,6 +3,7 @@ package net.lubble.util
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import net.lubble.util.config.utils.EnableLubbleUtils
+import net.lubble.util.enum.CookieType
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.stereotype.Component
@@ -33,6 +34,18 @@ class CookieUtil(private var response: HttpServletResponse) {
 
     fun clear(cookies: Array<String>) {
         val cleared = cookies.map { Cookie(it, null) }
+        cleared.forEach {
+            it.maxAge = 0
+            it.path = "/"
+            it.isHttpOnly = true
+            it.setAttribute("SameSite", "Strict")
+            response.addCookie(it)
+        }
+    }
+
+    fun clearAll() {
+        val cookies = CookieType.entries
+        val cleared = cookies.map { Cookie(it.value, null) }
         cleared.forEach {
             it.maxAge = 0
             it.path = "/"

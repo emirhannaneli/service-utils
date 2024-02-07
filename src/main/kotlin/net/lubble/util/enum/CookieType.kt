@@ -29,8 +29,6 @@ enum class CookieType {
     abstract val value: String
 
     fun prefix(): String {
-        return AppContextUtil.bean(LubbleConfig::class.java).security.cookie.prefix ?: default
+        return AppContextUtil.bean(LubbleConfig::class.java).security.cookie.prefix
     }
 }
-
-private const val default = "_lubble-"

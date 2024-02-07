@@ -21,7 +21,7 @@ import java.time.Duration
 @Configuration("lubbleRSocketConfig")
 @ConditionalOnClass(RSocket::class)
 open class RSocketConfig(val mapper: ObjectMapper, val config: LubbleConfig) {
-    private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
+    /*private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
     init {
         log.info("Lubble Utils RSocketConfig initialized.")
     }
@@ -41,37 +41,44 @@ open class RSocketConfig(val mapper: ObjectMapper, val config: LubbleConfig) {
     @Bean("rSocketPhoneClient")
     @ConditionalOnProperty(prefix = "lubble.services.phone-service", name = ["host"])
     open fun rSocketPhoneClient(): RSocketRequester {
+        val port = Integer.valueOf(config.services.phoneService.port) ?: throw IllegalArgumentException("Phone service port is not set.")
         return rSocketRequesterBuilder()
-            .tcp(config.services.phoneService.host!!, config.services.phoneService.port!!)
+            .tcp(config.services.phoneService.host, port)
     }
 
     @Bean("rSocketUserClient")
     @ConditionalOnProperty(prefix = "lubble.services.user-service", name = ["host"])
     open fun rSocketUserClient(): RSocketRequester {
+        val port = Integer.valueOf(config.services.userService.port) ?: throw IllegalArgumentException("User service port is not set.")
         return rSocketRequesterBuilder()
-            .tcp(config.services.userService.host!!, config.services.userService.port!!)
+            .tcp(config.services.userService.host, port)
     }
 
     @Bean("rSocketAddressClient")
     @ConditionalOnProperty(prefix = "lubble.services.address-service", name = ["host"])
     open fun rSocketAddressClient(): RSocketRequester {
+        val port =
+            Integer.valueOf(config.services.addressService.port) ?: throw IllegalArgumentException("Address service port is not set.")
         return rSocketRequesterBuilder()
-            .tcp(config.services.addressService.host!!, config.services.addressService.port!!)
+            .tcp(config.services.addressService.host, port)
     }
 
     @Bean("rSocketContentClient")
     @ConditionalOnProperty(prefix = "lubble.services.content-service", name = ["host"])
     open fun rSocketContentClient(): RSocketRequester {
+        val port =
+            Integer.valueOf(config.services.contentService.port) ?: throw IllegalArgumentException("Content service port is not set.")
         return rSocketRequesterBuilder()
-            .tcp(config.services.contentService.host!!, config.services.contentService.port!!)
+            .tcp(config.services.contentService.host, port)
     }
 
     @Bean("rSocketMailClient")
     @ConditionalOnProperty(prefix = "lubble.services.mail-service", name = ["host"])
     open fun rSocketMailClient(): RSocketRequester {
+        val port = Integer.valueOf(config.services.mailService.port) ?: throw IllegalArgumentException("Mail service port is not set.")
         return rSocketRequesterBuilder()
-            .tcp(config.services.mailService.host!!, config.services.mailService.port!!)
-    }
+            .tcp(config.services.mailService.host, port)
+    }*/
 }
 
 enum class RSocketService(val beanName: String) {
