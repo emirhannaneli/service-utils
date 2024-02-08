@@ -3,17 +3,16 @@ package net.lubble.util.config.utils
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.module.SimpleModule
 import jakarta.annotation.PostConstruct
 import net.lubble.util.AppContextUtil
+import net.lubble.util.LID
+import net.lubble.util.converter.LIDStringConverter
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.ApplicationContext
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.ComponentScan
-import org.springframework.context.annotation.ComponentScans
-import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.context.annotation.*
 import java.net.http.HttpClient
 
 @Configuration
@@ -42,6 +41,12 @@ open class EnableLubbleUtilsConfig {
 
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
+
+        val lidConverter = LIDStringConverter()
+        val lidModule = SimpleModule()
+        lidModule.addSerializer(LID::class.java, lidConverter)
+
+        mapper.registerModule(lidModule)
 
         return mapper
     }

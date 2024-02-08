@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -117,6 +118,19 @@ class LubbleRestExceptionHandler {
             "global.exception.invalid.param",
             BAD_REQUEST,
             "0x000400-4",
+            mapOf(
+                "message" to e.message
+            )
+        )
+        return response.build()
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
+    fun handleHttpRequestMethodNotSupportedException(e: HttpRequestMethodNotSupportedException): ResponseEntity<Response> {
+        val response = Response(
+            "global.exception.invalid.method",
+            BAD_REQUEST,
+            "0x000400-5",
             mapOf(
                 "message" to e.message
             )

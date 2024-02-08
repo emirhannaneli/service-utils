@@ -23,11 +23,11 @@ open class BaseMongoModel(
     @Id
     var id: ObjectId = ObjectId(),
 
-    @Indexed
-    val sk: LID = LID(),
-
-    @Indexed
+    @Indexed(unique = true)
     var pk: Long = UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE,
+
+    @Indexed(unique = true)
+    val sk: LID = LID(),
 
     @Indexed
     var deleted: Boolean = false,
@@ -57,7 +57,9 @@ open class BaseMongoModel(
         return result
     }
 
-    open class SearchParams : ParameterModel()
+    open class SearchParams : ParameterModel() {
+        var id: String? = null
+    }
 
     constructor(params: SearchParams) : this(
         id = ObjectId(),

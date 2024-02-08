@@ -6,19 +6,19 @@ import net.lubble.util.Response
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
-interface BaseController<C, U, R, P, ID> {
+interface BaseController<C, U, R, P> {
     @PostMapping
     fun create(@RequestBody @Valid create: C): ResponseEntity<R>
 
     @GetMapping("{id}")
-    fun findById(@PathVariable id: ID): ResponseEntity<R>
+    fun findById(@PathVariable id: String): ResponseEntity<R>
 
     @GetMapping
     fun findAll(@Valid params: P): ResponseEntity<PageResponse>
 
     @PutMapping("{id}")
-    fun update(@PathVariable id: ID, @RequestBody @Valid update: U): ResponseEntity<R>
+    fun update(@PathVariable id: String, @RequestBody @Valid update: U): ResponseEntity<R>
 
     @DeleteMapping("{id}")
-    fun delete(@PathVariable id: ID): ResponseEntity<Response>
+    fun delete(@PathVariable id: String): ResponseEntity<Response>
 }

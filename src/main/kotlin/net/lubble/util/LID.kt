@@ -1,11 +1,15 @@
 package net.lubble.util
 
 import org.apache.commons.codec.digest.DigestUtils
+import java.io.ByteArrayOutputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 import java.io.Serializable
 import java.security.SecureRandom
 import java.util.*
 
-class LID(private val seed: String) : Comparable<LID>, Serializable {
+
+class LID(private var seed: String) : Comparable<LID>, Serializable {
     private var value: String = ""
 
     private var randomInt1 = 0
@@ -16,9 +20,18 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
     private var randomPartInt3 = 0
 
 
-    constructor() : this(UUID.randomUUID().toString(), 0, 0, 0, 0, 0, 0)
+    constructor() : this(Generator.code().take(3), 0, 0, 0, 0, 0, 0)
 
-    constructor(byte: ByteArray) : this(String(byte), 0, 0, 0, 0, 0, 0)
+    constructor(byte: ByteArray) : this() {
+        val obj = fromByteArray(byte)
+        this.seed = obj.seed
+        this.randomInt1 = obj.randomInt1
+        this.randomInt2 = obj.randomInt2
+        this.randomInt3 = obj.randomInt3
+        this.randomPartInt1 = obj.randomPartInt1
+        this.randomPartInt2 = obj.randomPartInt2
+        this.randomPartInt3 = obj.randomPartInt3
+    }
 
     constructor(
         seed: String,
@@ -62,14 +75,34 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         if (randomPartInt2 == 0) this.randomPartInt2 = SecureRandom().nextInt(0, parts.size)
         if (randomPartInt3 == 0) this.randomPartInt3 = SecureRandom().nextInt(0, parts.size)
         val final = StringBuilder()
-        final.append(parts[this.randomPartInt1])
-        final.append(parts[this.randomPartInt2])
-        final.append(parts[this.randomPartInt3])
-        value = final.toString()
+        final.append(parts[this.randomPartInt1].take(parts[this.randomPartInt1].length / 2))
+        final.append(parts[this.randomPartInt2].take(parts[this.randomPartInt2].length / 2))
+        final.append(parts[this.randomPartInt3].take(parts[this.randomPartInt3].length / 2))
+        final.append(".")
+        final.append(seed)
+        final.append(".")
+        final.append(this.randomInt1)
+        final.append(".")
+        final.append(this.randomInt2)
+        final.append(".")
+        final.append(this.randomInt3)
+        final.append(".")
+        final.append(this.randomPartInt1)
+        final.append(".")
+        final.append(this.randomPartInt2)
+        final.append(".")
+        final.append(this.randomPartInt3)
+
+        value = Base64.getEncoder().encodeToString(final.toString().toByteArray())
     }
 
     fun toByteArray(): ByteArray {
-        return value.toByteArray()
+        ByteArrayOutputStream().use { bos ->
+            ObjectOutputStream(bos).use { oos ->
+                oos.writeObject("$seed,$randomInt1,$randomInt2,$randomInt3,$randomPartInt1,$randomPartInt2,$randomPartInt3")
+            }
+            return bos.toByteArray()
+        }
     }
 
     fun toKey(): String {
@@ -81,12 +114,19 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
     }
 
     override fun toString(): String {
-        return "LID(\nvalue='$value', \nseed='$seed', \nrandomInt1=$randomInt1, \nrandomInt2=$randomInt2, \nrandomInt3=$randomInt3, \nrandomPartInt1=$randomPartInt1, \nrandomPartInt2=$randomPartInt2, \nrandomPartInt3=$randomPartInt3)"
+        return value
     }
 
     override fun equals(other: Any?): Boolean {
         if (other is LID) {
             return value == other.value
+                    && seed == other.seed
+                    && randomInt1 == other.randomInt1
+                    && randomInt2 == other.randomInt2
+                    && randomInt3 == other.randomInt3
+                    && randomPartInt1 == other.randomPartInt1
+                    && randomPartInt2 == other.randomPartInt2
+                    && randomPartInt3 == other.randomPartInt3
         }
         return false
     }
@@ -98,4 +138,37 @@ class LID(private val seed: String) : Comparable<LID>, Serializable {
         return result
     }
 
+    companion object {
+        fun fromByteArray(byte: ByteArray): LID {
+            ObjectInputStream(byte.inputStream()).use { ois ->
+                val obj = ois.readObject()
+                if (obj is String) {
+                    val parts = obj.split(",")
+                    return LID(
+                        parts[0],
+                        parts[1].toInt(),
+                        parts[2].toInt(),
+                        parts[3].toInt(),
+                        parts[4].toInt(),
+                        parts[5].toInt(),
+                        parts[6].toInt()
+                    )
+                }
+            }
+            return LID()
+        }
+
+        fun fromKey(key: String): LID {
+            val parts = String(Base64.getDecoder().decode(key)).split(".")
+            return LID(
+                parts[1],
+                parts[2].toInt(),
+                parts[3].toInt(),
+                parts[4].toInt(),
+                parts[5].toInt(),
+                parts[6].toInt(),
+                parts[7].toInt()
+            )
+        }
+    }
 }

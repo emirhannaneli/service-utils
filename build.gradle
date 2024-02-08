@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.9.2'
+version = '1.9.4'
 
 publishing {
     repositories {
@@ -36,8 +36,8 @@ dependencies {
     implementation 'org.yaml:snakeyaml:2.2'
     implementation 'com.auth0:java-jwt:4.4.0'
     implementation 'joda-time:joda-time:2.12.7'
-    implementation 'org.aspectj:aspectjweaver:1.9.21'
     implementation 'org.aspectj:aspectjrt:1.9.21'
+    implementation 'org.aspectj:aspectjweaver:1.9.21'
     implementation 'com.google.api-client:google-api-client:2.3.0'
     compileOnly 'org.springframework.boot:spring-boot-starter-rsocket:3.2.2'
     compileOnly 'io.projectreactor:reactor-core:3.6.2'

@@ -17,14 +17,14 @@ import org.springframework.data.domain.Page
  * @property update Update Entity
  * @property delete Delete Entity
  */
-interface BaseService<T, C, U, S, ID> {
+interface BaseService<T, C, U, S> {
     fun create(create: C): T
 
     fun save(base: T): T
 
     fun find(spec: S): T
 
-    fun findById(id: ID): T
+    fun findById(id: String): T
 
     fun findAll(spec: S): Page<T>
 

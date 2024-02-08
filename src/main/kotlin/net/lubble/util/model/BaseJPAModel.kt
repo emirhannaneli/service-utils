@@ -92,7 +92,9 @@ open class BaseJPAModel(
         return pk.hashCode()
     }
 
-    open class SearchParams : ParameterModel()
+    open class SearchParams : ParameterModel() {
+        var id: String? = null
+    }
 
     constructor(params: SearchParams) : this(UUID.randomUUID(), LID(), UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE, false, Date(), Date(), params)
 
