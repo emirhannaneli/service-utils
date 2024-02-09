@@ -1,9 +1,6 @@
 package net.lubble.util.spec
 
-import jakarta.persistence.criteria.CriteriaBuilder
-import jakarta.persistence.criteria.CriteriaQuery
-import jakarta.persistence.criteria.Predicate
-import jakarta.persistence.criteria.Root
+import jakarta.persistence.criteria.*
 import net.lubble.util.LID
 import net.lubble.util.model.ParameterModel
 import org.springframework.data.domain.Example
@@ -27,14 +24,23 @@ open class BaseSpec(private val base: ParameterModel) {
 
             predicate = builder.and(predicate, builder.isFalse(root.get("deleted")))
 
-            id?.let { value ->
-                value.toLongOrNull()?.let {
-                    return builder.and(predicate, builder.equal(root.get<Long>("id"), it))
+            id?.let {
+                val value = id.toLongOrNull() ?: LID.fromKey(id)
+                if (value is Long) {
+                    return builder.and(predicate, builder.equal(root.get<Long>("id"), value))
                 }
-                return builder.and(predicate, builder.equal(root.get<ByteArray>("sk"), LID.fromKey(value)))
+                return builder.and(predicate, builder.equal(root.get<ByteArray>("sk"), value))
             }
 
             return predicate
+        }
+
+        fun <Z, X> idPredicate(builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
+            val value = id.toLongOrNull() ?: LID.fromKey(id)
+            if (value is Long) {
+                return builder.equal(join.get<Long>("id"), value)
+            }
+            return builder.equal(join.get<ByteArray>("sk"), value)
         }
     }
 

@@ -72,4 +72,13 @@ open class BaseMongoModel(
     )
 
     constructor() : this(params = SearchParams())
+
+    fun matchesId(id: String): Boolean {
+        val value = id.toLongOrNull() ?: LID.fromKey(id)
+        return if (value is Long) {
+            value == pk
+        } else {
+            value == sk
+        }
+    }
 }

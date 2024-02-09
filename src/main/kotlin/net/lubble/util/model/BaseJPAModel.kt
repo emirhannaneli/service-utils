@@ -99,4 +99,13 @@ open class BaseJPAModel(
     constructor(params: SearchParams) : this(UUID.randomUUID(), LID(), UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE, false, Date(), Date(), params)
 
     constructor() : this(SearchParams())
+
+    fun matchesId(id: String): Boolean {
+        val value = id.toLongOrNull() ?: LID.fromKey(id)
+        return if (value is Long) {
+            this.id == value
+        } else {
+            this.sk == value
+        }
+    }
 }
