@@ -11,6 +11,8 @@ import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.OK
 import org.springframework.http.ResponseEntity
+import org.springframework.web.server.ServerWebExchange
+import reactor.core.publisher.Mono
 import java.util.*
 
 @JsonPropertyOrder("message", "status", "code", "details")
@@ -51,6 +53,13 @@ data class Response(
         response.characterEncoding = "UTF-8"
         response.contentType = "application/json;charset=UTF-8"
         response.writer.flush()
+    }
+
+    fun exchangeHandler(exchange: ServerWebExchange): Mono<Void> {
+        this.apply { message = source().getMessage(message, null, locale()) }
+        exchange.response.statusCode = status
+        exchange.response.headers["Content-Type"] = listOf("application/json;charset=UTF-8")
+        return exchange.response.writeWith(Mono.just(exchange.response.bufferFactory().wrap(mapper().writeValueAsString(this).toByteArray())))
     }
 
     companion object {

@@ -27,7 +27,7 @@ open class BaseMongoModel(
     var pk: Long = UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE,
 
     @Indexed(unique = true)
-    val sk: LID = LID(),
+    var sk: LID = LID(),
 
     @Indexed
     var deleted: Boolean = false,

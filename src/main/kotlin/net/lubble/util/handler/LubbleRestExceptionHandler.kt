@@ -28,8 +28,8 @@ class LubbleRestExceptionHandler {
         log.info("Lubble Utils LubbleRestExceptionHandler initialized.")
     }
 
-    @ExceptionHandler(Exception::class)
-    fun handleException(e: Exception): ResponseEntity<Response> {
+    @ExceptionHandler(RuntimeException::class)
+    fun handleException(e: RuntimeException): ResponseEntity<Response> {
         val response = Response(
             "global.exception.internal.error",
             INTERNAL_SERVER_ERROR,

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.9.5'
+version = '1.9.6-SNAPSHOT'
 
 publishing {
     repositories {
@@ -39,7 +39,6 @@ dependencies {
     implementation 'org.aspectj:aspectjrt:1.9.21'
     implementation 'org.aspectj:aspectjweaver:1.9.21'
     implementation 'com.google.api-client:google-api-client:2.3.0'
-    compileOnly 'org.springframework.boot:spring-boot-starter-rsocket:3.2.2'
     compileOnly 'io.projectreactor:reactor-core:3.6.2'
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.16.1'
     compileOnly 'org.springframework.boot:spring-boot-starter-data-mongodb:3.2.2'
