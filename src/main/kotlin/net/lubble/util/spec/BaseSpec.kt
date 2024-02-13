@@ -5,6 +5,7 @@ import net.lubble.util.LID
 import net.lubble.util.model.ParameterModel
 import org.springframework.data.domain.Example
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 
 open class BaseSpec(private val base: ParameterModel) {
@@ -48,5 +49,21 @@ open class BaseSpec(private val base: ParameterModel) {
         fun ofSearch(): Query
 
         fun ofExample(): Example<T>
+
+        fun defaultQuery(id: String? = null): Query {
+            val query = Query()
+            query.addCriteria(Criteria.where("deleted").`is`(false))
+
+            id?.let {
+                val value = id.toLongOrNull() ?: LID.fromKey(id)
+                if (value is Long) {
+                    query.addCriteria(Criteria.where("id").`is`(value))
+                } else {
+                    query.addCriteria(Criteria.where("sk").`is`(value))
+                }
+            }
+
+            return query
+        }
     }
 }
