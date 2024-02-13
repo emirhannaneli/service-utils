@@ -21,4 +21,19 @@ interface BaseController<C, U, R, P> {
 
     @DeleteMapping("{id}")
     fun delete(@PathVariable id: String): ResponseEntity<Response>
+
+    @GetMapping("recycle-bin")
+    fun recycleBin(@Valid params: P): ResponseEntity<PageResponse> {
+        throw UnsupportedOperationException()
+    }
+
+    @PutMapping("{id}/restore")
+    fun restore(@PathVariable id: String): ResponseEntity<Response> {
+        throw UnsupportedOperationException()
+    }
+
+    @DeleteMapping("{id}/permanently")
+    fun deletePermanently(@PathVariable id: String): ResponseEntity<Response> {
+        throw UnsupportedOperationException()
+    }
 }
