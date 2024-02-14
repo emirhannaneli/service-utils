@@ -32,6 +32,9 @@ open class BaseMongoModel(
     @Indexed
     var deleted: Boolean = false,
 
+    @Indexed
+    var archived: Boolean = false,
+
     var createdAt: Date = Date(),
 
     var updatedAt: Date = Date(),

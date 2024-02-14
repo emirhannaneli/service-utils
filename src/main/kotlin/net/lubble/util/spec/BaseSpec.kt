@@ -24,6 +24,7 @@ open class BaseSpec(private val base: ParameterModel) {
             var predicate = builder.conjunction()
 
             predicate = builder.and(predicate, builder.isFalse(root.get("deleted")))
+            predicate = builder.and(predicate, builder.isFalse(root.get("archived")))
 
             id?.let {
                 val value = id.toLongOrNull() ?: LID.fromKey(id)
@@ -53,6 +54,7 @@ open class BaseSpec(private val base: ParameterModel) {
         fun defaultQuery(id: String? = null): Query {
             val query = Query()
             query.addCriteria(Criteria.where("deleted").`is`(false))
+            query.addCriteria(Criteria.where("archived").`is`(false))
 
             id?.let {
                 val value = id.toLongOrNull() ?: LID.fromKey(id)

@@ -38,6 +38,18 @@ interface BaseService<T, C, U, S> {
 
     fun delete(base: T)
 
+    fun archive(spec: S): Page<T> {
+        throw UnsupportedOperationException()
+    }
+
+    fun archive(base: T) {
+        throw UnsupportedOperationException()
+    }
+
+    fun unarchive(base: T) {
+        throw UnsupportedOperationException()
+    }
+
     fun recycleBin(spec: S): Page<T> {
         throw UnsupportedOperationException()
     }

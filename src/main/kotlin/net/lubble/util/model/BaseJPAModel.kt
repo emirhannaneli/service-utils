@@ -35,6 +35,10 @@ open class BaseJPAModel(
     var deleted: Boolean = false,
 
     @JvmField
+    @Column(nullable = false)
+    var archived: Boolean = false,
+
+    @JvmField
     @Column(nullable = false, updatable = false)
     val createdAt: Date = Date(),
 
@@ -60,6 +64,10 @@ open class BaseJPAModel(
 
     open fun getDeleted(): Boolean {
         return deleted
+    }
+
+    open fun getArchived(): Boolean {
+        return archived
     }
 
     open fun getCreatedAt(): Date {
@@ -96,7 +104,16 @@ open class BaseJPAModel(
         var id: String? = null
     }
 
-    constructor(params: SearchParams) : this(UUID.randomUUID(), LID(), UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE, false, Date(), Date(), params)
+    constructor(params: SearchParams) : this(
+        UUID.randomUUID(),
+        LID(),
+        UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE,
+        false,
+        false,
+        Date(),
+        Date(),
+        params
+    )
 
     constructor() : this(SearchParams())
 
