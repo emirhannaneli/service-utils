@@ -60,6 +60,20 @@ open class BaseSpec(private val base: ParameterModel) {
         /**
          * Returns the id predicate for a JPA model.
          *
+         * @param predicate The predicate to be combined.
+         * @param builder Used to construct criteria queries.
+         * @param join The join type.
+         * @param id The id of the entity.
+         */
+        fun <Z, X> idPredicate(predicate: Predicate, builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
+            val value = id.toLongOrNull() ?: LID.fromKey(id)
+            val key = if (value is Long) "id" else "sk"
+            return builder.and(predicate, builder.equal(join.get<Any>(key), value))
+        }
+
+        /**
+         * Returns the id predicate for a JPA model.
+         *
          * @param builder Used to construct criteria queries.
          * @param join The join type.
          * @param id The id of the entity.
@@ -79,7 +93,7 @@ open class BaseSpec(private val base: ParameterModel) {
          * @param type The type of the entity.
          */
         fun <K> typePredicate(predicate: Predicate, builder: CriteriaBuilder, root: Root<T>, type: Class<K>): Predicate {
-            return builder.and(predicate, builder.equal(root.type(), type))
+            return builder.and(predicate, typePredicate(builder, root, type))
         }
 
         /**
@@ -90,7 +104,7 @@ open class BaseSpec(private val base: ParameterModel) {
          * @param type The type of the entity.
          */
         fun <K> typePredicate(builder: CriteriaBuilder, root: Root<T>, type: Class<K>): Predicate {
-            return builder.and(builder.equal(root.type(), type))
+            return builder.equal(root.type(), type)
         }
     }
 
