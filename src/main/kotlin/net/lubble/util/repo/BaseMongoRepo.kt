@@ -18,13 +18,4 @@ import org.springframework.data.repository.NoRepositoryBean
 @NoRepositoryBean
 interface BaseMongoRepo<T> : MongoRepository<T, ObjectId> {
 
-    /**
-     * Retrieves the MongoTemplate bean from the application context.
-     * MongoTemplate provides a rich set of MongoDB operations, including basic CRUD operations, index operations, etc.
-     *
-     * @return The MongoTemplate bean.
-     */
-    fun template(): MongoTemplate {
-        return AppContextUtil.bean(MongoTemplate::class.java)
-    }
 }
