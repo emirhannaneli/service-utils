@@ -1,10 +1,8 @@
 package net.lubble.util
 
-import org.apache.commons.codec.digest.DigestUtils
-import org.bson.types.ObjectId
-import java.security.SecureRandom
-import java.util.*
-
+/**
+ * Generator is a utility class that provides methods for generating codes and passwords.
+ */
 class Generator {
     companion object {
         private val NUMBERS = "0123456789"
@@ -12,26 +10,30 @@ class Generator {
         private val UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         private val SPECIAL = "!@#$%^&*_=+-/.?"
 
+        /**
+         * Generates a 6-digit code consisting of numbers.
+         *
+         * @return The generated code.
+         */
         fun code(): String {
-            val code = StringBuilder()
-            for (i in 1..6)
-                code.append(NUMBERS[(Math.random() * NUMBERS.length).toInt()])
-            return code.toString()
+            return (1..6).map { NUMBERS[(Math.random() * NUMBERS.length).toInt()] }.joinToString("")
         }
 
+        /**
+         * Generates a password with the specified characteristics.
+         *
+         * @param numbers Whether the password should include numbers.
+         * @param upper Whether the password should include uppercase letters.
+         * @param special Whether the password should include special characters.
+         * @param length The length of the password.
+         * @return The generated password.
+         */
         fun password(numbers: Boolean, upper: Boolean, special: Boolean, length: Int): String {
-            val password = StringBuilder()
-            val chars = StringBuilder()
-            chars.append(LOWER)
-            if (numbers)
-                chars.append(NUMBERS)
-            if (upper)
-                chars.append(UPPER)
-            if (special)
-                chars.append(SPECIAL)
-            for (i in 0..<length)
-                password.append(chars[(Math.random() * chars.length).toInt()])
-            return password.toString()
+            val chars = StringBuilder(LOWER)
+            if (numbers) chars.append(NUMBERS)
+            if (upper) chars.append(UPPER)
+            if (special) chars.append(SPECIAL)
+            return (1..length).map { chars[(Math.random() * chars.length).toInt()] }.joinToString("")
         }
     }
 }

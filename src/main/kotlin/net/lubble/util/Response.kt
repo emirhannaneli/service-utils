@@ -15,6 +15,14 @@ import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
 import java.util.*
 
+/**
+ * This class represents a response that can be sent to the client.
+ * It contains information about the status of the request, a message, a code, and additional details.
+ * @property message The message to be sent to the client.
+ * @property status The HTTP status of the response.
+ * @property code An optional code that can provide additional information about the response.
+ * @property details Any additional details that should be included in the response.
+ */
 @JsonPropertyOrder("message", "status", "code", "details")
 data class Response(
     @JsonProperty("message")
@@ -26,12 +34,21 @@ data class Response(
     @JsonProperty("details")
     val details: Any? = null
 ) {
+    /**
+     * Constructs a new Response from an ExceptionModel.
+     * @param ex The ExceptionModel to construct the Response from.
+     */
     constructor(ex: ExceptionModel) : this(
         message = ex.message(),
         status = ex.status(),
         code = ex.code(),
     )
 
+    /**
+     * Constructs a new Response from an ExceptionModel and additional details.
+     * @param ex The ExceptionModel to construct the Response from.
+     * @param details The additional details to include in the Response.
+     */
     constructor(ex: ExceptionModel, details: Any) : this(
         message = ex.message(),
         status = ex.status(),
@@ -39,6 +56,10 @@ data class Response(
         details = details
     )
 
+    /**
+     * Builds the Response into a ResponseEntity.
+     * @return The ResponseEntity containing the Response.
+     */
     fun build(): ResponseEntity<Response> {
         this.apply {
             message = source().getMessage(message, null, locale())
@@ -46,6 +67,10 @@ data class Response(
         return ResponseEntity(this, status)
     }
 
+    /**
+     * Handles the Response for a servlet.
+     * @param response The HttpServletResponse to handle.
+     */
     fun servletHandler(response: HttpServletResponse) {
         this.apply { message = source().getMessage(message, null, locale()) }
         response.status = status.value()
@@ -55,6 +80,11 @@ data class Response(
         response.writer.flush()
     }
 
+    /**
+     * Handles the Response for a ServerWebExchange.
+     * @param exchange The ServerWebExchange to handle.
+     * @return A Mono<Void> indicating when the handling is complete.
+     */
     fun exchangeHandler(exchange: ServerWebExchange): Mono<Void> {
         this.apply { message = source().getMessage(message, null, locale()) }
         exchange.response.statusCode = status
@@ -63,6 +93,12 @@ data class Response(
     }
 
     companion object {
+        /**
+         * Constructs a new Response from a Page and a list of data.
+         * @param page The Page to construct the Response from.
+         * @param data The data to include in the Response.
+         * @return The constructed Response.
+         */
         @Suppress("unused")
         fun ofPage(page: Page<*>, data: List<*>): PageResponse {
             return PageResponse(
@@ -76,20 +112,43 @@ data class Response(
             )
         }
 
+        /**
+         * Retrieves the MessageSource bean from the application context.
+         * @return The MessageSource bean.
+         */
         private fun source(): MessageSource {
             return AppContextUtil.bean(MessageSource::class.java)
         }
 
+        /**
+         * Retrieves the current locale.
+         * @return The current locale.
+         */
         private fun locale(): Locale {
             return LocaleContextHolder.getLocale()
         }
 
+        /**
+         * Retrieves the ObjectMapper bean from the application context.
+         * @return The ObjectMapper bean.
+         */
         private fun mapper(): ObjectMapper {
             return AppContextUtil.bean(ObjectMapper::class.java)
         }
     }
 }
 
+/**
+ * This class represents a page response that can be sent to the client.
+ * It contains information about the current page, the size of the page, the total number of items, the total number of pages, whether there are next and previous pages, and the items on the page.
+ * @property current The current page number.
+ * @property size The size of the page.
+ * @property totalItems The total number of items.
+ * @property totalPages The total number of pages.
+ * @property hasNext Whether there is a next page.
+ * @property hasPrevious Whether there is a previous page.
+ * @property items The items on the page.
+ */
 @JsonPropertyOrder("current", "size", "totalItems", "totalPages", "hasNext", "hasPrevious", "items")
 data class PageResponse(
     @JsonProperty("current")
@@ -107,6 +166,10 @@ data class PageResponse(
     @JsonProperty("items")
     val items: List<*>
 ) {
+    /**
+     * Builds the PageResponse into a ResponseEntity.
+     * @return The ResponseEntity containing the PageResponse.
+     */
     fun build(): ResponseEntity<PageResponse> {
         return ResponseEntity(this, OK)
     }

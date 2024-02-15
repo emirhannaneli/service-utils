@@ -10,6 +10,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
+/**
+ * This class is responsible for handling OAuth operations.
+ * It is only enabled when the property "lubble.oauth2.enabled" is set to true.
+ * @property config The configuration object for Lubble.
+ */
 @Component
 @ConditionalOnProperty(prefix = "lubble.oauth2", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class OAuthTool(val config: LubbleConfig) {
@@ -38,8 +43,11 @@ class OAuthTool(val config: LubbleConfig) {
             .setIssuers(config.oauth2.google.issuers)
             .build()
 
+        // Verify the credentials and get the ID token.
+        // If the credentials are invalid, a WrongCredentials exception is thrown.
         val idToken = verifier.verify(credentials) ?: throw WrongCredentials()
 
+        // Extract the payload from the ID token.
         val payload = idToken.payload
         val userId = payload.subject
         val email = payload.email
@@ -50,6 +58,7 @@ class OAuthTool(val config: LubbleConfig) {
         val familyName = payload["family_name"] as String?
         val givenName = payload["given_name"] as String?
 
+        // Return the user data as a map.
         return mapOf(
             "userId" to userId,
             "email" to email,

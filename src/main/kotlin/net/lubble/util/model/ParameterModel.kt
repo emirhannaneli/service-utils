@@ -8,13 +8,13 @@ import net.lubble.util.helper.EnumHelper
 import net.lubble.util.spec.PaginationSpec
 
 /**
- * ParameterModel
- * @param search String?
- * @param page Int?
- * @param size Int?
- * @param sortBy String?
- * @param order SortOrder?
- * */
+ * This class represents a model for parameters.
+ * It extends PaginationSpec and provides additional fields for search, sortBy, and sortOrder.
+ * It also provides methods to get and set these fields.
+ * @property search The search string. It is transient, meaning it is not persisted in the database.
+ * @property sortBy The field to sort by. It is transient, meaning it is not persisted in the database.
+ * @property sortOrder The order to sort in. It is transient, meaning it is not persisted in the database.
+ */
 @JsonIgnoreProperties(value = ["page", "size", "sort", "order" ,"search"])
 open class ParameterModel : PaginationSpec() {
     @Trim
@@ -30,6 +30,10 @@ open class ParameterModel : PaginationSpec() {
     var sortOrder: SortOrder? = null
 }
 
+/**
+ * This enum represents the order to sort in.
+ * It provides labels, values, colors, and icons for each order.
+ */
 enum class SortOrder : EnumHelper {
     ASC {
         override val label: String = "sort.order.asc"
