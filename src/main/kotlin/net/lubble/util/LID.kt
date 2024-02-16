@@ -95,7 +95,7 @@ class LID(private var seed: String) : Comparable<LID>, Serializable {
         final.append(parts[this.randomPartInt3].take(parts[this.randomPartInt3].length / 2))
         final.append(".$seed.$randomInt1.$randomInt2.$randomInt3.$randomPartInt1.$randomPartInt2.$randomPartInt3")
 
-        value = Base64.getEncoder().encodeToString(final.toString().toByteArray())
+        value = Base64.getEncoder().encodeToString(final.toString().toByteArray()).replace("=", "")
     }
 
     /**
