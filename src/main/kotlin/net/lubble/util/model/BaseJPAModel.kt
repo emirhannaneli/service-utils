@@ -46,9 +46,6 @@ open class BaseJPAModel(
     @JvmField
     @Column(nullable = false)
     var updatedAt: Date = Date(),
-
-    @Transient
-    open var params: SearchParams
 ) {
 
     /**
@@ -151,26 +148,6 @@ open class BaseJPAModel(
     open class SearchParams : ParameterModel() {
         var id: String? = null
     }
-
-    /**
-     * Constructs a new BaseJPAModel with the given search parameters.
-     * @param params The search parameters.
-     */
-    constructor(params: SearchParams) : this(
-        UUID.randomUUID(),
-        LID(),
-        UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE,
-        false,
-        false,
-        Date(),
-        Date(),
-        params
-    )
-
-    /**
-     * Constructs a new BaseJPAModel with default search parameters.
-     */
-    constructor() : this(SearchParams())
 
     /**
      * Checks if the model matches the given id.

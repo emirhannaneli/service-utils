@@ -40,8 +40,6 @@ open class BaseMongoModel(
 
     var updatedAt: Date = Date(),
 
-    @Transient
-    var params: SearchParams
 ) {
     /**
      * Checks if the model is equal to another object.
@@ -74,34 +72,17 @@ open class BaseMongoModel(
      * This class represents the search parameters for the model.
      * @property id The id to search for.
      */
+    @Suppress("unused")
     open class SearchParams : ParameterModel() {
         var id: String? = null
     }
-
-    /**
-     * Constructs a new BaseMongoModel with the given search parameters.
-     * @param params The search parameters.
-     */
-    constructor(params: SearchParams) : this(
-        id = ObjectId(),
-        sk = LID(),
-        pk = UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE,
-        deleted = false,
-        createdAt = Date(),
-        updatedAt = Date(),
-        params = params
-    )
-
-    /**
-     * Constructs a new BaseMongoModel with default search parameters.
-     */
-    constructor() : this(params = SearchParams())
 
     /**
      * Checks if the model matches the given id.
      * @param id The id to check.
      * @return True if the model's pk or sk matches the given id, false otherwise.
      */
+    @Suppress("unused")
     fun matchesId(id: String): Boolean {
         val value = id.toLongOrNull() ?: LID.fromKey(id)
         return if (value is Long) {
