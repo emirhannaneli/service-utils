@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.9.9'
+version = '1.9.10'
 
 publishing {
     repositories {
@@ -14,10 +14,19 @@ publishing {
             def snapshotsRepoUrl = "https://repo.emirman.dev/repository/maven-snapshots/"
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
             credentials {
-                username = System.getenv("REPO_USER")
-                password = System.getenv("REPO_KEY")
+                username = System.getenv("REPO_USER") as String
+                password = System.getenv("REPO_KEY") as String
             }
         }
+        /*maven {
+            name = "sonatype"
+            url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+
+            credentials {
+                username = project.findProperty("sonatype.user")
+                password = project.findProperty("sonatype.password")
+            }
+        }*/
     }
     publications {
         gpr(MavenPublication) {

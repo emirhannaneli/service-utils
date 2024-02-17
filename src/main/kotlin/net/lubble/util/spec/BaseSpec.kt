@@ -4,6 +4,8 @@ import jakarta.persistence.criteria.*
 import net.lubble.util.LID
 import net.lubble.util.model.ParameterModel
 import org.springframework.data.domain.Example
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
@@ -19,6 +21,13 @@ open class BaseSpec(private val base: ParameterModel) {
      * Returns the pageable object from the base parameter model.
      */
     fun ofPageable() = base.ofPageable()
+
+    fun ofPageable(sort: Sort) = base.ofPageable(sort)
+
+    fun ofSortedPageable(): Pageable {
+        val sort = base.sortBy?.let { Sort.by(Sort.Direction.valueOf(base.sortOrder.value), it) } ?: Sort.unsorted()
+        return base.ofPageable(sort)
+    }
 
     /**
      * JPAModel interface defines the specifications for JPA models.

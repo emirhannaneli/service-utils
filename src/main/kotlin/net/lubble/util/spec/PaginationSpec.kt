@@ -33,9 +33,9 @@ open class PaginationSpec {
      * Converts this PaginationSpec into a Pageable with a specific sort order.
      * @param sort The sort order to apply.
      */
-    fun ofPageable(sort: Sort) {
+    fun ofPageable(sort: Sort): Pageable {
         val page = (this.page?.minus(1) ?: 0).coerceAtLeast(0)
         val size = this.size?.coerceAtLeast(1) ?: 1
-        PageRequest.of(page, size, sort)
+        return PageRequest.of(page, size, sort)
     }
 }

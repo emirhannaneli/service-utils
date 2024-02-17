@@ -8,6 +8,7 @@ import net.lubble.util.exception.NotFoundException
 import net.lubble.util.exception.WrongCredentials
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.data.mapping.PropertyReferenceException
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.ResponseEntity
@@ -131,6 +132,19 @@ class LubbleRestExceptionHandler {
             "global.exception.invalid.method",
             BAD_REQUEST,
             "0x000400-5",
+            mapOf(
+                "message" to e.message
+            )
+        )
+        return response.build()
+    }
+
+    @ExceptionHandler(PropertyReferenceException::class)
+    fun handlePropertyReferenceException(e: PropertyReferenceException): ResponseEntity<Response> {
+        val response = Response(
+            "global.exception.invalid.param.type",
+            BAD_REQUEST,
+            "0x000400-6",
             mapOf(
                 "message" to e.message
             )

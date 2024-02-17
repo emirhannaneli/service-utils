@@ -27,7 +27,7 @@ open class ParameterModel : PaginationSpec() {
     var sortBy: String? = null
 
     @Transient
-    var sortOrder: SortOrder? = null
+    var sortOrder: SortOrder = SortOrder.ASC
 }
 
 /**
@@ -37,7 +37,7 @@ open class ParameterModel : PaginationSpec() {
 enum class SortOrder : EnumHelper {
     ASC {
         override val label: String = "sort.order.asc"
-        override val value: String = "asc"
+        override val value: String = name.uppercase()
         override val color: String?
             get() = null
         override val icon: String?
@@ -45,7 +45,7 @@ enum class SortOrder : EnumHelper {
     },
     DESC {
         override val label: String = "sort.order.desc"
-        override val value: String = "desc"
+        override val value: String = name.uppercase()
         override val color: String?
             get() = null
         override val icon: String?
