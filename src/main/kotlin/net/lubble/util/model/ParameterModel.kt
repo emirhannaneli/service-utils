@@ -2,8 +2,6 @@ package net.lubble.util.model
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import jakarta.persistence.Transient
-import net.lubble.util.annotation.lower.Lower
-import net.lubble.util.annotation.trim.Trim
 import net.lubble.util.helper.EnumHelper
 import net.lubble.util.spec.PaginationSpec
 
@@ -17,14 +15,13 @@ import net.lubble.util.spec.PaginationSpec
  */
 @JsonIgnoreProperties(value = ["page", "size", "sort", "order" ,"search"])
 open class ParameterModel : PaginationSpec() {
-    @Trim
-    @Lower
     @Transient
     var search: String? = null
+        get() = field?.trim()?.lowercase()
 
-    @Trim
     @Transient
     var sortBy: String? = null
+        get() = field?.trim()
 
     @Transient
     var sortOrder: SortOrder = SortOrder.ASC

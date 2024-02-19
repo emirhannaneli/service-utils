@@ -9,4 +9,4 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 @Retention(AnnotationRetention.RUNTIME)
 @JsonSerialize(converter = LowerProcessor::class)
 @JsonDeserialize(converter = LowerProcessor::class)
-annotation class Lower()
+annotation class Lower
