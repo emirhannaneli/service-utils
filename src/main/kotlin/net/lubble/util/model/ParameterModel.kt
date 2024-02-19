@@ -25,6 +25,24 @@ open class ParameterModel : PaginationSpec() {
 
     @Transient
     var sortOrder: SortOrder = SortOrder.ASC
+
+    @Transient
+    var deleted: Boolean? = false
+        protected set
+
+    @Transient
+    var archived: Boolean? = false
+        protected set
+
+    fun deleted(deleted: Boolean?): ParameterModel {
+        this.deleted = deleted
+        return this
+    }
+
+    fun archived(archived: Boolean?): ParameterModel {
+        this.archived = archived
+        return this
+    }
 }
 
 /**
