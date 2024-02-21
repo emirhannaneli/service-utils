@@ -147,6 +147,8 @@ open class BaseJPAModel(
      */
     open class SearchParams : ParameterModel() {
         var id: String? = null
+        var deleted: Boolean? = null
+        var archived: Boolean? = null
     }
 
     /**

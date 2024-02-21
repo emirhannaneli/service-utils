@@ -84,7 +84,7 @@ interface BaseService<T, C, U, S> {
      * Unarchive an entity.
      * @param base The entity to unarchive.
      */
-    fun unarchive(base: T) {
+    fun unarchive(id: String) {
         throw UnsupportedOperationException()
     }
 
@@ -106,17 +106,17 @@ interface BaseService<T, C, U, S> {
 
     /**
      * Restore an entity from the recycle bin.
-     * @param base The entity to restore.
+     * @param id The ID of the entity to restore.
      */
-    fun restore(base: T) {
+    fun restore(id: String) {
         throw UnsupportedOperationException()
     }
 
     /**
      * Permanently delete an entity.
-     * @param base The entity to permanently delete.
+     * @param id The ID of the entity to delete.
      */
-    fun deletePermanently(base: T) {
+    fun deletePermanently(id: String) {
         throw UnsupportedOperationException()
     }
 }

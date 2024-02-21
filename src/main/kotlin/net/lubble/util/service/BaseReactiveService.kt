@@ -86,10 +86,10 @@ interface BaseReactiveService<T, C, U, S> {
 
     /**
      * Unarchive an entity.
-     * @param base The entity to unarchive.
+     * @param id The ID of the entity to unarchive.
      * @return A void wrapped in a Mono.
      */
-    fun unarchive(base: T): Mono<Void> {
+    fun unarchive(id: String): Mono<Void> {
         throw UnsupportedOperationException()
     }
 
@@ -115,16 +115,16 @@ interface BaseReactiveService<T, C, U, S> {
      * @param base The entity to restore.
      * @return A void wrapped in a Mono.
      */
-    fun restore(base: T): Mono<Void> {
+    fun restore(id: String): Mono<Void> {
         throw UnsupportedOperationException()
     }
 
     /**
      * Permanently delete an entity.
-     * @param base The entity to permanently delete.
+     * @param id The ID of the entity to delete.
      * @return A void wrapped in a Mono.
      */
-    fun deletePermanently(base: T): Mono<Void> {
+    fun deletePermanently(id: String): Mono<Void> {
         throw UnsupportedOperationException()
     }
 }

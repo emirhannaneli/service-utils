@@ -1,9 +1,13 @@
 package net.lubble.util.spec
 
-import jakarta.persistence.criteria.*
+import jakarta.persistence.criteria.CriteriaBuilder
+import jakarta.persistence.criteria.Join
+import jakarta.persistence.criteria.Predicate
+import jakarta.persistence.criteria.Root
 import net.lubble.util.LID
+import net.lubble.util.model.BaseJPAModel
+import net.lubble.util.model.BaseMongoModel
 import net.lubble.util.model.ParameterModel
-import org.springframework.data.domain.Example
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
@@ -16,7 +20,6 @@ import org.springframework.data.mongodb.core.query.Query
  * @property base The base parameter model.
  */
 open class BaseSpec(private val base: ParameterModel) {
-
     /**
      * Returns the pageable object from the base parameter model.
      */
@@ -34,7 +37,7 @@ open class BaseSpec(private val base: ParameterModel) {
      */
     interface JPAModel<T> {
         /**
-         * Returns the specification for search.
+         * Returns the query for search.
          */
         fun ofSearch(): Specification<T>
 
@@ -42,28 +45,40 @@ open class BaseSpec(private val base: ParameterModel) {
          * Returns the default predicates for a JPA model.
          *
          * @param root The root type in the from clause.
-         * @param query The criteria query.
          * @param builder Used to construct criteria queries.
          * @param id The id of the entity.
          */
         fun defaultPredicates(
             root: Root<T>,
-            query: CriteriaQuery<*>,
             builder: CriteriaBuilder,
-            id: String? = null,
+            params: BaseJPAModel.SearchParams,
         ): Predicate {
             var predicate = builder.conjunction()
 
-            predicate = builder.and(predicate, builder.isFalse(root.get("deleted")))
-            predicate = builder.and(predicate, builder.isFalse(root.get("archived")))
+            params.deleted?.let {
+                predicate = builder.and(predicate, builder.equal(root.get<Any>("deleted"), params.deleted))
+            }
 
-            id?.let {
-                val value = it.toLongOrNull() ?: LID.fromKey(it)
-                val key = if (value is Long) "id" else "sk"
-                return builder.and(predicate, builder.equal(root.get<Any>(key), value))
+            params.archived?.let {
+                predicate = builder.and(predicate, builder.equal(root.get<Any>("archived"), params.archived))
+            }
+
+            params.id?.let {
+                return idPredicate(predicate, root, builder, it)
             }
 
             return predicate
+        }
+
+        private fun idPredicate(
+            predicate: Predicate,
+            root: Root<T>,
+            builder: CriteriaBuilder,
+            id: String,
+        ): Predicate {
+            val value = id.toLongOrNull() ?: LID.fromKey(id)
+            val key = if (value is Long) "id" else "sk"
+            return builder.and(predicate, builder.equal(root.get<Any>(key), value))
         }
 
         /**
@@ -115,6 +130,27 @@ open class BaseSpec(private val base: ParameterModel) {
         fun <K> typePredicate(builder: CriteriaBuilder, root: Root<T>, type: Class<K>): Predicate {
             return builder.equal(root.type(), type)
         }
+
+        /**
+         * Returns the search predicate for a JPA model.
+         *
+         * @param predicate The predicate to be combined.
+         * @param builder Used to construct criteria queries.
+         * @param root The root type in the from clause.
+         * @param search The search string.
+         * @param fields The fields to search for.
+         */
+        fun searchPredicate(
+            predicate: Predicate,
+            builder: CriteriaBuilder,
+            root: Root<T>,
+            search: String,
+            vararg fields: String
+        ): Predicate {
+            return builder.or(
+                *fields.map { builder.like(builder.lower(root.get(it)), "%$search%") }.toTypedArray()
+            )
+        }
     }
 
     /**
@@ -127,26 +163,80 @@ open class BaseSpec(private val base: ParameterModel) {
         fun ofSearch(): Query
 
         /**
-         * Returns the example for a MongoDB model.
-         */
-        fun ofExample(): Example<T>
-
-        /**
          * Returns the default query for a MongoDB model.
          *
          * @param id The id of the entity.
          */
-        fun defaultQuery(id: String? = null): Query {
+        fun defaultQuery(
+            params: BaseMongoModel.SearchParams
+        ): Query {
             val query = Query()
-            query.addCriteria(Criteria.where("deleted").`is`(false))
-            query.addCriteria(Criteria.where("archived").`is`(false))
 
-            id?.let {
+            params.deleted?.let {
+                query.addCriteria(Criteria.where("deleted").`is`(it))
+            }
+
+            params.archived?.let {
+                query.addCriteria(Criteria.where("archived").`is`(it))
+            }
+
+            params.id?.let {
                 val value = it.toLongOrNull() ?: LID.fromKey(it)
                 val key = if (value is Long) "id" else "sk"
                 query.addCriteria(Criteria.where(key).`is`(value))
             }
 
+            return query
+        }
+
+        /**
+         * Returns the id query for a MongoDB model.
+         *
+         * @param query The query to be combined.
+         * @param id The id of the entity.
+         */
+        fun idQuery(query: Query, id: String): Query {
+            val value = id.toLongOrNull() ?: LID.fromKey(id)
+            val key = if (value is Long) "id" else "sk"
+            query.addCriteria(Criteria.where(key).`is`(value))
+            return query
+        }
+
+        /**
+         * Returns the type query for a MongoDB model.
+         *
+         * @param query The query to be combined.
+         * @param type The type of the entity.
+         */
+        fun <K> typeQuery(query: Query, type: Class<K>): Query {
+            query.addCriteria(Criteria.where("class").`is`(type.name))
+            return query
+        }
+
+        /**
+         * Returns the type query for a MongoDB model.
+         *
+         * @param type The type of the entity.
+         */
+        fun <K> typeQuery(type: Class<K>): Query {
+            val query = Query()
+            query.addCriteria(Criteria.where("class").`is`(type.name))
+            return query
+        }
+
+        /**
+         * Returns the search query for a MongoDB model.
+         *
+         * @param query The query to be combined.
+         * @param search The search string.
+         * @param fields The fields to search for.
+         */
+        fun searchQuery(query: Query, search: String, vararg fields: String): Query {
+            query.addCriteria(
+                Criteria().orOperator(
+                    *fields.map { Criteria.where(it).regex(".*$search.*", "i") }.toTypedArray()
+                )
+            )
             return query
         }
     }

@@ -2,7 +2,6 @@ package net.lubble.util.model
 
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
-import jakarta.persistence.Transient
 import net.lubble.util.LID
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.index.Indexed
@@ -75,6 +74,8 @@ open class BaseMongoModel(
     @Suppress("unused")
     open class SearchParams : ParameterModel() {
         var id: String? = null
+        var deleted: Boolean? = null
+        var archived: Boolean? = null
     }
 
     /**
