@@ -1,11 +1,18 @@
 package net.lubble.util.service
 
 import org.springframework.data.domain.Page
+import org.springframework.transaction.annotation.Transactional
 
 /**
  * This interface defines the basic CRUD operations for a service.
  * It uses generic types for the entity (T), create (C), update (U), and specification (S).
+ * @param T The entity type.
+ * @param C The create type.
+ * @param U The update type.
+ * @param S The specification type.
+ * @see Transactional
  */
+@Transactional
 interface BaseService<T, C, U, S> {
 
     /**
