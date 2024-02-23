@@ -1,6 +1,7 @@
 package net.lubble.util
 
 import jakarta.servlet.http.HttpServletRequest
+import net.lubble.util.config.utils.EnableLubbleUtils
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.stereotype.Component
@@ -8,7 +9,7 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnClass(HttpServletRequest::class)
 open class RequestTool(private val request: HttpServletRequest) {
-    private val logger = LoggerFactory.getLogger(RequestTool::class.java)
+    private val logger = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
     init {
         logger.info("Lubble Utils RequestTool initialized.")
     }
