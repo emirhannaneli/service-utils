@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 open class RequestTool(private val request: HttpServletRequest) {
     private val logger = LoggerFactory.getLogger(RequestTool::class.java)
     init {
-        logger.info("RequestTool initialized.")
+        logger.info("Lubble Utils RequestTool initialized.")
     }
     fun hasHeader(header: String): Boolean {
         return request.headerNames.toList().contains(header)
