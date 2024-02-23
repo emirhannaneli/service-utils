@@ -10,9 +10,11 @@ import net.lubble.util.LID
 import net.lubble.util.converter.LIDStringConverter
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.*
+import org.springframework.context.event.EventListener
 import java.net.http.HttpClient
 
 @Configuration
@@ -28,7 +30,7 @@ open class EnableLubbleUtilsConfig {
 
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent::class)
     fun init() {
         AppContextUtil.initialize(context)
 
