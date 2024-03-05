@@ -30,7 +30,8 @@ open class EnableLubbleUtilsConfig {
 
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
-    init {
+    @PostConstruct
+    fun init(){
         AppContextUtil.initialize(context)
     }
 
