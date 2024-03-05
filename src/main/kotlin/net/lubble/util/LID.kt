@@ -15,7 +15,7 @@ import java.util.*
  *
  * @property seed The seed string used to generate the unique identifier.
  */
-class LID(private var seed: String) : Comparable<LID>, Serializable {
+class LID(private var seed: String = Generator.password(numbers = true, upper = true, special = false, length = 5)) : Comparable<LID>, Serializable {
     private var value: String = ""
 
     private var randomInt1 = 0
@@ -93,7 +93,7 @@ class LID(private var seed: String) : Comparable<LID>, Serializable {
         final.append(parts[this.randomPartInt1].take(parts[this.randomPartInt1].length / 2))
         final.append(parts[this.randomPartInt2].take(parts[this.randomPartInt2].length / 2))
         final.append(parts[this.randomPartInt3].take(parts[this.randomPartInt3].length / 2))
-        final.append(".$seed.$randomInt1.$randomInt2.$randomInt3.$randomPartInt1.$randomPartInt2.$randomPartInt3")
+        final.append(".$seed.${this.randomInt1}.${this.randomInt2}.${this.randomInt3}.${this.randomPartInt1}.${this.randomPartInt2}.${this.randomPartInt3}")
 
         value = Base64.getEncoder().encodeToString(final.toString().toByteArray()).replace("=", "")
     }
