@@ -30,10 +30,12 @@ open class EnableLubbleUtilsConfig {
 
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
-    @EventListener(ApplicationReadyEvent::class)
-    fun init() {
+    init {
         AppContextUtil.initialize(context)
+    }
 
+    @EventListener(ApplicationReadyEvent::class)
+    fun onApplicationReady() {
         log.info("Lubble Utils initialized with <3")
     }
 
