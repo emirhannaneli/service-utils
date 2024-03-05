@@ -29,7 +29,7 @@ open class BaseJPAModel(
 
     @JvmField
     @Column(name = "id", unique = true, nullable = false, updatable = false)
-    val id: Long = pk.leastSignificantBits and Long.MAX_VALUE,
+    val id: Long = System.currentTimeMillis(),
 
     @JvmField
     @Column(nullable = false)

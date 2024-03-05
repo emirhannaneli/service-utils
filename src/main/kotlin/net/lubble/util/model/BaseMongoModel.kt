@@ -24,7 +24,7 @@ open class BaseMongoModel(
     var id: ObjectId = ObjectId(),
 
     @Indexed(unique = true)
-    var pk: Long = UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE,
+    var pk: Long = System.currentTimeMillis(),
 
     @Indexed(unique = true)
     var sk: LID = LID(),
