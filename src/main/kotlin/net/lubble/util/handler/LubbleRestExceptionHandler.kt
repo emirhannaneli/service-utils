@@ -6,11 +6,13 @@ import net.lubble.util.exception.AlreadyExistsException
 import net.lubble.util.exception.InvalidParamException
 import net.lubble.util.exception.NotFoundException
 import net.lubble.util.exception.WrongCredentials
+import net.lubble.util.exception.AccessDenied
+import net.lubble.util.exception.UnAuthorized
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.data.mapping.PropertyReferenceException
-import org.springframework.http.HttpStatus.BAD_REQUEST
-import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
+import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatus.*
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.HttpRequestMethodNotSupportedException
@@ -176,6 +178,40 @@ class LubbleRestExceptionHandler {
 
     @ExceptionHandler(WrongCredentials::class)
     fun handleWrongCredentials(e: WrongCredentials): ResponseEntity<Response> {
+        val response = Response(
+            e.message(),
+            e.status(),
+            e.code()
+        )
+        return response.build()
+    }
+
+    @ExceptionHandler(AccessDenied::class)
+    fun handleAccessDenied(e: AccessDenied): ResponseEntity<Response> {
+        val response = Response(
+            e.message(),
+            e.status(),
+            e.code(),
+            e.details()
+        )
+        return response.build()
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException::class)
+    fun handleAccessDenied(e: org.springframework.security.access.AccessDeniedException): ResponseEntity<Response> {
+        val response = Response(
+            "global.exception.access.denied",
+            FORBIDDEN,
+            "0x000403-2",
+            mapOf(
+                "message" to e.message
+            )
+        )
+        return response.build()
+    }
+
+    @ExceptionHandler(UnAuthorized::class)
+    fun handleUnAuthorized(e: UnAuthorized): ResponseEntity<Response> {
         val response = Response(
             e.message(),
             e.status(),
