@@ -6,6 +6,7 @@ import net.lubble.util.LID
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.index.Indexed
 import java.util.*
+import kotlin.math.abs
 
 /**
  * This is a base class for all MongoDB models. It provides common fields and methods that are used across different models.
@@ -24,7 +25,7 @@ open class BaseMongoModel(
     var id: ObjectId = ObjectId(),
 
     @Indexed(unique = true)
-    var pk: Long = System.currentTimeMillis(),
+    var pk: Long = abs(UUID.randomUUID().mostSignificantBits - (UUID.randomUUID().leastSignificantBits + System.currentTimeMillis())) % 1000000000000,
 
     @Indexed(unique = true)
     var sk: LID = LID(),

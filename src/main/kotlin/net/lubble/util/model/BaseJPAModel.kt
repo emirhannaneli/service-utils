@@ -3,6 +3,7 @@ package net.lubble.util.model
 import jakarta.persistence.*
 import net.lubble.util.LID
 import java.util.*
+import kotlin.math.abs
 
 /**
  * This is a base class for all JPA models. It provides common fields and methods that are used across different models.
@@ -29,7 +30,7 @@ open class BaseJPAModel(
 
     @JvmField
     @Column(name = "id", unique = true, nullable = false, updatable = false)
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = abs(pk.mostSignificantBits - (pk.leastSignificantBits + System.currentTimeMillis())) % 1000000000000,
 
     @JvmField
     @Column(nullable = false)
