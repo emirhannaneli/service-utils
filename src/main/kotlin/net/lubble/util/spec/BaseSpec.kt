@@ -43,12 +43,13 @@ open class BaseSpec(private val base: ParameterModel) {
          * Returns the default predicates for a JPA model.
          *
          * @param root The root type in the from clause.
+         * @param query The criteria query.
          * @param builder Used to construct criteria queries.
          * @param id The id of the entity.
          */
         fun defaultPredicates(
             root: Root<T>,
-            query: CriteriaQuery<T>,
+            query: CriteriaQuery<*>,
             builder: CriteriaBuilder,
             params: BaseJPAModel.SearchParams,
         ): Predicate {
