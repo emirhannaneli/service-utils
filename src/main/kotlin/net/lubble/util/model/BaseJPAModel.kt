@@ -30,7 +30,10 @@ open class BaseJPAModel(
 
     @JvmField
     @Column(name = "id", unique = true, nullable = false, updatable = false)
-    val id: Long = abs(pk.mostSignificantBits - (pk.leastSignificantBits + System.currentTimeMillis())) % 1000000000000,
+    val id: Long = String.format(
+        "%012d",
+        abs(pk.mostSignificantBits - (pk.leastSignificantBits + System.currentTimeMillis())) % 1000000000000
+    ).toLong(),
 
     @JvmField
     @Column(nullable = false)
