@@ -1,13 +1,11 @@
 package net.lubble.util.spec
 
-import jakarta.persistence.criteria.CriteriaBuilder
-import jakarta.persistence.criteria.Join
-import jakarta.persistence.criteria.Predicate
-import jakarta.persistence.criteria.Root
+import jakarta.persistence.criteria.*
 import net.lubble.util.LID
 import net.lubble.util.model.BaseJPAModel
 import net.lubble.util.model.BaseMongoModel
 import net.lubble.util.model.ParameterModel
+import net.lubble.util.model.SortOrder
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
@@ -50,6 +48,7 @@ open class BaseSpec(private val base: ParameterModel) {
          */
         fun defaultPredicates(
             root: Root<T>,
+            query: CriteriaQuery<T>,
             builder: CriteriaBuilder,
             params: BaseJPAModel.SearchParams,
         ): Predicate {
@@ -65,6 +64,19 @@ open class BaseSpec(private val base: ParameterModel) {
 
             params.id?.let {
                 return idPredicate(predicate, root, builder, it)
+            }
+
+            val fields = root.model.javaType.fields
+            when (params.sortOrder) {
+                SortOrder.ASC -> params.sortBy?.let {
+                    if (fields.any { field -> field.name == it })
+                        query.orderBy(builder.asc(root.get<Any>(it)))
+                }
+
+                SortOrder.DESC -> params.sortBy?.let {
+                    if (fields.any { field -> field.name == it })
+                        query.orderBy(builder.desc(root.get<Any>(it)))
+                }
             }
 
             return predicate
@@ -184,6 +196,16 @@ open class BaseSpec(private val base: ParameterModel) {
                 val value = it.toLongOrNull() ?: LID.fromKey(it)
                 val key = if (value is Long) "id" else "sk"
                 query.addCriteria(Criteria.where(key).`is`(value))
+            }
+
+            when (params.sortOrder) {
+                SortOrder.ASC -> params.sortBy?.let {
+                    query.with(Sort.by(Sort.Order.asc(it)))
+                }
+
+                SortOrder.DESC -> params.sortBy?.let {
+                    query.with(Sort.by(Sort.Order.desc(it)))
+                }
             }
 
             return query
