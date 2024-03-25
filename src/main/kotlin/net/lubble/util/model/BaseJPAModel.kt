@@ -22,15 +22,15 @@ open class BaseJPAModel(
     @JvmField
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "pk", unique = true, updatable = false, nullable = false)
-    val pk: UUID = UUID.randomUUID(),
+    var pk: UUID = UUID.randomUUID(),
 
     @JvmField
     @Column(name = "sk", unique = true, updatable = false, nullable = false)
-    val sk: LID = LID(),
+    var sk: LID = LID(),
 
     @JvmField
     @Column(name = "id", unique = true, nullable = false, updatable = false)
-    val id: Long = String.format(
+    var id: Long = String.format(
         "%012d",
         abs(pk.mostSignificantBits - (pk.leastSignificantBits + System.currentTimeMillis())) % 1000000000000
     ).toLong(),
@@ -45,7 +45,7 @@ open class BaseJPAModel(
 
     @JvmField
     @Column(nullable = false, updatable = false)
-    val createdAt: Date = Date(),
+    var createdAt: Date = Date(),
 
     @JvmField
     @Column(nullable = false)
