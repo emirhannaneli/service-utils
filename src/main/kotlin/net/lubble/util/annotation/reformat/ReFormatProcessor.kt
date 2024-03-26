@@ -1,22 +1,37 @@
 package net.lubble.util.annotation.reformat
 
-import org.aspectj.lang.ProceedingJoinPoint
-import org.aspectj.lang.annotation.Around
+import org.aspectj.lang.JoinPoint
+import org.aspectj.lang.annotation.AfterReturning
 import org.aspectj.lang.annotation.Aspect
-import org.springframework.context.i18n.LocaleContextHolder
+import org.aspectj.lang.annotation.Pointcut
 import org.springframework.stereotype.Component
-import java.util.*
 
 @Aspect
 @Component
 class ReFormatProcessor {
-    @Around("@annotation(net.lubble.util.annotation.reformat.ReFormat)")
-    fun process(point: ProceedingJoinPoint): Any {
-        val args = point.args
+    init {
+        println("ReFormatProcessor initialized")
+    }
+
+    @Pointcut("@annotation(reFormat) || @within(reFormat)")
+    fun reformat(reFormat: ReFormat) {
+    }
+
+    @AfterReturning(pointcut = "reformat(reFormat)", returning = "result")
+    fun reformatAfterReturning(joinPoint: JoinPoint, reFormat: ReFormat, result: Any): Any {
+        println("ReFormatProcessor reformatAfterReturning")
+        println("joinPoint: $joinPoint")
+        println("reFormat: $reFormat")
+        println("result: $result")
+        return result
+    }
+
+    /*val args = point.args
         for (i in args.indices) {
             val arg = args[i]
             if (arg is String) {
-                val annotation = point.signature.declaringType.getDeclaredField(point.signature.name).getAnnotation(ReFormat::class.java)
+                val methodSignature = point.signature as MethodSignature
+                val annotation = methodSignature.method.getAnnotation(ReFormat::class.java)
                 val upper = annotation.upper
                 val lower = annotation.lower
                 val trim = annotation.trim
@@ -24,60 +39,67 @@ class ReFormatProcessor {
                 val decapitate = annotation.decapitate
                 val locale = annotation.locale
                 val useContextLocale = annotation.useContextLocale
-                var value = String(arg.byteInputStream().readAllBytes())
-                if (upper) {
-                    if (useContextLocale) {
-                        try {
-                            val contextLocale = LocaleContextHolder.getLocale()
-                            value = value.uppercase(contextLocale)
-                        } catch (e: Exception) {
-                            value = value.uppercase(Locale.forLanguageTag(locale))
-                        }
-                    } else value = value.uppercase(Locale.forLanguageTag(locale))
 
-                }
-                if (lower) {
-                    if (useContextLocale) {
+                var value = arg
+
+                if (upper) {
+                    value = if (useContextLocale) {
                         try {
                             val contextLocale = LocaleContextHolder.getLocale()
-                            value = value.lowercase(contextLocale)
+                            value.uppercase(contextLocale)
                         } catch (e: Exception) {
-                            value = value.lowercase(Locale.forLanguageTag(locale))
+                            value.uppercase(Locale.forLanguageTag(locale))
                         }
                     } else {
-                        value = value.lowercase(Locale.forLanguageTag(locale))
+                        value.uppercase(Locale.forLanguageTag(locale))
                     }
                 }
+
+                if (lower) {
+                    value = if (useContextLocale) {
+                        try {
+                            val contextLocale = LocaleContextHolder.getLocale()
+                            value.lowercase(contextLocale)
+                        } catch (e: Exception) {
+                            value.lowercase(Locale.forLanguageTag(locale))
+                        }
+                    } else {
+                        value.lowercase(Locale.forLanguageTag(locale))
+                    }
+                }
+
                 if (trim) {
                     value = value.trim()
                 }
+
                 if (capitalize) {
-                    if (useContextLocale) {
+                    value = if (useContextLocale) {
                         try {
                             val contextLocale = LocaleContextHolder.getLocale()
-                            value = value.replaceFirstChar { it.titlecase(contextLocale) }
+                            value.replaceFirstChar { it.titlecase(contextLocale) }
                         } catch (e: Exception) {
-                            value = value.replaceFirstChar { it.titlecase(Locale.forLanguageTag(locale)) }
+                            value.replaceFirstChar { it.titlecase(Locale.forLanguageTag(locale)) }
                         }
                     } else {
-                        value = value.replaceFirstChar { it.titlecase(Locale.forLanguageTag(locale)) }
+                        value.replaceFirstChar { it.titlecase(Locale.forLanguageTag(locale)) }
                     }
                 }
+
                 if (decapitate) {
-                    if (useContextLocale) {
+                    value = if (useContextLocale) {
                         try {
                             val contextLocale = LocaleContextHolder.getLocale()
-                            value = value.replaceFirstChar { it.lowercase(contextLocale) }
+                            value.replaceFirstChar { it.lowercase(contextLocale) }
                         } catch (e: Exception) {
-                            value = value.replaceFirstChar { it.lowercase(Locale.forLanguageTag(locale)) }
+                            value.replaceFirstChar { it.lowercase(Locale.forLanguageTag(locale)) }
                         }
                     } else {
-                        value = value.replaceFirstChar { it.lowercase(Locale.forLanguageTag(locale)) }
+                        value.replaceFirstChar { it.lowercase(Locale.forLanguageTag(locale)) }
                     }
                 }
+
                 args[i] = value
             }
         }
-        return point.proceed(args)
-    }
+        return point.proceed(args)*/
 }
