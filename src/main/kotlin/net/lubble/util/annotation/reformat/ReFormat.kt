@@ -2,7 +2,8 @@ package net.lubble.util.annotation.reformat
 
 @Target(
     AnnotationTarget.FIELD,
-    AnnotationTarget.CLASS
+    AnnotationTarget.CLASS,
+    AnnotationTarget.FUNCTION,
 )
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ReFormat(

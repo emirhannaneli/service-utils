@@ -9,7 +9,7 @@ package net.lubble.util.mapper
  *
  * @property map(source: U, destination: T) - maps the update DTO to the entity
  */
-interface BaseMapper<T, R, RB, U> {
+interface BaseMapper<T : Any, R, RB, U : Any> {
 
     /**
      * Maps the properties of the source object (of type U) to the destination object (of type T).
@@ -19,12 +19,46 @@ interface BaseMapper<T, R, RB, U> {
      * @param destination The destination object to map to.
      */
     fun map(source: U, destination: T) {
-        source!!::class.java.declaredFields.forEach { sourceField ->
-            destination!!::class.java.declaredFields.firstOrNull { it.name == sourceField.name }?.let { destinationField ->
+        objectMap(source, destination)
+    }
+
+    /**
+     * Private function to map the properties of the source object to the destination object.
+     * This function is used internally by the public map functions.
+     * It handles the mapping of fields of type List, Map and other classes.
+     *
+     * @param source The source object to map from.
+     * @param destination The destination object to map to.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun objectMap(source: Any, destination: Any) {
+        source::class.java.declaredFields.forEach { sourceField ->
+            destination::class.java.declaredFields.firstOrNull { it.name == sourceField.name }?.let { destinationField ->
                 sourceField.isAccessible = true
                 destinationField.isAccessible = true
-                sourceField.get(source)?.let { sourceValue ->
-                    destinationField.set(destination, sourceValue)
+
+                val sourceValue = sourceField.get(source)
+                val destinationValue = destinationField.get(destination)
+
+                if (sourceValue != null && destinationValue != null) {
+                    if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(List::class.java)) {
+                        // If the field is a list
+                        val sourceList = sourceValue as List<*>
+                        val destinationList = destinationValue as MutableList<Any>
+                        destinationList.clear()
+                        destinationList.addAll(sourceList.filterNotNull().map { it })
+                    } else if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(Map::class.java)) {
+                        // If the field is a map
+                        val sourceMap = sourceValue as Map<Any, Any>
+                        val destinationMap = destinationValue as MutableMap<Any, Any>
+                        destinationMap.clear()
+                        destinationMap.putAll(sourceMap)
+                    } else if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(sourceValue::class.java)) {
+                        // If the field is another class
+                        objectMap(sourceValue, destinationValue)
+                    } else {
+                        destinationField.set(destination, sourceValue)
+                    }
                 }
             }
         }

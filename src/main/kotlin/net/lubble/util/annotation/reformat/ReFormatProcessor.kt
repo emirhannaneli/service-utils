@@ -24,7 +24,7 @@ class ReFormatProcessor {
                 val decapitate = annotation.decapitate
                 val locale = annotation.locale
                 val useContextLocale = annotation.useContextLocale
-                var value = arg
+                var value = String(arg.byteInputStream().readAllBytes())
                 if (upper) {
                     if (useContextLocale) {
                         try {
