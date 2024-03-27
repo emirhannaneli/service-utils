@@ -1,19 +1,9 @@
 package net.lubble.util.annotation.reformat
 
-import org.aspectj.lang.JoinPoint
-import org.aspectj.lang.annotation.AfterReturning
-import org.aspectj.lang.annotation.Aspect
-import org.aspectj.lang.annotation.Pointcut
-import org.springframework.stereotype.Component
-
-@Aspect
-@Component
+//@Aspect
+//@Component
 class ReFormatProcessor {
-    init {
-        println("ReFormatProcessor initialized")
-    }
-
-    @Pointcut("@annotation(reFormat) || @within(reFormat)")
+    /*@Pointcut("@annotation(reFormat) || @within(reFormat)")
     fun reformat(reFormat: ReFormat) {
     }
 
@@ -24,7 +14,7 @@ class ReFormatProcessor {
         println("reFormat: $reFormat")
         println("result: $result")
         return result
-    }
+    }*/
 
     /*val args = point.args
         for (i in args.indices) {
