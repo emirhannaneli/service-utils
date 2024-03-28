@@ -1,5 +1,6 @@
 package net.lubble.util.spec
 
+import jakarta.persistence.Column
 import jakarta.persistence.criteria.*
 import net.lubble.util.LID
 import net.lubble.util.model.BaseJPAModel
@@ -70,12 +71,18 @@ open class BaseSpec(private val base: ParameterModel) {
             val fields = root.model.javaType.fields
             when (params.sortOrder) {
                 SortOrder.ASC -> params.sortBy?.let {
-                    if (fields.any { field -> field.name == it })
+                    if (fields.any { field ->
+                            val columnValue = field.getAnnotation(Column::class.java)?.name
+                            field.name == it || columnValue == it
+                        })
                         query.orderBy(builder.asc(root.get<Any>(it)))
                 }
 
                 SortOrder.DESC -> params.sortBy?.let {
-                    if (fields.any { field -> field.name == it })
+                    if (fields.any { field ->
+                            val columnValue = field.getAnnotation(Column::class.java)?.name
+                            field.name == it || columnValue == it
+                        })
                         query.orderBy(builder.desc(root.get<Any>(it)))
                 }
             }
