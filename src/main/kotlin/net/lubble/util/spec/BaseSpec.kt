@@ -68,7 +68,7 @@ open class BaseSpec(private val base: ParameterModel) {
                 return idPredicate(predicate, root, builder, it)
             }
 
-            val fields = root.model.javaType.fields
+            val fields = root.model.javaType.declaredFields
             when (params.sortOrder) {
                 SortOrder.ASC -> params.sortBy?.let {
                     if (fields.any { field ->
