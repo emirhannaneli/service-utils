@@ -147,10 +147,10 @@ open class BaseJPAModel(
 
     /**
      * This class represents the search parameters for the model.
-     * @property id The id to search for.
+     * @property deleted A flag indicating whether the model is deleted.
+     * @property archived A flag indicating whether the model is archived.
      */
     open class SearchParams : ParameterModel() {
-        var id: String? = null
         var deleted: Boolean? = null
         var archived: Boolean? = null
     }

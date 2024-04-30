@@ -77,7 +77,6 @@ open class BaseMongoModel(
      */
     @Suppress("unused")
     open class SearchParams : ParameterModel() {
-        var id: String? = null
         var deleted: Boolean? = null
         var archived: Boolean? = null
     }

@@ -35,6 +35,8 @@ open class BaseSpec(private val base: ParameterModel) {
      * JPAModel interface defines the specifications for JPA models.
      */
     interface JPAModel<T> {
+        var id: String?
+
         /**
          * Returns the query for search.
          */
@@ -56,16 +58,16 @@ open class BaseSpec(private val base: ParameterModel) {
         ): Predicate {
             var predicate = builder.conjunction()
 
+            id?.let {
+                return idPredicate(predicate, root, builder, it)
+            }
+
             params.deleted?.let {
                 predicate = builder.and(predicate, builder.equal(root.get<Any>("deleted"), params.deleted))
             }
 
             params.archived?.let {
                 predicate = builder.and(predicate, builder.equal(root.get<Any>("archived"), params.archived))
-            }
-
-            params.id?.let {
-                return idPredicate(predicate, root, builder, it)
             }
 
             val fields = root.model.javaType.declaredFields
@@ -90,6 +92,14 @@ open class BaseSpec(private val base: ParameterModel) {
             return predicate
         }
 
+        /**
+         * Returns the id predicate for a JPA model.
+         *
+         * @param predicate The predicate to be combined.
+         * @param root The root type in the from clause.
+         * @param builder Used to construct criteria queries.
+         * @param id The id of the entity.
+         */
         private fun idPredicate(
             predicate: Predicate,
             root: Root<T>,
@@ -97,8 +107,9 @@ open class BaseSpec(private val base: ParameterModel) {
             id: String,
         ): Predicate {
             val value = id.toLongOrNull() ?: LID.fromKey(id)
-            val key = if (value is Long) "id" else "sk"
-            return builder.and(predicate, builder.equal(root.get<Any>(key), value))
+            val key = if (value is Long) IDType.ID else IDType.SK
+            return if (key == IDType.ID) builder.and(predicate, builder.equal(root.get<Long>(key.name.lowercase()), value))
+            else builder.and(predicate, builder.equal(root.get<String>(key.name.lowercase()), value))
         }
 
         /**
@@ -111,8 +122,9 @@ open class BaseSpec(private val base: ParameterModel) {
          */
         fun <Z, X> idPredicate(predicate: Predicate, builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
             val value = id.toLongOrNull() ?: LID.fromKey(id)
-            val key = if (value is Long) "id" else "sk"
-            return builder.and(predicate, builder.equal(join.get<Any>(key), value))
+            val key = if (value is Long) IDType.ID else IDType.SK
+            return if (key == IDType.ID) builder.and(predicate, builder.equal(join.get<Long>(key.name.lowercase()), value))
+            else builder.and(predicate, builder.equal(join.get<String>(key.name.lowercase()), value))
         }
 
         /**
@@ -124,8 +136,9 @@ open class BaseSpec(private val base: ParameterModel) {
          */
         fun <Z, X> idPredicate(builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
             val value = id.toLongOrNull() ?: LID.fromKey(id)
-            val key = if (value is Long) "id" else "sk"
-            return builder.equal(join.get<Any>(key), value)
+            val key = if (value is Long) IDType.ID else IDType.SK
+            return if (key == IDType.ID) builder.equal(join.get<Long>(key.name.lowercase()), value)
+            else builder.equal(join.get<String>(key.name.lowercase()), value)
         }
 
         /**
@@ -177,6 +190,8 @@ open class BaseSpec(private val base: ParameterModel) {
      * MongoModel interface defines the specifications for MongoDB models.
      */
     interface MongoModel<T> {
+        var id: String?
+
         /**
          * Returns the query for search.
          */
@@ -192,18 +207,16 @@ open class BaseSpec(private val base: ParameterModel) {
         ): Query {
             val query = Query()
 
+            id?.let {
+                return idQuery(query, it)
+            }
+
             params.deleted?.let {
                 query.addCriteria(Criteria.where("deleted").`is`(it))
             }
 
             params.archived?.let {
                 query.addCriteria(Criteria.where("archived").`is`(it))
-            }
-
-            params.id?.let {
-                val value = it.toLongOrNull() ?: LID.fromKey(it)
-                val key = if (value is Long) "id" else "sk"
-                query.addCriteria(Criteria.where(key).`is`(value))
             }
 
             when (params.sortOrder) {
@@ -227,9 +240,11 @@ open class BaseSpec(private val base: ParameterModel) {
          */
         fun idQuery(query: Query, id: String): Query {
             val value = id.toLongOrNull() ?: LID.fromKey(id)
-            val key = if (value is Long) "id" else "sk"
-            query.addCriteria(Criteria.where(key).`is`(value))
-            return query
+            val key = if (value is Long) IDType.ID else IDType.SK
+            return when (key) {
+                IDType.ID -> query.addCriteria(Criteria.where(key.name.lowercase()).`is`(value))
+                IDType.SK -> query.addCriteria(Criteria.where(key.name.lowercase()).`is`(value))
+            }
         }
 
         /**
@@ -269,5 +284,13 @@ open class BaseSpec(private val base: ParameterModel) {
             )
             return query
         }
+    }
+
+    /**
+     * IDType enum class defines the types of ids.
+     * */
+    private enum class IDType {
+        ID,
+        SK
     }
 }
