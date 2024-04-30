@@ -35,6 +35,9 @@ open class BaseSpec(private val base: ParameterModel) {
      * JPAModel interface defines the specifications for JPA models.
      */
     interface JPAModel<T> {
+        /**
+         * The id of the entity.
+         * */
         var id: String?
 
         /**
