@@ -150,10 +150,7 @@ open class BaseJPAModel(
      * @property deleted A flag indicating whether the model is deleted.
      * @property archived A flag indicating whether the model is archived.
      */
-    open class SearchParams : ParameterModel() {
-        var deleted: Boolean? = null
-        var archived: Boolean? = null
-    }
+    open class SearchParams : ParameterModel()
 
     /**
      * Checks if the model matches the given id.

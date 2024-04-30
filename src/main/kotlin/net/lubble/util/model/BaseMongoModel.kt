@@ -76,10 +76,7 @@ open class BaseMongoModel(
      * @property id The id to search for.
      */
     @Suppress("unused")
-    open class SearchParams : ParameterModel() {
-        var deleted: Boolean? = null
-        var archived: Boolean? = null
-    }
+    open class SearchParams : ParameterModel()
 
     /**
      * Checks if the model matches the given id.

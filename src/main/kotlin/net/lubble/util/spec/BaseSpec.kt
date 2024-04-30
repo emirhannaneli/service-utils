@@ -39,6 +39,14 @@ open class BaseSpec(private val base: ParameterModel) {
          * The id of the entity.
          * */
         var id: String?
+        /**
+         * The deleted status of the entity.
+         * */
+        var deleted: Boolean?
+        /**
+         * The archived status of the entity.
+         * */
+        var archived: Boolean?
 
         /**
          * Returns the query for search.
@@ -62,15 +70,15 @@ open class BaseSpec(private val base: ParameterModel) {
             var predicate = builder.conjunction()
 
             id?.let {
-                return idPredicate(predicate, root, builder, it)
+                predicate = idPredicate(predicate, root, builder, it)
             }
 
-            params.deleted?.let {
-                predicate = builder.and(predicate, builder.equal(root.get<Any>("deleted"), params.deleted))
+            deleted?.let {
+                predicate = builder.and(predicate, builder.equal(root.get<Any>("deleted"), deleted))
             }
 
-            params.archived?.let {
-                predicate = builder.and(predicate, builder.equal(root.get<Any>("archived"), params.archived))
+            archived?.let {
+                predicate = builder.and(predicate, builder.equal(root.get<Any>("archived"), archived))
             }
 
             val fields = root.model.javaType.declaredFields
@@ -193,7 +201,18 @@ open class BaseSpec(private val base: ParameterModel) {
      * MongoModel interface defines the specifications for MongoDB models.
      */
     interface MongoModel<T> {
+        /**
+         * The id of the entity.
+         * */
         var id: String?
+        /**
+         * The deleted status of the entity.
+         * */
+        var deleted: Boolean?
+        /**
+         * The archived status of the entity.
+         * */
+        var archived: Boolean?
 
         /**
          * Returns the query for search.
@@ -211,14 +230,14 @@ open class BaseSpec(private val base: ParameterModel) {
             val query = Query()
 
             id?.let {
-                return idQuery(query, it)
+                idQuery(query, it)
             }
 
-            params.deleted?.let {
+            deleted?.let {
                 query.addCriteria(Criteria.where("deleted").`is`(it))
             }
 
-            params.archived?.let {
+            archived?.let {
                 query.addCriteria(Criteria.where("archived").`is`(it))
             }
 
