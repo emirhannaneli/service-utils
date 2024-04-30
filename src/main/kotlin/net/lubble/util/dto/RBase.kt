@@ -16,7 +16,7 @@ open class RBase {
     /**
      * The unique identifier for the DTO.
      */
-    open lateinit var id: String
+    open lateinit var id: Any
 
     /**
      * A secondary key for the DTO.
