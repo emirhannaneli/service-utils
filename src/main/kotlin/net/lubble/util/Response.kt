@@ -11,8 +11,6 @@ import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.OK
 import org.springframework.http.ResponseEntity
-import org.springframework.web.server.ServerWebExchange
-import reactor.core.publisher.Mono
 import java.util.*
 
 /**
@@ -24,47 +22,63 @@ import java.util.*
  * @property details Any additional details that should be included in the response.
  */
 @JsonPropertyOrder("message", "status", "code", "details")
-data class Response(
+class Response() : ResponseEntity<Response>(OK) {
     @JsonProperty("message")
-    var message: String,
+    private lateinit var message: String
     @JsonProperty("status")
-    val status: HttpStatus = OK,
+    private var status: HttpStatus = OK
     @JsonProperty("code")
-    val code: String? = null,
+    private var code: String? = null
     @JsonProperty("details")
-    val details: Any? = null
-) {
+    private var details: Any? = null
+
+    /**
+     * Constructs a new Response from a message, status, code, and details.
+     * @param message The message to include in the Response.
+     * @param status The status to include in the Response.
+     * @param code An optional code that can provide additional information about the response.
+     * @param details Any additional details that should be included in the response.
+     */
+    constructor(message: String, status: HttpStatus, code: String?, details: Any?) : this() {
+        this.message = source().getMessage(message, null, locale())
+        this.status = status
+        this.code = code
+        this.details = details
+        status(status).body(this)
+    }
+
+    /**
+     * Constructs a new Response from a message.
+     * @param message The message to include in the Response.
+     */
+    constructor(message: String) : this() {
+        this.message = source().getMessage(message, null, locale())
+        status(OK).body(this)
+    }
+
     /**
      * Constructs a new Response from an ExceptionModel.
      * @param ex The ExceptionModel to construct the Response from.
      */
-    constructor(ex: ExceptionModel) : this(
-        message = ex.message(),
-        status = ex.status(),
-        code = ex.code(),
-    )
+    constructor(ex: ExceptionModel) : this() {
+        message = source().getMessage(ex.message(), null, locale())
+        status = ex.status()
+        code = ex.code()
+        status(ex.status()).body(this)
+    }
 
     /**
      * Constructs a new Response from an ExceptionModel and additional details.
      * @param ex The ExceptionModel to construct the Response from.
      * @param details The additional details to include in the Response.
      */
-    constructor(ex: ExceptionModel, details: Any) : this(
-        message = ex.message(),
-        status = ex.status(),
-        code = ex.code(),
-        details = details
-    )
+    constructor(ex: ExceptionModel, details: Any) : this() {
+        message = source().getMessage(ex.message(), null, locale())
+        status = ex.status()
+        code = ex.code()
+        this.details = details
 
-    /**
-     * Builds the Response into a ResponseEntity.
-     * @return The ResponseEntity containing the Response.
-     */
-    fun build(): ResponseEntity<Response> {
-        this.apply {
-            message = source().getMessage(message, null, locale())
-        }
-        return ResponseEntity(this, status)
+        status(ex.status()).body(this)
     }
 
     /**
@@ -72,24 +86,11 @@ data class Response(
      * @param response The HttpServletResponse to handle.
      */
     fun servletHandler(response: HttpServletResponse) {
-        this.apply { message = source().getMessage(message, null, locale()) }
         response.status = status.value()
         response.writer.write(mapper().writeValueAsString(this))
         response.characterEncoding = "UTF-8"
-        response.contentType = "application/json;charset=UTF-8"
+        response.contentType = "application/json;charset=UTF-8;"
         response.writer.flush()
-    }
-
-    /**
-     * Handles the Response for a ServerWebExchange.
-     * @param exchange The ServerWebExchange to handle.
-     * @return A Mono<Void> indicating when the handling is complete.
-     */
-    fun exchangeHandler(exchange: ServerWebExchange): Mono<Void> {
-        this.apply { message = source().getMessage(message, null, locale()) }
-        exchange.response.statusCode = status
-        exchange.response.headers["Content-Type"] = listOf("application/json;charset=UTF-8")
-        return exchange.response.writeWith(Mono.just(exchange.response.bufferFactory().wrap(mapper().writeValueAsString(this).toByteArray())))
     }
 
     companion object {
@@ -99,8 +100,7 @@ data class Response(
          * @param data The data to include in the Response.
          * @return The constructed Response.
          */
-        @Suppress("unused")
-        fun ofPage(page: Page<*>, data: List<*>): PageResponse {
+        fun of(page: Page<*>, data: Collection<*>): PageResponse {
             return PageResponse(
                 current = page.number + 1,
                 size = page.size,
@@ -116,7 +116,7 @@ data class Response(
          * Retrieves the MessageSource bean from the application context.
          * @return The MessageSource bean.
          */
-        private fun source(): MessageSource {
+        fun source(): MessageSource {
             return AppContextUtil.bean(MessageSource::class.java)
         }
 
@@ -124,7 +124,7 @@ data class Response(
          * Retrieves the current locale.
          * @return The current locale.
          */
-        private fun locale(): Locale {
+        fun locale(): Locale {
             return LocaleContextHolder.getLocale()
         }
 
@@ -132,7 +132,7 @@ data class Response(
          * Retrieves the ObjectMapper bean from the application context.
          * @return The ObjectMapper bean.
          */
-        private fun mapper(): ObjectMapper {
+        fun mapper(): ObjectMapper {
             return AppContextUtil.bean(ObjectMapper::class.java)
         }
     }
@@ -164,13 +164,22 @@ data class PageResponse(
     @JsonProperty("hasPrevious")
     val hasPrevious: Boolean,
     @JsonProperty("items")
-    val items: List<*>
-) {
+    val items: Collection<*>
+) : ResponseEntity<PageResponse>(OK) {
     /**
-     * Builds the PageResponse into a ResponseEntity.
-     * @return The ResponseEntity containing the PageResponse.
+     * Constructs a new PageResponse from a Page and a list of data.
+     * @param page The Page to construct the PageResponse from.
+     * @param data The data to include in the PageResponse.
      */
-    fun build(): ResponseEntity<PageResponse> {
-        return ResponseEntity(this, OK)
+    constructor(page: Page<*>, data: Collection<*>) : this(
+        current = page.number + 1,
+        size = page.size,
+        totalItems = page.totalElements,
+        totalPages = page.totalPages,
+        hasNext = page.hasNext(),
+        hasPrevious = page.hasPrevious(),
+        items = data
+    ) {
+        status(OK).body(this)
     }
 }
