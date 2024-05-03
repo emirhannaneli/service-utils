@@ -1,4 +1,4 @@
-package net.lubble.util.repo
+package net.lubble.util.repo.reactive
 
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository
@@ -15,6 +15,4 @@ import org.springframework.data.repository.NoRepositoryBean
  * It provides reactive support for MongoDB operations.
  */
 @NoRepositoryBean
-interface BaseReactiveMongo<T> : ReactiveMongoRepository<T, ObjectId> {
-
-}
+interface BaseReactiveMongo<T> : ReactiveMongoRepository<T, ObjectId>

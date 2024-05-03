@@ -1,4 +1,4 @@
-package net.lubble.util.controller
+package net.lubble.util.controller.reactive
 
 import jakarta.validation.Valid
 import net.lubble.util.PageResponse
