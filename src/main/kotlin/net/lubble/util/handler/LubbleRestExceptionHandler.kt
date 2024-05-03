@@ -52,12 +52,7 @@ class LubbleRestExceptionHandler {
 
     @ExceptionHandler(InvalidParamException::class)
     fun handleInvalidParamException(e: InvalidParamException): Response {
-        return Response(
-            "global.exception.invalid.param",
-            e.status(),
-            e.code(),
-            e.details()
-        )
+        return Response(e)
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
