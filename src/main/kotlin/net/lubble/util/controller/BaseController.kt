@@ -39,7 +39,7 @@ interface BaseController<C, U, R, P> {
      * @return A page of found entities wrapped in a ResponseEntity.
      */
     @GetMapping
-    fun findAll(@Valid params: P): PageResponse
+    fun findAll(@Valid params: P): ResponseEntity<PageResponse>
 
     /**
      * Update an entity.
@@ -58,7 +58,7 @@ interface BaseController<C, U, R, P> {
      * @return A response wrapped in a ResponseEntity.
      */
     @DeleteMapping("{id}")
-    fun delete(@PathVariable id: String): Response
+    fun delete(@PathVariable id: String): ResponseEntity<Response>
 
     /**
      * Find all archived entities.
@@ -67,7 +67,7 @@ interface BaseController<C, U, R, P> {
      * @return A page of found archived entities wrapped in a ResponseEntity.
      */
     @GetMapping("archive")
-    fun findAllArchived(@Valid params: P): PageResponse {
+    fun findAllArchived(@Valid params: P): ResponseEntity<PageResponse> {
         throw UnsupportedOperationException()
     }
 
@@ -78,7 +78,7 @@ interface BaseController<C, U, R, P> {
      * @return A response wrapped in a ResponseEntity.
      */
     @PutMapping("{id}/archive")
-    fun archive(@PathVariable id: String): Response {
+    fun archive(@PathVariable id: String): ResponseEntity<Response> {
         throw UnsupportedOperationException()
     }
 
@@ -89,7 +89,7 @@ interface BaseController<C, U, R, P> {
      * @return A response wrapped in a ResponseEntity.
      */
     @PutMapping("{id}/unarchive")
-    fun unarchive(@PathVariable id: String): Response {
+    fun unarchive(@PathVariable id: String): ResponseEntity<Response> {
         throw UnsupportedOperationException()
     }
 
@@ -100,7 +100,7 @@ interface BaseController<C, U, R, P> {
      * @return A page of found entities in the recycle bin wrapped in a ResponseEntity.
      */
     @GetMapping("recycle-bin")
-    fun recycleBin(@Valid params: P): PageResponse {
+    fun recycleBin(@Valid params: P): ResponseEntity<PageResponse> {
         throw UnsupportedOperationException()
     }
 
@@ -110,7 +110,7 @@ interface BaseController<C, U, R, P> {
      * @return A response wrapped in a ResponseEntity.
      */
     @DeleteMapping("recycle-bin/clear")
-    fun clearRecycleBin(): Response {
+    fun clearRecycleBin(): ResponseEntity<Response> {
         throw UnsupportedOperationException()
     }
 
@@ -121,7 +121,7 @@ interface BaseController<C, U, R, P> {
      * @return A response wrapped in a ResponseEntity.
      */
     @PutMapping("{id}/restore")
-    fun restore(@PathVariable id: String): Response {
+    fun restore(@PathVariable id: String): ResponseEntity<Response> {
         throw UnsupportedOperationException()
     }
 
@@ -132,7 +132,7 @@ interface BaseController<C, U, R, P> {
      * @return A response wrapped in a ResponseEntity.
      */
     @DeleteMapping("{id}/permanently")
-    fun deletePermanently(@PathVariable id: String): Response {
+    fun deletePermanently(@PathVariable id: String): ResponseEntity<Response> {
         throw UnsupportedOperationException()
     }
 
@@ -157,5 +157,5 @@ interface BaseController<C, U, R, P> {
      * @param page The Page to construct the PageResponse from.
      * @param data The data to include in the PageResponse.
      */
-    fun paged(page: Page<*>, data: Collection<*>): PageResponse = Response.of(page, data)
+    fun paged(page: Page<*>, data: Collection<*>): ResponseEntity<PageResponse> = Response.of(page, data)
 }

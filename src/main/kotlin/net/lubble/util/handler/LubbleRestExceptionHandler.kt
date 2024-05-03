@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.data.mapping.PropertyReferenceException
 import org.springframework.http.HttpStatus.*
+import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -25,7 +26,7 @@ class LubbleRestExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException::class)
-    fun handleException(e: RuntimeException): Response {
+    fun handleException(e: RuntimeException): ResponseEntity<Response> {
         return Response(
             "global.exception.internal.error",
             INTERNAL_SERVER_ERROR,
@@ -34,11 +35,11 @@ class LubbleRestExceptionHandler {
                 "exception" to e.javaClass.name,
                 "message" to e.message
             )
-        )
+        ).build()
     }
 
     @ExceptionHandler(java.lang.UnsupportedOperationException::class)
-    fun handleUnsupportedOperationException(e: UnsupportedOperationException): Response {
+    fun handleUnsupportedOperationException(e: UnsupportedOperationException): ResponseEntity<Response> {
         return Response(
             "global.exception.unsupported.operation",
             INTERNAL_SERVER_ERROR,
@@ -47,16 +48,16 @@ class LubbleRestExceptionHandler {
                 "exception" to e.javaClass.name,
                 "message" to e.message
             )
-        )
+        ).build()
     }
 
     @ExceptionHandler(InvalidParamException::class)
-    fun handleInvalidParamException(e: InvalidParamException): Response {
-        return Response(e)
+    fun handleInvalidParamException(e: InvalidParamException): ResponseEntity<Response> {
+        return Response(e).build()
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleMethodArgumentNotValidException(e: MethodArgumentNotValidException): Response {
+    fun handleMethodArgumentNotValidException(e: MethodArgumentNotValidException): ResponseEntity<Response> {
         val errors = e.bindingResult.allErrors
         val details = mutableMapOf<String, Any>()
         errors.forEach {
@@ -70,11 +71,11 @@ class LubbleRestExceptionHandler {
             BAD_REQUEST,
             "0x000400-1",
             details
-        )
+        ).build()
     }
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
-    fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): Response {
+    fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): ResponseEntity<Response> {
         return Response(
             "global.exception.invalid.payload",
             BAD_REQUEST,
@@ -82,11 +83,11 @@ class LubbleRestExceptionHandler {
             mapOf(
                 "message" to e.message
             )
-        )
+        ).build()
     }
 
     @ExceptionHandler(MissingServletRequestParameterException::class)
-    fun handleMissingServletRequestParameterException(e: MissingServletRequestParameterException): Response {
+    fun handleMissingServletRequestParameterException(e: MissingServletRequestParameterException): ResponseEntity<Response> {
         return Response(
             "global.exception.invalid.param",
             BAD_REQUEST,
@@ -94,11 +95,11 @@ class LubbleRestExceptionHandler {
             mapOf(
                 "message" to e.message
             )
-        )
+        ).build()
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
-    fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): Response {
+    fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<Response> {
         return Response(
             "global.exception.invalid.param",
             BAD_REQUEST,
@@ -106,11 +107,11 @@ class LubbleRestExceptionHandler {
             mapOf(
                 "message" to e.message
             )
-        )
+        ).build()
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
-    fun handleHttpRequestMethodNotSupportedException(e: HttpRequestMethodNotSupportedException): Response {
+    fun handleHttpRequestMethodNotSupportedException(e: HttpRequestMethodNotSupportedException): ResponseEntity<Response> {
         return Response(
             "global.exception.invalid.method",
             BAD_REQUEST,
@@ -118,11 +119,11 @@ class LubbleRestExceptionHandler {
             mapOf(
                 "message" to e.message
             )
-        )
+        ).build()
     }
 
     @ExceptionHandler(PropertyReferenceException::class)
-    fun handlePropertyReferenceException(e: PropertyReferenceException): Response {
+    fun handlePropertyReferenceException(e: PropertyReferenceException): ResponseEntity<Response> {
         return Response(
             "global.exception.invalid.param.type",
             BAD_REQUEST,
@@ -130,31 +131,31 @@ class LubbleRestExceptionHandler {
             mapOf(
                 "message" to e.message
             )
-        )
+        ).build()
     }
 
     @ExceptionHandler(NotFoundException::class)
-    fun handleNotFoundException(e: NotFoundException): Response {
-        return Response(e, e.details())
+    fun handleNotFoundException(e: NotFoundException): ResponseEntity<Response> {
+        return Response(e, e.details()).build()
     }
 
     @ExceptionHandler(AlreadyExistsException::class)
-    fun handleAlreadyExistsException(e: AlreadyExistsException): Response {
-        return Response(e, e.details())
+    fun handleAlreadyExistsException(e: AlreadyExistsException): ResponseEntity<Response> {
+        return Response(e, e.details()).build()
     }
 
     @ExceptionHandler(WrongCredentials::class)
-    fun handleWrongCredentials(e: WrongCredentials): Response {
-        return Response(e)
+    fun handleWrongCredentials(e: WrongCredentials): ResponseEntity<Response> {
+        return Response(e).build()
     }
 
     @ExceptionHandler(AccessDenied::class)
-    fun handleAccessDenied(e: AccessDenied): Response {
-        return Response(e, e.details() ?: "unknown")
+    fun handleAccessDenied(e: AccessDenied): ResponseEntity<Response> {
+        return Response(e, e.details() ?: "unknown").build()
     }
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException::class)
-    fun handleAccessDenied(e: org.springframework.security.access.AccessDeniedException): Response {
+    fun handleAccessDenied(e: org.springframework.security.access.AccessDeniedException): ResponseEntity<Response> {
         return Response(
             "global.exception.access.denied",
             FORBIDDEN,
@@ -162,16 +163,16 @@ class LubbleRestExceptionHandler {
             mapOf(
                 "message" to e.message
             )
-        )
+        ).build()
     }
 
     @ExceptionHandler(UnAuthorized::class)
-    fun handleUnAuthorized(e: UnAuthorized): Response {
-        return Response(e)
+    fun handleUnAuthorized(e: UnAuthorized): ResponseEntity<Response> {
+        return Response(e).build()
     }
 
     @ExceptionHandler(NotImplementedError::class)
-    fun handleNotImplementedError(e: NotImplementedError): Response {
+    fun handleNotImplementedError(e: NotImplementedError): ResponseEntity<Response> {
         return Response(
             "global.exception.unsupported.operation",
             NOT_IMPLEMENTED,
@@ -180,6 +181,6 @@ class LubbleRestExceptionHandler {
                 "exception" to e.javaClass.name,
                 "message" to e.message
             )
-        )
+        ).build()
     }
 }

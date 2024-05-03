@@ -44,7 +44,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @return A Mono that emits the ResponseEntity of the PageResponse containing all found entities.
      */
     @GetMapping
-    fun findAll(@Valid params: P): Mono<PageResponse>
+    fun findAll(@Valid params: P): Mono<ResponseEntity<PageResponse>>
 
     /**
      * Update an existing entity.
@@ -63,7 +63,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @return A Mono that emits the ResponseEntity of the Response indicating the result of the operation.
      */
     @DeleteMapping("{id}")
-    fun delete(@PathVariable id: String): Mono<Response>
+    fun delete(@PathVariable id: String): Mono<ResponseEntity<Response>>
 
     // Additional operations for archiving, unarchiving, and managing a recycle bin are defined below.
     // These operations throw UnsupportedOperationException by default, and should be overridden in the implementing class if needed.
@@ -76,7 +76,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @GetMapping("archive")
-    fun findAllArchived(@Valid params: P): Mono<PageResponse> {
+    fun findAllArchived(@Valid params: P): Mono<ResponseEntity<PageResponse>> {
         throw UnsupportedOperationException()
     }
 
@@ -88,7 +88,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @PutMapping("{id}/archive")
-    fun archive(@PathVariable id: String): Mono<Response> {
+    fun archive(@PathVariable id: String): Mono<ResponseEntity<Response>> {
         throw UnsupportedOperationException()
     }
 
@@ -100,7 +100,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @PutMapping("{id}/unarchive")
-    fun unarchive(@PathVariable id: String): Mono<Response> {
+    fun unarchive(@PathVariable id: String): Mono<ResponseEntity<Response>> {
         throw UnsupportedOperationException()
     }
 
@@ -112,7 +112,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @GetMapping("recycle-bin")
-    fun recycleBin(@Valid params: P): Mono<PageResponse> {
+    fun recycleBin(@Valid params: P): Mono<ResponseEntity<PageResponse>> {
         throw UnsupportedOperationException()
     }
 
@@ -123,7 +123,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @DeleteMapping("recycle-bin/clear")
-    fun clearRecycleBin(): Mono<Response> {
+    fun clearRecycleBin(): Mono<ResponseEntity<Response>> {
         throw UnsupportedOperationException()
     }
 
@@ -135,7 +135,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @PutMapping("{id}/restore")
-    fun restore(@PathVariable id: String): Mono<Response> {
+    fun restore(@PathVariable id: String): Mono<ResponseEntity<Response>> {
         throw UnsupportedOperationException()
     }
 
@@ -147,7 +147,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @DeleteMapping("{id}/permanently")
-    fun deletePermanently(@PathVariable id: String): Mono<Response> {
+    fun deletePermanently(@PathVariable id: String): Mono<ResponseEntity<Response>> {
         throw UnsupportedOperationException()
     }
 
@@ -172,5 +172,5 @@ interface ReactiveBaseController<C, U, R, P> {
      * @param page The Page to include in the response.
      * @param data The data to include in the response.
      * */
-    fun paged(page: Page<*>, data: Collection<*>): Mono<PageResponse> = Mono.fromCallable { Response.of(page, data) }
+    fun paged(page: Page<*>, data: Collection<*>): Mono<ResponseEntity<PageResponse>> = Mono.fromCallable { Response.of(page, data) }
 }

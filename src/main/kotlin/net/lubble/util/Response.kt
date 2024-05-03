@@ -22,7 +22,7 @@ import java.util.*
  * @property details Any additional details that should be included in the response.
  */
 @JsonPropertyOrder("message", "status", "code", "details")
-class Response() : ResponseEntity<Response>(OK) {
+class Response() {
     @JsonProperty("message")
     private lateinit var message: String
     @JsonProperty("status")
@@ -44,7 +44,6 @@ class Response() : ResponseEntity<Response>(OK) {
         this.status = status
         this.code = code
         this.details = details
-        status(status).body(this)
     }
 
     /**
@@ -53,7 +52,6 @@ class Response() : ResponseEntity<Response>(OK) {
      */
     constructor(message: String) : this() {
         this.message = source().getMessage(message, null, locale())
-        status(OK).body(this)
     }
 
     /**
@@ -61,10 +59,9 @@ class Response() : ResponseEntity<Response>(OK) {
      * @param ex The ExceptionModel to construct the Response from.
      */
     constructor(ex: ExceptionModel) : this() {
-        message = source().getMessage(ex.message(), null, locale())
-        status = ex.status()
-        code = ex.code()
-        status(ex.status()).body(this)
+        this.message = source().getMessage(ex.message(), null, locale())
+        this.status = ex.status()
+        this.code = ex.code()
     }
 
     /**
@@ -73,12 +70,10 @@ class Response() : ResponseEntity<Response>(OK) {
      * @param details The additional details to include in the Response.
      */
     constructor(ex: ExceptionModel, details: Any) : this() {
-        message = source().getMessage(ex.message(), null, locale())
-        status = ex.status()
-        code = ex.code()
+        this.message = source().getMessage(ex.message(), null, locale())
+        this.status = ex.status()
+        this.code = ex.code()
         this.details = details
-
-        status(ex.status()).body(this)
     }
 
     /**
@@ -93,6 +88,10 @@ class Response() : ResponseEntity<Response>(OK) {
         response.writer.flush()
     }
 
+    fun build(): ResponseEntity<Response> {
+        return ResponseEntity(this, status)
+    }
+
     companion object {
         /**
          * Constructs a new Response from a Page and a list of data.
@@ -100,7 +99,7 @@ class Response() : ResponseEntity<Response>(OK) {
          * @param data The data to include in the Response.
          * @return The constructed Response.
          */
-        fun of(page: Page<*>, data: Collection<*>): PageResponse {
+        fun of(page: Page<*>, data: Collection<*>): ResponseEntity<PageResponse> {
             return PageResponse(
                 current = page.number + 1,
                 size = page.size,
@@ -109,14 +108,14 @@ class Response() : ResponseEntity<Response>(OK) {
                 hasNext = page.hasNext(),
                 hasPrevious = page.hasPrevious(),
                 items = data
-            )
+            ).build()
         }
 
         /**
          * Retrieves the MessageSource bean from the application context.
          * @return The MessageSource bean.
          */
-        fun source(): MessageSource {
+        private fun source(): MessageSource {
             return AppContextUtil.bean(MessageSource::class.java)
         }
 
@@ -124,7 +123,7 @@ class Response() : ResponseEntity<Response>(OK) {
          * Retrieves the current locale.
          * @return The current locale.
          */
-        fun locale(): Locale {
+        private fun locale(): Locale {
             return LocaleContextHolder.getLocale()
         }
 
@@ -132,7 +131,7 @@ class Response() : ResponseEntity<Response>(OK) {
          * Retrieves the ObjectMapper bean from the application context.
          * @return The ObjectMapper bean.
          */
-        fun mapper(): ObjectMapper {
+        private fun mapper(): ObjectMapper {
             return AppContextUtil.bean(ObjectMapper::class.java)
         }
     }
@@ -165,7 +164,7 @@ data class PageResponse(
     val hasPrevious: Boolean,
     @JsonProperty("items")
     val items: Collection<*>
-) : ResponseEntity<PageResponse>(OK) {
+) {
     /**
      * Constructs a new PageResponse from a Page and a list of data.
      * @param page The Page to construct the PageResponse from.
@@ -179,7 +178,17 @@ data class PageResponse(
         hasNext = page.hasNext(),
         hasPrevious = page.hasPrevious(),
         items = data
-    ) {
-        status(OK).body(this)
+    )
+
+    fun build(): ResponseEntity<PageResponse> {
+        return ResponseEntity(this, OK)
+    }
+
+    /**
+     * Retrieves the ObjectMapper bean from the application context.
+     * @return The ObjectMapper bean.
+     */
+    private fun mapper(): ObjectMapper {
+        return AppContextUtil.bean(ObjectMapper::class.java)
     }
 }
