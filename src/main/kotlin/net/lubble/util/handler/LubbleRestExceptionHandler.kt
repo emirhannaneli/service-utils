@@ -169,4 +169,17 @@ class LubbleRestExceptionHandler {
     fun handleUnAuthorized(e: UnAuthorized): Response {
         return Response(e)
     }
+
+    @ExceptionHandler(NotImplementedError::class)
+    fun handleNotImplementedError(e: NotImplementedError): Response {
+        return Response(
+            "global.exception.unsupported.operation",
+            NOT_IMPLEMENTED,
+            "0x000500-2",
+            mapOf(
+                "exception" to e.javaClass.name,
+                "message" to e.message
+            )
+        )
+    }
 }
