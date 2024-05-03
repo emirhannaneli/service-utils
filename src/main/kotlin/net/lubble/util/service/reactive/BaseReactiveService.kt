@@ -84,10 +84,10 @@ interface BaseReactiveService<T, C, U, S> {
 
     /**
      * Archive an entity.
-     * @param base The entity to archive.
+     * @param id The ID of the entity to archive.
      * @return A void wrapped in a Mono.
      */
-    fun archive(base: T): Mono<Void> {
+    fun archive(id: String): Mono<Void> {
         throw UnsupportedOperationException()
     }
 
@@ -113,7 +113,7 @@ interface BaseReactiveService<T, C, U, S> {
      * Clear the recycle bin.
      * @return A void wrapped in a Mono.
      */
-    fun clearRecycleBin() {
+    fun clearRecycleBin(): Mono<Void> {
         throw UnsupportedOperationException()
     }
 

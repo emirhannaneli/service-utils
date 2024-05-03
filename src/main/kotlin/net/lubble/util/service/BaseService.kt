@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional
  * @param C The create type.
  * @param U The update type.
  * @param S The specification type.
- * @see Transactional
+ * @see Transactional This annotation is used to indicate that the methods should be run in a transaction.
  */
 @Transactional
 interface BaseService<T, C, U, S> {
@@ -81,15 +81,15 @@ interface BaseService<T, C, U, S> {
 
     /**
      * Archive an entity.
-     * @param base The entity to archive.
+     * @param id The ID of the entity to archive.
      */
-    fun archive(base: T) {
+    fun archive(id: String) {
         throw UnsupportedOperationException()
     }
 
     /**
      * Unarchive an entity.
-     * @param base The entity to unarchive.
+     * @param id The ID of the entity to unarchive.
      */
     fun unarchive(id: String) {
         throw UnsupportedOperationException()
