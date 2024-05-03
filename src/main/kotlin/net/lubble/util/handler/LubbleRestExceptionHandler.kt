@@ -2,18 +2,11 @@ package net.lubble.util.handler
 
 import net.lubble.util.Response
 import net.lubble.util.config.utils.EnableLubbleUtils
-import net.lubble.util.exception.AlreadyExistsException
-import net.lubble.util.exception.InvalidParamException
-import net.lubble.util.exception.NotFoundException
-import net.lubble.util.exception.WrongCredentials
-import net.lubble.util.exception.AccessDenied
-import net.lubble.util.exception.UnAuthorized
+import net.lubble.util.exception.*
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.data.mapping.PropertyReferenceException
-import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.*
-import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -32,8 +25,8 @@ class LubbleRestExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException::class)
-    fun handleException(e: RuntimeException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleException(e: RuntimeException): Response {
+        return Response(
             "global.exception.internal.error",
             INTERNAL_SERVER_ERROR,
             "0x000500-0",
@@ -42,12 +35,11 @@ class LubbleRestExceptionHandler {
                 "message" to e.message
             )
         )
-        return response.build()
     }
 
     @ExceptionHandler(java.lang.UnsupportedOperationException::class)
-    fun handleUnsupportedOperationException(e: UnsupportedOperationException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleUnsupportedOperationException(e: UnsupportedOperationException): Response {
+        return Response(
             "global.exception.unsupported.operation",
             INTERNAL_SERVER_ERROR,
             "0x000500-1",
@@ -56,22 +48,20 @@ class LubbleRestExceptionHandler {
                 "message" to e.message
             )
         )
-        return response.build()
     }
 
     @ExceptionHandler(InvalidParamException::class)
-    fun handleInvalidParamException(e: InvalidParamException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleInvalidParamException(e: InvalidParamException): Response {
+        return Response(
             "global.exception.invalid.param",
             e.status(),
             e.code(),
             e.details()
         )
-        return response.build()
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleMethodArgumentNotValidException(e: MethodArgumentNotValidException): ResponseEntity<Response> {
+    fun handleMethodArgumentNotValidException(e: MethodArgumentNotValidException): Response {
         val errors = e.bindingResult.allErrors
         val details = mutableMapOf<String, Any>()
         errors.forEach {
@@ -80,18 +70,17 @@ class LubbleRestExceptionHandler {
             details[field] = message
         }
         val message = details["unknown"] ?: "global.exception.invalid.param"
-        val response = Response(
+        return Response(
             message.toString(),
             BAD_REQUEST,
             "0x000400-1",
             details
         )
-        return response.build()
     }
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
-    fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): Response {
+        return Response(
             "global.exception.invalid.payload",
             BAD_REQUEST,
             "0x000400-2",
@@ -99,12 +88,11 @@ class LubbleRestExceptionHandler {
                 "message" to e.message
             )
         )
-        return response.build()
     }
 
     @ExceptionHandler(MissingServletRequestParameterException::class)
-    fun handleMissingServletRequestParameterException(e: MissingServletRequestParameterException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleMissingServletRequestParameterException(e: MissingServletRequestParameterException): Response {
+        return Response(
             "global.exception.invalid.param",
             BAD_REQUEST,
             "0x000400-3",
@@ -112,12 +100,11 @@ class LubbleRestExceptionHandler {
                 "message" to e.message
             )
         )
-        return response.build()
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
-    fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): Response {
+        return Response(
             "global.exception.invalid.param",
             BAD_REQUEST,
             "0x000400-4",
@@ -125,12 +112,11 @@ class LubbleRestExceptionHandler {
                 "message" to e.message
             )
         )
-        return response.build()
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
-    fun handleHttpRequestMethodNotSupportedException(e: HttpRequestMethodNotSupportedException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleHttpRequestMethodNotSupportedException(e: HttpRequestMethodNotSupportedException): Response {
+        return Response(
             "global.exception.invalid.method",
             BAD_REQUEST,
             "0x000400-5",
@@ -138,12 +124,11 @@ class LubbleRestExceptionHandler {
                 "message" to e.message
             )
         )
-        return response.build()
     }
 
     @ExceptionHandler(PropertyReferenceException::class)
-    fun handlePropertyReferenceException(e: PropertyReferenceException): ResponseEntity<Response> {
-        val response = Response(
+    fun handlePropertyReferenceException(e: PropertyReferenceException): Response {
+        return Response(
             "global.exception.invalid.param.type",
             BAD_REQUEST,
             "0x000400-6",
@@ -151,55 +136,46 @@ class LubbleRestExceptionHandler {
                 "message" to e.message
             )
         )
-        return response.build()
     }
 
     @ExceptionHandler(NotFoundException::class)
-    fun handleNotFoundException(e: NotFoundException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleNotFoundException(e: NotFoundException): Response {
+        return Response(
             e.message(),
             e.status(),
             e.code(),
             e.details()
         )
-        return response.build()
     }
 
     @ExceptionHandler(AlreadyExistsException::class)
-    fun handleAlreadyExistsException(e: AlreadyExistsException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleAlreadyExistsException(e: AlreadyExistsException): Response {
+        return Response(
             e.message(),
             e.status(),
             e.code(),
             e.details()
         )
-        return response.build()
     }
 
     @ExceptionHandler(WrongCredentials::class)
-    fun handleWrongCredentials(e: WrongCredentials): ResponseEntity<Response> {
-        val response = Response(
-            e.message(),
-            e.status(),
-            e.code()
-        )
-        return response.build()
+    fun handleWrongCredentials(e: WrongCredentials): Response {
+        return Response(e)
     }
 
     @ExceptionHandler(AccessDenied::class)
-    fun handleAccessDenied(e: AccessDenied): ResponseEntity<Response> {
-        val response = Response(
+    fun handleAccessDenied(e: AccessDenied): Response {
+        return Response(
             e.message(),
             e.status(),
             e.code(),
             e.details()
         )
-        return response.build()
     }
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException::class)
-    fun handleAccessDenied(e: org.springframework.security.access.AccessDeniedException): ResponseEntity<Response> {
-        val response = Response(
+    fun handleAccessDenied(e: org.springframework.security.access.AccessDeniedException): Response {
+        return Response(
             "global.exception.access.denied",
             FORBIDDEN,
             "0x000403-2",
@@ -207,16 +183,10 @@ class LubbleRestExceptionHandler {
                 "message" to e.message
             )
         )
-        return response.build()
     }
 
     @ExceptionHandler(UnAuthorized::class)
-    fun handleUnAuthorized(e: UnAuthorized): ResponseEntity<Response> {
-        val response = Response(
-            e.message(),
-            e.status(),
-            e.code()
-        )
-        return response.build()
+    fun handleUnAuthorized(e: UnAuthorized): Response {
+        return Response(e)
     }
 }
