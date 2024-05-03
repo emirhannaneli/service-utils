@@ -3,9 +3,11 @@ package net.lubble.util.controller
 import jakarta.validation.Valid
 import net.lubble.util.PageResponse
 import net.lubble.util.Response
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
+import java.net.URI
 
 /**
  * This interface defines the base operations for a reactive controller.
@@ -42,7 +44,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @return A Mono that emits the ResponseEntity of the PageResponse containing all found entities.
      */
     @GetMapping
-    fun findAll(@Valid params: P): Mono<ResponseEntity<PageResponse>>
+    fun findAll(@Valid params: P): Mono<PageResponse>
 
     /**
      * Update an existing entity.
@@ -61,7 +63,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @return A Mono that emits the ResponseEntity of the Response indicating the result of the operation.
      */
     @DeleteMapping("{id}")
-    fun delete(@PathVariable id: String): Mono<ResponseEntity<Response>>
+    fun delete(@PathVariable id: String): Mono<Response>
 
     // Additional operations for archiving, unarchiving, and managing a recycle bin are defined below.
     // These operations throw UnsupportedOperationException by default, and should be overridden in the implementing class if needed.
@@ -74,7 +76,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @GetMapping("archive")
-    fun findAllArchived(@Valid params: P): Mono<ResponseEntity<PageResponse>> {
+    fun findAllArchived(@Valid params: P): Mono<PageResponse> {
         throw UnsupportedOperationException()
     }
 
@@ -86,7 +88,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @PutMapping("{id}/archive")
-    fun archive(@PathVariable id: String): Mono<ResponseEntity<Response>> {
+    fun archive(@PathVariable id: String): Mono<Response> {
         throw UnsupportedOperationException()
     }
 
@@ -98,7 +100,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @PutMapping("{id}/unarchive")
-    fun unarchive(@PathVariable id: String): Mono<ResponseEntity<Response>> {
+    fun unarchive(@PathVariable id: String): Mono<Response> {
         throw UnsupportedOperationException()
     }
 
@@ -110,7 +112,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @GetMapping("recycle-bin")
-    fun recycleBin(@Valid params: P): Mono<ResponseEntity<PageResponse>> {
+    fun recycleBin(@Valid params: P): Mono<PageResponse> {
         throw UnsupportedOperationException()
     }
 
@@ -121,7 +123,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @DeleteMapping("recycle-bin/clear")
-    fun clearRecycleBin(): Mono<ResponseEntity<Response>> {
+    fun clearRecycleBin(): Mono<Response> {
         throw UnsupportedOperationException()
     }
 
@@ -133,7 +135,7 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @PutMapping("{id}/restore")
-    fun restore(@PathVariable id: String): Mono<ResponseEntity<Response>> {
+    fun restore(@PathVariable id: String): Mono<Response> {
         throw UnsupportedOperationException()
     }
 
@@ -145,7 +147,30 @@ interface ReactiveBaseController<C, U, R, P> {
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @DeleteMapping("{id}/permanently")
-    fun deletePermanently(@PathVariable id: String): Mono<ResponseEntity<Response>> {
+    fun deletePermanently(@PathVariable id: String): Mono<Response> {
         throw UnsupportedOperationException()
     }
+
+    /**
+     * Create a Mono that emits a ResponseEntity with a CREATED status and the URI of the created entity.
+     *
+     * @param read The object to include in the response.
+     * @param uri The URI of the created entity.
+     * */
+    fun created(read: R, uri: String): Mono<ResponseEntity<R>> = Mono.fromCallable { ResponseEntity.created(URI(uri)).body(read) }
+
+    /**
+     * Create a Mono that emits a ResponseEntity with an OK status and the object.
+     *
+     * @param read The object to include in the response.
+     * */
+    fun ok(read: R): Mono<ResponseEntity<R>> = Mono.fromCallable { ResponseEntity.ok(read) }
+
+    /**
+     * Create a Mono that emits a PageResponse with the given Page and data.
+     *
+     * @param page The Page to include in the response.
+     * @param data The data to include in the response.
+     * */
+    fun paged(page: Page<*>, data: Collection<*>): Mono<PageResponse> = Mono.fromCallable { Response.of(page, data) }
 }
