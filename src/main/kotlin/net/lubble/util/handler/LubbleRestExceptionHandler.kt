@@ -140,22 +140,12 @@ class LubbleRestExceptionHandler {
 
     @ExceptionHandler(NotFoundException::class)
     fun handleNotFoundException(e: NotFoundException): Response {
-        return Response(
-            e.message(),
-            e.status(),
-            e.code(),
-            e.details()
-        )
+        return Response(e, e.details())
     }
 
     @ExceptionHandler(AlreadyExistsException::class)
     fun handleAlreadyExistsException(e: AlreadyExistsException): Response {
-        return Response(
-            e.message(),
-            e.status(),
-            e.code(),
-            e.details()
-        )
+        return Response(e, e.details())
     }
 
     @ExceptionHandler(WrongCredentials::class)
@@ -165,12 +155,7 @@ class LubbleRestExceptionHandler {
 
     @ExceptionHandler(AccessDenied::class)
     fun handleAccessDenied(e: AccessDenied): Response {
-        return Response(
-            e.message(),
-            e.status(),
-            e.code(),
-            e.details()
-        )
+        return Response(e, e.details() ?: "unknown")
     }
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException::class)
