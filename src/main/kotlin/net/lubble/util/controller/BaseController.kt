@@ -152,6 +152,13 @@ interface BaseController<C, U, R, P> {
     fun ok(read: R): ResponseEntity<R> = ResponseEntity.ok(read)
 
     /**
+     * Create a ResponseEntity with a 200 OK status and a message.
+     *
+     * @param message The message to include in the response.
+     */
+    fun message(message: String): ResponseEntity<Response> = Response(message).build()
+
+    /**
      * Create a PageResponse from a Page and a list of data.
      *
      * @param page The Page to construct the PageResponse from.

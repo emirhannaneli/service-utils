@@ -59,6 +59,16 @@ class Response() {
     }
 
     /**
+     * Constructs a new Response from a message and status.
+     * @param message The message to include in the Response.
+     * @param status The status to include in the Response.
+     */
+    constructor(message: String, status: HttpStatus) : this() {
+        this.message = source().getMessage(message, null, locale())
+        this.status = status
+    }
+
+    /**
      * Constructs a new Response from a message.
      * @param message The message to include in the Response.
      */

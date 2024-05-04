@@ -167,6 +167,13 @@ interface ReactiveBaseController<C, U, R, P> {
     fun ok(read: R): Mono<ResponseEntity<R>> = Mono.fromCallable { ResponseEntity.ok(read) }
 
     /**
+     * Create a Mono that emits a ResponseEntity with a 200 OK status and a fun message.
+     *
+     * @param message The message to include in the response.
+     * */
+    fun message(message: String): Mono<ResponseEntity<Response>> = Mono.fromCallable { Response(message).build() }
+
+    /**
      * Create a Mono that emits a PageResponse with the given Page and data.
      *
      * @param page The Page to include in the response.

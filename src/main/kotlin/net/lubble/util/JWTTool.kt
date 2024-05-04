@@ -3,22 +3,27 @@ package net.lubble.util
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.joda.time.DateTime
+import java.time.Duration
 
 /**
  * JWTTool is a utility class for generating, verifying, and decoding JWT tokens.
  *
- * @property secret The secret key used to sign the JWT.
- * @property issuer The issuer of the JWT.
- * @property expiration The expiration time of the JWT in milliseconds.
- * @property audience The intended audience of the JWT.
+ * @param secret The secret key used to sign and verify JWT tokens.
+ * @param issuer The issuer of the JWT tokens.
+ * @param expiration The expiration time of the JWT tokens in milliseconds.
+ * @param audience The audience of the JWT tokens.
+ * @constructor Creates a new JWTTool with the specified secret, issuer, expiration, and audience.
  */
 class JWTTool(
-    secret: String,
-    private val issuer: String,
-    private val expiration: Long,
-    private val audience: Array<String>,
+    private val secret: String,
+    private var issuer: String,
+    private var expiration: Long,
+    private var audience: Array<String>,
 ) {
-    private val algorithm: Algorithm = Algorithm.HMAC256(secret)
+    private val algorithm: Algorithm
+        get() = Algorithm.HMAC256(secret)
+
+    constructor(secret: String) : this(secret, "", 0, emptyArray())
 
     /**
      * Generates a JWT with the specified subject and claims.
@@ -139,5 +144,25 @@ class JWTTool(
             .build()
             .verify(token)
             .subject
+    }
+
+    fun audience(audience: Array<String>): JWTTool {
+        this.audience = audience
+        return this
+    }
+
+    fun expiration(expiration: Long): JWTTool {
+        this.expiration = expiration
+        return this
+    }
+
+    fun expiration(expiration: Duration): JWTTool {
+        this.expiration = expiration.toMillis()
+        return this
+    }
+
+    fun issuer(issuer: String): JWTTool {
+        this.issuer = issuer
+        return this
     }
 }
