@@ -38,7 +38,7 @@ class LubbleRestExceptionHandler {
         ).build()
     }
 
-    @ExceptionHandler(java.lang.UnsupportedOperationException::class)
+    @ExceptionHandler(UnsupportedOperationException::class)
     fun handleUnsupportedOperationException(e: UnsupportedOperationException): ResponseEntity<Response> {
         return Response(
             "global.exception.unsupported.operation",
