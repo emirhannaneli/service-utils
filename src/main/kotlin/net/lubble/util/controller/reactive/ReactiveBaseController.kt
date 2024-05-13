@@ -164,7 +164,7 @@ interface ReactiveBaseController<C, U, R, P> {
      *
      * @param read The object to include in the response.
      * */
-    fun ok(read: Any): Mono<ResponseEntity<Any>> = Mono.fromCallable { ResponseEntity.ok(read) }
+    fun ok(read: R): Mono<ResponseEntity<R>> = Mono.fromCallable { ResponseEntity.ok(read) }
 
     /**
      * Create a Mono that emits a ResponseEntity with an OK status and the object.
