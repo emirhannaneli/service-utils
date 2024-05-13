@@ -149,7 +149,7 @@ interface BaseController<C, U, R, P> {
      *
      * @param read The entity to include in the response.
      */
-    fun ok(read: R): ResponseEntity<R> = ResponseEntity.ok(read)
+    fun ok(read: R): ResponseEntity<Any> = ResponseEntity.ok(read)
 
     /**
      * Create a ResponseEntity with a 200 OK status and a message.
