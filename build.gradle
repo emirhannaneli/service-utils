@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.12.9'
+version = '1.13.0'
 
 publishing {
     repositories {

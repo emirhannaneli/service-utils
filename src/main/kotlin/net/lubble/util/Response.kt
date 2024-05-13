@@ -77,6 +77,16 @@ class Response() {
     }
 
     /**
+     * Constructs a new Response from a message and additional details.
+     * @param message The message to include in the Response.
+     * @param details The additional details to include in the Response.
+     */
+    constructor(message: String, details: Any) : this() {
+        this.message = source().getMessage(message, null, locale())
+        this.details = details
+    }
+
+    /**
      * Constructs a new Response from an ExceptionModel.
      * @param ex The ExceptionModel to construct the Response from.
      */
