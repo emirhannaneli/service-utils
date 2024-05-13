@@ -139,7 +139,7 @@ interface BaseController<C, U, R, P> {
     /**
      * Create a ResponseEntity with a 201 Created status and a location header.
      *
-     * @param entity The entity to include in the response.
+     * @param read The entity to include in the response.
      * @param uri The URI to include in the location header.
      * */
     fun created(read: R, uri: String): ResponseEntity<R> = ResponseEntity.created(URI.create(uri)).body(read)
@@ -147,9 +147,9 @@ interface BaseController<C, U, R, P> {
     /**
      * Create a ResponseEntity with a 200 OK status.
      *
-     * @param read The entity to include in the response.
+     * @param read Any entity to include in the response.
      */
-    fun ok(read: R): ResponseEntity<Any> = ResponseEntity.ok(read)
+    fun ok(read: Any): ResponseEntity<Any> = ResponseEntity.ok(read)
 
     /**
      * Create a ResponseEntity with a 200 OK status and a message.
