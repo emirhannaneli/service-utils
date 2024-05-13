@@ -167,6 +167,13 @@ interface ReactiveBaseController<C, U, R, P> {
     fun ok(read: Any): Mono<ResponseEntity<Any>> = Mono.fromCallable { ResponseEntity.ok(read) }
 
     /**
+     * Create a Mono that emits a ResponseEntity with an OK status and the object.
+     *
+     * @param status The status to include in the response.
+     * */
+    fun ok(status: Boolean): Mono<ResponseEntity<Boolean>> = Mono.fromCallable { ResponseEntity.ok(status) }
+
+    /**
      * Create a Mono that emits a ResponseEntity with a 200 OK status and a fun message.
      *
      * @param message The message to include in the response.
