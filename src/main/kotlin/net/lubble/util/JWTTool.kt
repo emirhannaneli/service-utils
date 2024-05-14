@@ -47,17 +47,17 @@ class JWTTool(
      *
      * @param subject The subject of the JWT.
      * @param expiration The expiration time of the JWT in milliseconds.
-     * @param claims An array of claims to include in the JWT.
+     * @param claims A map of claims to include in the JWT.
      * @return The generated JWT.
      */
-    fun generate(subject: String, expiration: Long, claims: Array<String>): String {
-        return JWT.create()
+    fun generate(subject: String, expiration: Long, claims: Map<String, String>): String {
+        val jwt = JWT.create()
             .withSubject(subject)
             .withIssuer(issuer)
             .withAudience(*audience)
-            .withArrayClaim("claims", claims)
             .withExpiresAt(DateTime.now().plus(expiration).toDate())
-            .sign(algorithm)
+        claims.forEach { (key, value) -> jwt.withClaim(key, value) }
+        return jwt.sign(algorithm)
     }
 
     /**
