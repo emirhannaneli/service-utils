@@ -37,6 +37,7 @@ class JWTTool(
             .withSubject(subject)
             .withIssuer(issuer)
             .withAudience(*audience)
+            .withIssuedAt(DateTime.now().toDate())
             .withExpiresAt(DateTime.now().plus(expiration).toDate())
         claims.forEach { (key, value) -> jwt.withClaim(key, value) }
         return jwt.sign(algorithm)
@@ -55,6 +56,7 @@ class JWTTool(
             .withSubject(subject)
             .withIssuer(issuer)
             .withAudience(*audience)
+            .withIssuedAt(DateTime.now().toDate())
             .withExpiresAt(DateTime.now().plus(expiration).toDate())
         claims.forEach { (key, value) -> jwt.withClaim(key, value) }
         return jwt.sign(algorithm)
