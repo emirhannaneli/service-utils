@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.joda.time.DateTime
 import java.time.Duration
+import java.time.Instant
 
 /**
  * JWTTool is a utility class for generating, verifying, and decoding JWT tokens.
@@ -33,12 +34,14 @@ class JWTTool(
      * @return The generated JWT.
      */
     fun generate(subject: String, claims: Map<String, String>): String {
+        val iat = Instant.now()
+        val eat = iat.plusMillis(expiration)
         val jwt = JWT.create()
             .withSubject(subject)
             .withIssuer(issuer)
             .withAudience(*audience)
-            .withIssuedAt(DateTime.now().toDate())
-            .withExpiresAt(DateTime.now().plus(expiration).toDate())
+            .withIssuedAt(iat)
+            .withExpiresAt(eat)
         claims.forEach { (key, value) -> jwt.withClaim(key, value) }
         return jwt.sign(algorithm)
     }
@@ -52,12 +55,14 @@ class JWTTool(
      * @return The generated JWT.
      */
     fun generate(subject: String, expiration: Long, claims: Map<String, String>): String {
+        val iat = Instant.now()
+        val eat = iat.plusMillis(expiration)
         val jwt = JWT.create()
             .withSubject(subject)
             .withIssuer(issuer)
             .withAudience(*audience)
-            .withIssuedAt(DateTime.now().toDate())
-            .withExpiresAt(DateTime.now().plus(expiration).toDate())
+            .withIssuedAt(iat)
+            .withExpiresAt(eat)
         claims.forEach { (key, value) -> jwt.withClaim(key, value) }
         return jwt.sign(algorithm)
     }
