@@ -165,4 +165,83 @@ class JWTTool(
         this.issuer = issuer
         return this
     }
+
+    companion object {
+
+        /**
+         * Decodes a JWT and returns its claims as a map.
+         *
+         * @param token The JWT to decode.
+         * @return A map of the claims in the JWT.
+         */
+        fun decode(token: String): Map<String, Any> {
+            return JWT.decode(token)
+                .claims
+                .mapValues { it.value }
+        }
+
+        /**
+         * Decodes a JWT and returns the value of a specific claim.
+         *
+         * @param token The JWT to decode.
+         * @param key The key of the claim to return.
+         * @return The value of the claim, or an empty string if the claim is not present.
+         */
+        fun decode(token: String, key: String): String {
+            return JWT.decode(token)
+                .claims[key]?.asString() ?: ""
+        }
+
+        /**
+         * Returns the subject of a JWT.
+         *
+         * @param token The JWT to get the subject from.
+         * @return The subject of the JWT.
+         */
+        fun subject(token: String): String {
+            return JWT.decode(token).subject
+        }
+
+        /**
+         * Verifies a JWT.
+         *
+         * @param token The JWT to verify.
+         * @param algorithm The algorithm used to verify the JWT.
+         * @return True if the JWT is valid and not expired, false otherwise.
+         */
+        fun verify(token: String, algorithm: Algorithm): Boolean {
+            return try {
+                val expired = JWT.require(algorithm)
+                    .build()
+                    .verify(token)
+                    .expiresAt
+                    .before(DateTime.now().toDate())
+                !expired
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        /**
+         * Verifies a JWT.
+         *
+         * @param token The JWT to verify.
+         * @param audience The audience of the JWT.
+         * @param algorithm The algorithm used to verify the JWT.
+         * @return True if the JWT is valid and not expired, false otherwise.
+         */
+        fun verify(token: String, audience: Array<String>, algorithm: Algorithm): Boolean {
+            return try {
+                val expired = JWT.require(algorithm)
+                    .withAudience(*audience)
+                    .build()
+                    .verify(token)
+                    .expiresAt
+                    .before(DateTime.now().toDate())
+                !expired
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
 }
