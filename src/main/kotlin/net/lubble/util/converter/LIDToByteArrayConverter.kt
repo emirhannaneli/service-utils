@@ -5,7 +5,7 @@ import jakarta.persistence.Converter
 import net.lubble.util.LID
 
 @Converter(autoApply = true)
-class LIDByteArrayConverter : AttributeConverter<LID, ByteArray> {
+class LIDToByteArrayConverter : AttributeConverter<LID, ByteArray> {
     override fun convertToDatabaseColumn(attribute: LID?): ByteArray {
         return attribute?.toByteArray() ?: throw Exception("LID cannot be null")
     }

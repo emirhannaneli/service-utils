@@ -7,7 +7,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import jakarta.annotation.PostConstruct
 import net.lubble.util.AppContextUtil
 import net.lubble.util.LID
-import net.lubble.util.converter.LIDStringConverter
+import net.lubble.util.converter.LIDToStringConverter
+import net.lubble.util.converter.StringToLIDConverter
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -47,9 +48,11 @@ open class EnableLubbleUtilsConfig {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
 
-        val lidConverter = LIDStringConverter()
+        val lidToStringConverter = LIDToStringConverter()
+        val stringToLIDConverter = StringToLIDConverter()
         val lidModule = SimpleModule()
-        lidModule.addSerializer(LID::class.java, lidConverter)
+        lidModule.addSerializer(LID::class.java, lidToStringConverter)
+        lidModule.addDeserializer(LID::class.java, stringToLIDConverter)
 
         mapper.registerModule(lidModule)
 
