@@ -20,7 +20,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param create The entity to create.
      * @return The created entity wrapped in a Mono.
      */
-    @Transactional
     fun create(create: C): Mono<T>
 
     /**
@@ -28,7 +27,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param base The entity to save.
      * @return The saved entity wrapped in a Mono.
      */
-    @Transactional
     fun save(base: T): Mono<T>
 
     /**
@@ -36,7 +34,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param spec The specification to use when finding the entity.
      * @return The found entity wrapped in a Mono.
      */
-    @Transactional
     fun find(spec: S): Mono<T>
 
     /**
@@ -44,7 +41,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param spec The specification to use when checking if the entity exists.
      * @return A boolean indicating if the entity exists wrapped in a Mono.
      */
-    @Transactional
     fun exists(spec: S): Mono<Boolean>
 
     /**
@@ -52,7 +48,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param id The ID of the entity to find.
      * @return The found entity wrapped in a Mono.
      */
-    @Transactional
     fun findById(id: String): Mono<T>
 
     /**
@@ -60,7 +55,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param spec The specification to use when finding the entities.
      * @return A page of found entities wrapped in a Mono.
      */
-    @Transactional
     fun findAll(spec: S): Mono<Page<T>>
 
     /**
@@ -69,7 +63,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param update The updated entity.
      * @return A void wrapped in a Mono.
      */
-    @Transactional
     fun update(base: T, update: U): Mono<Void>
 
     /**
@@ -77,7 +70,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param base The entity to delete.
      * @return A void wrapped in a Mono.
      */
-    @Transactional
     fun delete(base: T): Mono<Void>
 
     /**
@@ -85,7 +77,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param spec The specification to use when finding the archived entities.
      * @return A page of found archived entities wrapped in a Mono.
      */
-    @Transactional
     fun findAllArchived(spec: S): Mono<Page<T>> {
         throw UnsupportedOperationException()
     }
@@ -95,7 +86,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param id The ID of the entity to archive.
      * @return A void wrapped in a Mono.
      */
-    @Transactional
     fun archive(id: String): Mono<Void> {
         throw UnsupportedOperationException()
     }
@@ -105,7 +95,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param id The ID of the entity to unarchive.
      * @return A void wrapped in a Mono.
      */
-    @Transactional
     fun unarchive(id: String): Mono<Void> {
         throw UnsupportedOperationException()
     }
@@ -115,7 +104,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param spec The specification to use when finding the entities in the recycle bin.
      * @return A page of found entities in the recycle bin wrapped in a Mono.
      */
-    @Transactional
     fun recycleBin(spec: S): Mono<Page<T>> {
         throw UnsupportedOperationException()
     }
@@ -124,17 +112,15 @@ interface BaseReactiveService<T, C, U, S> {
      * Clear the recycle bin.
      * @return A void wrapped in a Mono.
      */
-    @Transactional
     fun clearRecycleBin(): Mono<Void> {
         throw UnsupportedOperationException()
     }
 
     /**
      * Restore an entity from the recycle bin.
-     * @param base The entity to restore.
+     * @param id The ID of the entity to restore.
      * @return A void wrapped in a Mono.
      */
-    @Transactional
     fun restore(id: String): Mono<Void> {
         throw UnsupportedOperationException()
     }
@@ -144,7 +130,6 @@ interface BaseReactiveService<T, C, U, S> {
      * @param id The ID of the entity to delete.
      * @return A void wrapped in a Mono.
      */
-    @Transactional
     fun deletePermanently(id: String): Mono<Void> {
         throw UnsupportedOperationException()
     }

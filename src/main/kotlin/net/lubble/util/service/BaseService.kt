@@ -1,16 +1,14 @@
 package net.lubble.util.service
 
 import org.springframework.data.domain.Page
-import org.springframework.transaction.annotation.Transactional
 
 /**
  * This interface defines the basic CRUD operations for a service.
  * It uses generic types for the entity (T), create (C), update (U), and specification (S).
  * @param T The entity type.
- * @param C The create type.
+ * @param C The creation type.
  * @param U The update type.
  * @param S The specification type.
- * @see Transactional This annotation is used to indicate that the methods should be run in a transaction.
  */
 interface BaseService<T, C, U, S> {
 
@@ -19,7 +17,6 @@ interface BaseService<T, C, U, S> {
      * @param create The entity to create.
      * @return The created entity.
      */
-    @Transactional
     fun create(create: C): T
 
     /**
@@ -27,7 +24,6 @@ interface BaseService<T, C, U, S> {
      * @param base The entity to save.
      * @return The saved entity.
      */
-    @Transactional
     fun save(base: T): T
 
     /**
@@ -35,7 +31,6 @@ interface BaseService<T, C, U, S> {
      * @param spec The specification to use when finding the entity.
      * @return The found entity.
      */
-    @Transactional
     fun find(spec: S): T
 
     /**
@@ -43,7 +38,6 @@ interface BaseService<T, C, U, S> {
      * @param spec The specification to use when checking if the entity exists.
      * @return A boolean indicating if the entity exists.
      */
-    @Transactional
     fun exists(spec: S): Boolean
 
     /**
@@ -51,7 +45,6 @@ interface BaseService<T, C, U, S> {
      * @param id The ID of the entity to find.
      * @return The found entity.
      */
-    @Transactional
     fun findById(id: String): T
 
     /**
@@ -59,7 +52,6 @@ interface BaseService<T, C, U, S> {
      * @param spec The specification to use when finding the entities.
      * @return A page of found entities.
      */
-    @Transactional
     fun findAll(spec: S): Page<T>
 
     /**
@@ -67,14 +59,12 @@ interface BaseService<T, C, U, S> {
      * @param base The entity to update.
      * @param update The updated entity.
      */
-    @Transactional
     fun update(base: T, update: U)
 
     /**
      * Delete an entity.
      * @param base The entity to delete.
      */
-    @Transactional
     fun delete(base: T)
 
     /**
@@ -82,7 +72,6 @@ interface BaseService<T, C, U, S> {
      * @param spec The specification to use when finding the archived entities.
      * @return A page of found archived entities.
      */
-    @Transactional
     fun findAllArchived(spec: S): Page<T> {
         throw UnsupportedOperationException()
     }
@@ -91,7 +80,6 @@ interface BaseService<T, C, U, S> {
      * Archive an entity.
      * @param id The ID of the entity to archive.
      */
-    @Transactional
     fun archive(id: String) {
         throw UnsupportedOperationException()
     }
@@ -100,7 +88,6 @@ interface BaseService<T, C, U, S> {
      * Unarchive an entity.
      * @param id The ID of the entity to unarchive.
      */
-    @Transactional
     fun unarchive(id: String) {
         throw UnsupportedOperationException()
     }
@@ -110,7 +97,6 @@ interface BaseService<T, C, U, S> {
      * @param spec The specification to use when finding the entities in the recycle bin.
      * @return A page of found entities in the recycle bin.
      */
-    @Transactional
     fun recycleBin(spec: S): Page<T> {
         throw UnsupportedOperationException()
     }
@@ -118,7 +104,6 @@ interface BaseService<T, C, U, S> {
     /**
      * Clear the recycle bin.
      */
-    @Transactional
     fun clearRecycleBin() {
         throw UnsupportedOperationException()
     }
@@ -127,7 +112,6 @@ interface BaseService<T, C, U, S> {
      * Restore an entity from the recycle bin.
      * @param id The ID of the entity to restore.
      */
-    @Transactional
     fun restore(id: String) {
         throw UnsupportedOperationException()
     }
@@ -136,7 +120,6 @@ interface BaseService<T, C, U, S> {
      * Permanently delete an entity.
      * @param id The ID of the entity to delete.
      */
-    @Transactional
     fun deletePermanently(id: String) {
         throw UnsupportedOperationException()
     }
