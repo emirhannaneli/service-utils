@@ -39,10 +39,12 @@ open class BaseSpec(private val base: ParameterModel) {
          * The id of the entity.
          * */
         var id: String?
+
         /**
          * The deleted status of the entity.
          * */
         var deleted: Boolean?
+
         /**
          * The archived status of the entity.
          * */
@@ -191,9 +193,16 @@ open class BaseSpec(private val base: ParameterModel) {
             search: String,
             vararg fields: String
         ): Predicate {
-            return builder.or(
-                *fields.map { builder.like(builder.lower(root.get(it)), "%$search%") }.toTypedArray()
-            )
+            val terms = search.split(" ")
+                .map { it.trim().lowercase() }
+                .filter { it.isNotEmpty() }
+                .map { term ->
+                    builder.or(
+                        *fields.map { field -> builder.like(builder.lower(root.get(field)), "%$term%") }.toTypedArray()
+                    )
+                }
+
+            return builder.and(predicate, builder.or(*terms.toTypedArray()))
         }
     }
 
@@ -205,10 +214,12 @@ open class BaseSpec(private val base: ParameterModel) {
          * The id of the entity.
          * */
         var id: String?
+
         /**
          * The deleted status of the entity.
          * */
         var deleted: Boolean?
+
         /**
          * The archived status of the entity.
          * */
@@ -299,11 +310,15 @@ open class BaseSpec(private val base: ParameterModel) {
          * @param fields The fields to search for.
          */
         fun searchQuery(query: Query, search: String, vararg fields: String): Query {
-            query.addCriteria(
-                Criteria().orOperator(
-                    *fields.map { Criteria.where(it).regex(".*$search.*", "i") }.toTypedArray()
-                )
-            )
+            val terms = search.split(" ")
+                .map { it.trim().lowercase() }
+                .filter { it.isNotEmpty() }
+                .map { term ->
+                    Criteria().orOperator(
+                        *fields.map { Criteria.where(it).regex(".*$term.*", "i") }.toTypedArray()
+                    )
+                }
+            query.addCriteria(Criteria().orOperator(*terms.toTypedArray()))
             return query
         }
     }
