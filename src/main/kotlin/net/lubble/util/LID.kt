@@ -95,7 +95,7 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
         final.append(parts[this.randomPartInt3].take(parts[this.randomPartInt3].length / 2))
         final.append(".$seed.${this.randomInt1}.${this.randomInt2}.${this.randomInt3}.${this.randomPartInt1}.${this.randomPartInt2}.${this.randomPartInt3}")
 
-        value = Base64.getEncoder().encodeToString(final.toString().toByteArray()).replace("=", "")
+        value = Base64.getUrlEncoder().encodeToString(final.toString().toByteArray()).trimEnd('=')
     }
 
     /**
@@ -205,7 +205,7 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
          * @return The created LID object.
          */
         fun fromKey(key: String): LID {
-            val parts = String(Base64.getDecoder().decode(key)).split(".")
+            val parts = String(Base64.getUrlDecoder().decode(key)).split(".")
             return LID(
                 parts[1],
                 parts[2].toInt(),
