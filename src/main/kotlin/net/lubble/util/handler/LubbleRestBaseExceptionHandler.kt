@@ -1,5 +1,6 @@
 package net.lubble.util.handler
 
+import jakarta.annotation.Priority
 import net.lubble.util.Response
 import net.lubble.util.config.utils.EnableLubbleUtils
 import net.lubble.util.exception.*
@@ -11,13 +12,14 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 
+@Priority(1)
 @ControllerAdvice
 @ConditionalOnProperty(prefix = "lubble", name = ["exception-handling"], havingValue = "true", matchIfMissing = true)
 class LubbleRestBaseExceptionHandler {
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
     init {
-        log.info("Lubble Utils LubbleRestBaseExceptionHandler initialized.")
+        log.info("Lubble Utils Exception Handlers initialized.")
     }
 
     @ExceptionHandler(RuntimeException::class)
@@ -39,6 +41,19 @@ class LubbleRestBaseExceptionHandler {
             "global.exception.unsupported.operation",
             INTERNAL_SERVER_ERROR,
             "0x000500-1",
+            mapOf(
+                "exception" to e.javaClass.name,
+                "message" to e.message
+            )
+        ).build()
+    }
+
+    @ExceptionHandler(NotImplementedError::class)
+    fun handleNotImplementedError(e: NotImplementedError): ResponseEntity<Response> {
+        return Response(
+            "global.exception.unsupported.operation",
+            NOT_IMPLEMENTED,
+            "0x000500-2",
             mapOf(
                 "exception" to e.javaClass.name,
                 "message" to e.message
@@ -74,18 +89,5 @@ class LubbleRestBaseExceptionHandler {
     @ExceptionHandler(UnAuthorized::class)
     fun handleUnAuthorized(e: UnAuthorized): ResponseEntity<Response> {
         return Response(e).build()
-    }
-
-    @ExceptionHandler(NotImplementedError::class)
-    fun handleNotImplementedError(e: NotImplementedError): ResponseEntity<Response> {
-        return Response(
-            "global.exception.unsupported.operation",
-            NOT_IMPLEMENTED,
-            "0x000500-2",
-            mapOf(
-                "exception" to e.javaClass.name,
-                "message" to e.message
-            )
-        ).build()
     }
 }
