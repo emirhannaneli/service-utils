@@ -66,4 +66,4 @@ open class EnableLubbleUtilsConfig {
 }
 
 private const val COMPONENT_SCAN = "net.lubble.util"
-private const val CONFIGURATION_PROPERTIES_SCAN = "net.lubble.util.config.lubble"
+private const val CONFIGURATION_PROPERTIES_SCAN = "net.lubble.util.config"
