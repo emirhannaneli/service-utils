@@ -75,8 +75,8 @@ class AppContextUtil(context: ApplicationContext) {
          * @param clazz The class of the beans to retrieve.
          * @return A map of bean names to bean instances.
          */
-        fun beans(clazz: Class<*>): Map<String, *> {
-            return instance?.context?.getBeansOfType(clazz) ?: emptyMap<String, Any>()
+        fun <T> beans(clazz: Class<T>): Map<String, T> {
+            return instance?.context?.getBeansOfType(clazz) ?: emptyMap()
         }
     }
 }
