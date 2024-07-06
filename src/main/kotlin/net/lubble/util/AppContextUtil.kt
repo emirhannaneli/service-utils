@@ -23,7 +23,7 @@ class AppContextUtil(context: ApplicationContext) {
     }
 
     companion object {
-        private var instance: AppContextUtil? = null
+        var instance: AppContextUtil? = null
 
         /**
          * Initializes the AppContextUtil with an instance of ApplicationContext.
@@ -67,6 +67,16 @@ class AppContextUtil(context: ApplicationContext) {
         @Suppress("UNCHECKED_CAST")
         fun <T> bean(name: String): T {
             return instance?.context?.getBean(name) as T ?: throw RuntimeException("Could not get bean ($name)")
+        }
+
+        /**
+         * Retrieves all beans of a given class from the application context.
+         *
+         * @param clazz The class of the beans to retrieve.
+         * @return A map of bean names to bean instances.
+         */
+        fun beans(clazz: Class<*>): Map<String, *> {
+            return instance?.context?.getBeansOfType(clazz) ?: emptyMap<String, Any>()
         }
     }
 }
