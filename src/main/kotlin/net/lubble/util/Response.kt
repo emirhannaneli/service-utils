@@ -87,6 +87,18 @@ class Response() {
     }
 
     /**
+     * Constructs a new Response from a message, status, and details.
+     * @param message The message to include in the Response.
+     * @param status The status to include in the Response.
+     * @param details The additional details to include in the Response.
+     */
+    constructor(message: String, status: HttpStatus, details: Any) : this() {
+        this.message = source().getMessage(message, null, locale())
+        this.status = status
+        this.details = details
+    }
+
+    /**
      * Constructs a new Response from an ExceptionModel.
      * @param ex The ExceptionModel to construct the Response from.
      */
