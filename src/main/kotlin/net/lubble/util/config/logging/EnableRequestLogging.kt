@@ -5,4 +5,4 @@ import org.springframework.context.annotation.Import
 @Import(RequestLoggingConfig::class)
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class EnableRequestLogs
+annotation class EnableRequestLogging
