@@ -216,5 +216,13 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
                 parts[7].toInt()
             )
         }
+
+        fun fromKeyOrNull(key: String): LID? {
+            return try {
+                fromKey(key)
+            } catch (e: Exception) {
+                null
+            }
+        }
     }
 }

@@ -5,6 +5,7 @@ import jakarta.persistence.MappedSuperclass
 import net.lubble.util.LID
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.index.Indexed
+import org.springframework.data.mongodb.core.mapping.Field
 import java.util.*
 import kotlin.math.abs
 
@@ -17,19 +18,20 @@ import kotlin.math.abs
  * @property archived A flag indicating whether the model is archived.
  * @property createdAt The date and time when the model was created.
  * @property updatedAt The date and time when the model was last updated.
- * @property params The search parameters for the model. It is transient, meaning it is not persisted in the database.
  */
 @MappedSuperclass
 open class BaseMongoModel(
     @Id
-    var id: ObjectId = ObjectId(),
+    private var id: ObjectId = ObjectId(),
 
+    @Field("pk")
     @Indexed(unique = true)
     var pk: Long = String.format(
         "%012d",
         abs(UUID.randomUUID().mostSignificantBits - (UUID.randomUUID().leastSignificantBits + System.currentTimeMillis())) % 1000000000000
     ).toLong(),
 
+    @Field("sk")
     @Indexed(unique = true)
     var sk: LID = LID(),
 
@@ -43,7 +45,8 @@ open class BaseMongoModel(
 
     var updatedAt: Date = Date(),
 
-) {
+    ) {
+
     /**
      * Checks if the model is equal to another object.
      * @param other The object to compare with.
@@ -54,8 +57,8 @@ open class BaseMongoModel(
         if (other !is BaseMongoModel) return false
 
         if (id != other.id) return false
-        if (sk != other.sk) return false
         if (pk != other.pk) return false
+        if (sk != other.sk) return false
 
         return true
     }
@@ -66,14 +69,14 @@ open class BaseMongoModel(
      */
     override fun hashCode(): Int {
         var result = id.hashCode()
-        result = 31 * result + sk.hashCode()
         result = 31 * result + pk.hashCode()
+        result = 31 * result + sk.hashCode()
         return result
     }
 
     /**
      * This class represents the search parameters for the model.
-     * @property id The id to search for.
+     * @property pk The id to search for.
      */
     @Suppress("unused")
     open class SearchParams : ParameterModel()
@@ -87,9 +90,9 @@ open class BaseMongoModel(
     fun matchesId(id: String): Boolean {
         val value = id.toLongOrNull() ?: LID.fromKey(id)
         return if (value is Long) {
-            value == pk
+            value == this.pk
         } else {
-            value == sk
+            value == this.sk
         }
     }
 }

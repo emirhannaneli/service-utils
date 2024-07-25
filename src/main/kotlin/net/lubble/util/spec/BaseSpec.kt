@@ -61,7 +61,6 @@ open class BaseSpec(private val base: ParameterModel) {
          * @param root The root type in the from clause.
          * @param query The criteria query.
          * @param builder Used to construct criteria queries.
-         * @param id The id of the entity.
          */
         fun defaultPredicates(
             root: Root<T>,
@@ -120,8 +119,8 @@ open class BaseSpec(private val base: ParameterModel) {
             id: String,
         ): Predicate {
             val value = id.toLongOrNull() ?: LID.fromKey(id)
-            val key = if (value is Long) IDType.ID else IDType.SK
-            return if (key == IDType.ID) builder.and(predicate, builder.equal(root.get<Long>(key.name.lowercase()), value))
+            val key = if (value is Long) IDType.PK else IDType.SK
+            return if (key == IDType.PK) builder.and(predicate, builder.equal(root.get<Long>(key.name.lowercase()), value))
             else builder.and(predicate, builder.equal(root.get<String>(key.name.lowercase()), value))
         }
 
@@ -135,8 +134,8 @@ open class BaseSpec(private val base: ParameterModel) {
          */
         fun <Z, X> idPredicate(predicate: Predicate, builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
             val value = id.toLongOrNull() ?: LID.fromKey(id)
-            val key = if (value is Long) IDType.ID else IDType.SK
-            return if (key == IDType.ID) builder.and(predicate, builder.equal(join.get<Long>(key.name.lowercase()), value))
+            val key = if (value is Long) IDType.PK else IDType.SK
+            return if (key == IDType.PK) builder.and(predicate, builder.equal(join.get<Long>(key.name.lowercase()), value))
             else builder.and(predicate, builder.equal(join.get<String>(key.name.lowercase()), value))
         }
 
@@ -149,8 +148,8 @@ open class BaseSpec(private val base: ParameterModel) {
          */
         fun <Z, X> idPredicate(builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
             val value = id.toLongOrNull() ?: LID.fromKey(id)
-            val key = if (value is Long) IDType.ID else IDType.SK
-            return if (key == IDType.ID) builder.equal(join.get<Long>(key.name.lowercase()), value)
+            val key = if (value is Long) IDType.PK else IDType.SK
+            return if (key == IDType.PK) builder.equal(join.get<Long>(key.name.lowercase()), value)
             else builder.equal(join.get<String>(key.name.lowercase()), value)
         }
 
@@ -233,7 +232,6 @@ open class BaseSpec(private val base: ParameterModel) {
         /**
          * Returns the default query for a MongoDB model.
          *
-         * @param id The id of the entity.
          */
         fun defaultQuery(
             params: BaseMongoModel.SearchParams
@@ -273,9 +271,9 @@ open class BaseSpec(private val base: ParameterModel) {
          */
         fun idQuery(query: Query, id: String): Query {
             val value = id.toLongOrNull() ?: LID.fromKey(id)
-            val key = if (value is Long) IDType.ID else IDType.SK
+            val key = if (value is Long) IDType.PK else IDType.SK
             return when (key) {
-                IDType.ID -> query.addCriteria(Criteria.where(key.name.lowercase()).`is`(value))
+                IDType.PK -> query.addCriteria(Criteria.where(key.name.lowercase()).`is`(value))
                 IDType.SK -> query.addCriteria(Criteria.where(key.name.lowercase()).`is`(value))
             }
         }
@@ -327,7 +325,7 @@ open class BaseSpec(private val base: ParameterModel) {
      * IDType enum class defines the types of ids.
      * */
     private enum class IDType {
-        ID,
+        PK,
         SK
     }
 }

@@ -7,32 +7,30 @@ import kotlin.math.abs
 
 /**
  * This is a base class for all JPA models. It provides common fields and methods that are used across different models.
- * @property pk The primary key of the model. It is a UUID and is unique, not updatable, and not nullable.
+ * @property id The primary key of the model. It is a UUID and is unique, not updatable, and not nullable.
  * @property sk The secondary key of the model. It is a LID and is unique, not updatable, and not nullable.
- * @property id The id of the model. It is a Long and is unique, not updatable, and not nullable.
+ * @property pk The id of the model. It is a Long and is unique, not updatable, and not nullable.
  * @property deleted A flag indicating whether the model is deleted. It is not nullable.
  * @property archived A flag indicating whether the model is archived. It is not nullable.
  * @property createdAt The date and time when the model was created. It is not nullable and not updatable.
  * @property updatedAt The date and time when the model was last updated. It is not nullable.
- * @property params The search parameters for the model. It is transient, meaning it is not persisted in the database.
  */
 @MappedSuperclass
 open class BaseJPAModel(
     @Id
-    @JvmField
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "pk", unique = true, updatable = false, nullable = false)
-    var pk: UUID = UUID.randomUUID(),
+    @Column(name = "id", unique = true, updatable = false, nullable = false)
+    private var id: UUID = UUID.randomUUID(),
 
     @JvmField
     @Column(name = "sk", unique = true, updatable = false, nullable = false)
     var sk: LID = LID(),
 
     @JvmField
-    @Column(name = "id", unique = true, nullable = false, updatable = false)
-    var id: Long = String.format(
+    @Column(name = "pk", unique = true, nullable = false, updatable = false)
+    var pk: Long = String.format(
         "%012d",
-        abs(pk.mostSignificantBits - (pk.leastSignificantBits + System.currentTimeMillis())) % 1000000000000
+        abs(id.mostSignificantBits - (id.leastSignificantBits + System.currentTimeMillis())) % 1000000000000
     ).toLong(),
 
     @JvmField
@@ -57,7 +55,7 @@ open class BaseJPAModel(
      * @return The primary key.
      */
     open fun getPk(): UUID {
-        return pk
+        return id
     }
 
     /**
@@ -73,7 +71,7 @@ open class BaseJPAModel(
      * @return The id.
      */
     open fun getId(): Long {
-        return id
+        return pk
     }
 
     /**
@@ -133,7 +131,7 @@ open class BaseJPAModel(
         if (this === other) return true
         if (other !is BaseJPAModel) return false
 
-        if (pk != other.pk || sk != other.sk || id != other.id) return false
+        if (id != other.id || sk != other.sk || pk != other.pk) return false
         return true
     }
 
@@ -142,7 +140,7 @@ open class BaseJPAModel(
      * @return The hash code.
      */
     override fun hashCode(): Int {
-        return pk.hashCode()
+        return id.hashCode()
     }
 
     /**
@@ -160,7 +158,7 @@ open class BaseJPAModel(
     fun matchesId(id: String): Boolean {
         val value = id.toLongOrNull() ?: LID.fromKey(id)
         return if (value is Long) {
-            this.id == value
+            this.pk == value
         } else {
             this.sk == value
         }
