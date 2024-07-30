@@ -16,19 +16,16 @@ import java.util.*
  * @property seed The seed string used to generate the unique identifier.
  */
 class LID(private var seed: String = Generator.password(numbers = true, upper = true, special = false, length = 5)) : Comparable<LID>, Serializable {
-    private var value: String = ""
+    private var value: String = "lb"
 
     private var randomInt1 = 0
     private var randomInt2 = 0
-    private var randomInt3 = 0
     private var randomPartInt1 = 0
-    private var randomPartInt2 = 0
-    private var randomPartInt3 = 0
 
     /**
      * Default constructor that generates random integers and parts.
      */
-    constructor() : this(Generator.code().take(3), 0, 0, 0, 0, 0, 0)
+    constructor() : this(Generator.code().take(2), 0, 0, 0)
 
     /**
      * Constructor that initializes the LID object from a byte array.
@@ -40,10 +37,7 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
         this.seed = obj.seed
         this.randomInt1 = obj.randomInt1
         this.randomInt2 = obj.randomInt2
-        this.randomInt3 = obj.randomInt3
         this.randomPartInt1 = obj.randomPartInt1
-        this.randomPartInt2 = obj.randomPartInt2
-        this.randomPartInt3 = obj.randomPartInt3
     }
 
     /**
@@ -53,23 +47,25 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
      * @param seed The seed string.
      * @param randomInt1 The first random integer.
      * @param randomInt2 The second random integer.
-     * @param randomInt3 The third random integer.
      * @param randomPartInt1 The first random part.
-     * @param randomPartInt2 The second random part.
-     * @param randomPartInt3 The third random part.
      */
     constructor(
         seed: String,
         randomInt1: Int,
         randomInt2: Int,
-        randomInt3: Int,
         randomPartInt1: Int,
-        randomPartInt2: Int,
-        randomPartInt3: Int
     ) : this(seed) {
+        this.value = generate(seed, randomInt1, randomInt2, randomPartInt1)
+    }
+
+    private fun generate(
+        seed: String,
+        randomInt1: Int,
+        randomInt2: Int,
+        randomPartInt1: Int
+    ): String {
         this.randomInt1 = randomInt1.takeIf { it != 0 } ?: SecureRandom().nextInt(1, 10)
         this.randomInt2 = randomInt2.takeIf { it != 0 } ?: SecureRandom().nextInt(1, 10)
-        this.randomInt3 = randomInt3.takeIf { it != 0 } ?: SecureRandom().nextInt(1, 10)
 
         val unified = StringBuilder()
         val hash = DigestUtils.sha512(seed.toByteArray())
@@ -77,25 +73,21 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
         val flatBase64 = encoded
             .replace("=", this.randomInt1.toString())
             .replace("+", this.randomInt2.toString())
-            .replace("/", this.randomInt3.toString())
         unified.append(flatBase64)
 
-        val parts = unified.toString().chunked(6)
+        val parts = unified.toString().chunked(8)
             .plus(unified.toString().chunked(this.randomInt1))
             .plus(unified.toString().chunked(this.randomInt2))
-            .plus(unified.toString().chunked(this.randomInt3))
 
         this.randomPartInt1 = randomPartInt1.takeIf { it != 0 } ?: SecureRandom().nextInt(0, parts.size)
-        this.randomPartInt2 = randomPartInt2.takeIf { it != 0 } ?: SecureRandom().nextInt(0, parts.size)
-        this.randomPartInt3 = randomPartInt3.takeIf { it != 0 } ?: SecureRandom().nextInt(0, parts.size)
 
         val final = StringBuilder()
         final.append(parts[this.randomPartInt1].take(parts[this.randomPartInt1].length / 2))
-        final.append(parts[this.randomPartInt2].take(parts[this.randomPartInt2].length / 2))
-        final.append(parts[this.randomPartInt3].take(parts[this.randomPartInt3].length / 2))
-        final.append(".$seed.${this.randomInt1}.${this.randomInt2}.${this.randomInt3}.${this.randomPartInt1}.${this.randomPartInt2}.${this.randomPartInt3}")
+        final.append(".$seed.${this.randomInt1}.${this.randomInt2}.${this.randomPartInt1}")
 
-        value = Base64.getUrlEncoder().encodeToString(final.toString().toByteArray()).trimEnd('=')
+        val pure = final.toString()
+        val key = Base64.getUrlEncoder().encodeToString(pure.toByteArray()).trimEnd('=')
+        return key
     }
 
     /**
@@ -106,7 +98,7 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
     fun toByteArray(): ByteArray {
         ByteArrayOutputStream().use { bos ->
             ObjectOutputStream(bos).use { oos ->
-                oos.writeObject("$seed,$randomInt1,$randomInt2,$randomInt3,$randomPartInt1,$randomPartInt2,$randomPartInt3")
+                oos.writeObject("$seed,$randomInt1,$randomInt2,$randomPartInt1")
             }
             return bos.toByteArray()
         }
@@ -152,10 +144,7 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
                     && seed == other.seed
                     && randomInt1 == other.randomInt1
                     && randomInt2 == other.randomInt2
-                    && randomInt3 == other.randomInt3
                     && randomPartInt1 == other.randomPartInt1
-                    && randomPartInt2 == other.randomPartInt2
-                    && randomPartInt3 == other.randomPartInt3
         }
         return false
     }
@@ -189,9 +178,6 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
                         parts[1].toInt(),
                         parts[2].toInt(),
                         parts[3].toInt(),
-                        parts[4].toInt(),
-                        parts[5].toInt(),
-                        parts[6].toInt()
                     )
                 }
             }
@@ -211,9 +197,6 @@ class LID(private var seed: String = Generator.password(numbers = true, upper = 
                 parts[2].toInt(),
                 parts[3].toInt(),
                 parts[4].toInt(),
-                parts[5].toInt(),
-                parts[6].toInt(),
-                parts[7].toInt()
             )
         }
 

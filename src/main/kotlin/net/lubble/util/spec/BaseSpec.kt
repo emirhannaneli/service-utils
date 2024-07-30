@@ -190,14 +190,22 @@ open class BaseSpec(private val base: ParameterModel) {
             builder: CriteriaBuilder,
             root: Root<T>,
             search: String,
-            vararg fields: String
+            vararg fields: String,
+            type: SearchType = SearchType.LIKE,
         ): Predicate {
             val terms = search.split(" ")
                 .map { it.trim().lowercase() }
                 .filter { it.isNotEmpty() }
                 .map { term ->
                     builder.or(
-                        *fields.map { field -> builder.like(builder.lower(root.get(field)), "%$term%") }.toTypedArray()
+                        *fields.map { field ->
+                            when (type) {
+                                SearchType.EQUAL -> builder.equal(builder.lower(root.get(field)), term)
+                                SearchType.STARTS_WITH -> builder.like(builder.lower(root.get(field)), "$term%")
+                                SearchType.ENDS_WITH -> builder.like(builder.lower(root.get(field)), "%$term")
+                                SearchType.LIKE -> builder.like(builder.lower(root.get(field)), "%$term%")
+                            }
+                        }.toTypedArray()
                     )
                 }
 
@@ -285,7 +293,7 @@ open class BaseSpec(private val base: ParameterModel) {
          * @param type The type of the entity.
          */
         fun <K> typeQuery(query: Query, type: Class<K>): Query {
-            query.addCriteria(Criteria.where("class").`is`(type.name))
+            query.addCriteria(Criteria.where("_class").`is`(type.name))
             return query
         }
 
@@ -296,7 +304,7 @@ open class BaseSpec(private val base: ParameterModel) {
          */
         fun <K> typeQuery(type: Class<K>): Query {
             val query = Query()
-            query.addCriteria(Criteria.where("class").`is`(type.name))
+            query.addCriteria(Criteria.where("_class").`is`(type.name))
             return query
         }
 
@@ -307,13 +315,20 @@ open class BaseSpec(private val base: ParameterModel) {
          * @param search The search string.
          * @param fields The fields to search for.
          */
-        fun searchQuery(query: Query, search: String, vararg fields: String): Query {
+        fun searchQuery(query: Query, search: String, vararg fields: String, type: SearchType = SearchType.LIKE): Query {
             val terms = search.split(" ")
                 .map { it.trim().lowercase() }
                 .filter { it.isNotEmpty() }
                 .map { term ->
                     Criteria().orOperator(
-                        *fields.map { Criteria.where(it).regex(".*$term.*", "i") }.toTypedArray()
+                        *fields.map {
+                            when (type) {
+                                SearchType.EQUAL -> Criteria.where(it).`is`(term)
+                                SearchType.STARTS_WITH -> Criteria.where(it).regex("^$term.*", "i")
+                                SearchType.ENDS_WITH -> Criteria.where(it).regex(".*$term$", "i")
+                                SearchType.LIKE -> Criteria.where(it).regex(".*$term.*", "i")
+                            }
+                        }.toTypedArray()
                     )
                 }
             query.addCriteria(Criteria().orOperator(*terms.toTypedArray()))
@@ -327,5 +342,12 @@ open class BaseSpec(private val base: ParameterModel) {
     private enum class IDType {
         PK,
         SK
+    }
+
+    enum class SearchType {
+        EQUAL,
+        STARTS_WITH,
+        ENDS_WITH,
+        LIKE
     }
 }
