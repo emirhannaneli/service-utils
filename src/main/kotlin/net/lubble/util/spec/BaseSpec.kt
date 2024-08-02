@@ -64,7 +64,7 @@ open class BaseSpec(private val base: ParameterModel) {
          */
         fun defaultPredicates(
             root: Root<T>,
-            query: CriteriaQuery<*>,
+            query: CriteriaQuery<*>?,
             builder: CriteriaBuilder,
             params: BaseJPAModel.SearchParams,
         ): Predicate {
@@ -89,7 +89,7 @@ open class BaseSpec(private val base: ParameterModel) {
                             val columnValue = field.getAnnotation(Column::class.java)?.name
                             field.name == it || columnValue == it
                         })
-                        query.orderBy(builder.asc(root.get<Any>(it)))
+                        query?.orderBy(builder.asc(root.get<Any>(it)))
                 }
 
                 SortOrder.DESC -> params.sortBy?.let {
@@ -97,7 +97,7 @@ open class BaseSpec(private val base: ParameterModel) {
                             val columnValue = field.getAnnotation(Column::class.java)?.name
                             field.name == it || columnValue == it
                         })
-                        query.orderBy(builder.desc(root.get<Any>(it)))
+                        query?.orderBy(builder.desc(root.get<Any>(it)))
                 }
             }
 
