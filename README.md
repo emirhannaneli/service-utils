@@ -1,3 +1,15 @@
+build.gradle.kt
+
+```
+    maven {
+        url = uri("https://repo.emirman.dev/repository/maven-public/")
+    }
+```
+
+```
+    implementation("net.lubble:microservice-utils:<version>")
+```
+
 # Service Utils ```EN```
 
 `Service Utils` is a comprehensive library designed to enhance and streamline development within Spring Boot projects. It provides a standardized and efficient framework with the following key features:
