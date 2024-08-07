@@ -1,13 +1,15 @@
 build.gradle.kt
 
 ```
+repositories {
     maven {
         url = uri("https://repo.emirman.dev/repository/maven-public/")
     }
-```
+}
 
-```
+dependencies {
     implementation("net.lubble:microservice-utils:<version>")
+}
 ```
 
 # Service Utils ```EN```
