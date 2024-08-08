@@ -63,7 +63,7 @@ interface LJPAProjection<T> {
         val builder = manager().criteriaBuilder
         val query = builder.createTupleQuery()
         val root = query.from(clazz)
-        val fields = spec.fields?.map { it.lowercase(Locale.ENGLISH) } ?: clazz.declaredFields.map { it.name }
+        val fields = spec.fields?.map { it } ?: clazz.declaredFields.map { it.name }
         query.multiselect(fields.map { root.get<Any>(it).alias(it) })
             .where(spec.ofSearch().toPredicate(root, query, builder))
         return query
