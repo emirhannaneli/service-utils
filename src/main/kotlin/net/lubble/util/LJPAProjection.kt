@@ -43,7 +43,6 @@ interface LJPAProjection<T> {
             val entity = clazz.getDeclaredConstructor().newInstance()
             val fields = FieldUtils.getAllFields(clazz)
             fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
-                field.isAccessible = true
                 field.set(entity, tuple.get(field.name))
             }
             entity
@@ -63,7 +62,8 @@ interface LJPAProjection<T> {
         val builder = manager().criteriaBuilder
         val query = builder.createTupleQuery()
         val root = query.from(clazz)
-        val fields = spec.fields?.map { it } ?: clazz.declaredFields.map { it.name }
+        val fields = spec.fields?.map { it }?.toMutableSet() ?: clazz.declaredFields.map { it.name }.toMutableSet()
+        fields.addAll(listOf("pk", "sk", "updatedAt", "createdAt"))
         query.multiselect(fields.map { root.get<Any>(it).alias(it) })
             .where(spec.ofSearch().toPredicate(root, query, builder))
         return query
