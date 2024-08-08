@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager
 import jakarta.persistence.Tuple
 import jakarta.persistence.criteria.CriteriaQuery
 import net.lubble.util.spec.BaseSpec
+import org.apache.commons.lang3.reflect.FieldUtils
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import java.util.*
@@ -40,9 +41,11 @@ interface LJPAProjection<T> {
         val query = projection(spec, clazz) ?: return PageImpl(emptyList(), spec.ofPageable(), 0L)
         val result = manager().createQuery(query).resultList.map { tuple ->
             val entity = clazz.getDeclaredConstructor().newInstance()
-            clazz.declaredFields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
+            val fields = FieldUtils.getAllFields(clazz)
+            fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
                 field.isAccessible = true
                 field.set(entity, tuple.get(field.name))
+                println("field: ${field.name}, value: ${field.get(entity)} ${tuple.get(field.name)}")
             }
             entity
         }
@@ -61,7 +64,7 @@ interface LJPAProjection<T> {
         val builder = manager().criteriaBuilder
         val query = builder.createTupleQuery()
         val root = query.from(clazz)
-        val fields = spec.fields ?: clazz.declaredFields.map { it.name }
+        val fields = spec.fields?.map { it.lowercase(Locale.ENGLISH) } ?: clazz.declaredFields.map { it.name }
         query.multiselect(fields.map { root.get<Any>(it).alias(it) })
             .where(spec.ofSearch().toPredicate(root, query, builder))
         return query
