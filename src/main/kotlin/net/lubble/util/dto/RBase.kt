@@ -1,5 +1,6 @@
 package net.lubble.util.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.util.*
 
 /**
@@ -16,20 +17,24 @@ open class RBase {
     /**
      * The unique identifier for the DTO.
      */
+    @JsonProperty(index = 0)
     open var pk: Any? = null
 
     /**
      * A secondary key for the DTO.
      */
+    @JsonProperty(index = 1)
     open lateinit var sk: String
 
     /**
      * The date and time when the DTO was last updated.
      */
+    @JsonProperty(index = Int.MAX_VALUE - 1)
     open lateinit var updatedAt: Date
 
     /**
      * The date and time when the DTO was created.
      */
+    @JsonProperty(index = Int.MAX_VALUE)
     open lateinit var createdAt: Date
 }
