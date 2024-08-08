@@ -8,7 +8,7 @@ repositories {
 }
 
 dependencies {
-    implementation("net.lubble:microservice-utils:<version>")
+    implementation("net.lubble:service-utils:<version>")
 }
 ```
 

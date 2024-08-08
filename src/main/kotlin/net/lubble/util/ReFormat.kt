@@ -4,7 +4,7 @@ import org.springframework.context.i18n.LocaleContextHolder
 import java.util.*
 
 class ReFormat(private var value: String) {
-    private val locale = LocaleContextHolder.getLocale() ?: Locale.ENGLISH
+    private val locale = LocaleContextHolder.getLocale()
     fun upper(): ReFormat {
         value = value.uppercase(locale)
         return this

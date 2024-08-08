@@ -24,17 +24,17 @@ open class RBase {
      * A secondary key for the DTO.
      */
     @JsonProperty(index = 1)
-    open lateinit var sk: String
+    open var sk: String? = null
 
     /**
      * The date and time when the DTO was last updated.
      */
     @JsonProperty(index = Int.MAX_VALUE - 1)
-    open lateinit var updatedAt: Date
+    open var updatedAt: Date? = null
 
     /**
      * The date and time when the DTO was created.
      */
     @JsonProperty(index = Int.MAX_VALUE)
-    open lateinit var createdAt: Date
+    open var createdAt: Date? = null
 }

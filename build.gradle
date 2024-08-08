@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.14.2'
+version = '1.15.0'
 
 publishing {
     repositories {
@@ -51,4 +51,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-script-runtime:1.9.23"
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs = ['-Xjsr305=strict', '-Xjvm-default=all']
+    }
+}
 
