@@ -43,6 +43,7 @@ interface LJPAProjection<T> {
             val entity = clazz.getDeclaredConstructor().newInstance()
             val fields = FieldUtils.getAllFields(clazz)
             fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
+                field.isAccessible = true
                 field.set(entity, tuple.get(field.name))
             }
             entity
