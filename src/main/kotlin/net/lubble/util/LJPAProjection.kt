@@ -45,7 +45,6 @@ interface LJPAProjection<T> {
             fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
                 field.isAccessible = true
                 field.set(entity, tuple.get(field.name))
-                println("field: ${field.name}, value: ${field.get(entity)} ${tuple.get(field.name)}")
             }
             entity
         }
