@@ -45,13 +45,15 @@ interface LJPAProjection<T> {
      * @param clazz the class of the entity.
      * @return a page of entities matching the specification.
      */
-    fun <T> findAll(spec: BaseSpec<T>, clazz: Class<T>): Page<T> {
+    fun <T> findAll(spec: BaseSpec<T>, clazz: Class<T>, pagination: Boolean = true): Page<T> {
         val projection = projection(spec, clazz) ?: return PageImpl(emptyList(), spec.ofPageable(), 0L)
         val query = manager().createQuery(projection)
 
-        val pageable = spec.ofPageable()
-        query.firstResult = pageable.pageNumber * pageable.pageSize
-        query.maxResults = pageable.pageSize
+        if (pagination) {
+            val pageable = spec.ofPageable()
+            query.firstResult = pageable.pageNumber * pageable.pageSize
+            query.maxResults = pageable.pageSize
+        }
 
         val result = query.resultList.map { tuple ->
             val entity = clazz.getDeclaredConstructor().newInstance()
