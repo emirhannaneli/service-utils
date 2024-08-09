@@ -75,7 +75,7 @@ interface BaseGraphController<C, U, R, P> {
      * @return A paginated response containing the archived entities.
      */
     @QueryMapping
-    fun findAllArchived(@Valid params: P, env: DataFetchingEnvironment): GraphPageResponse {
+    fun findAllArchived(@Argument @Valid params: P, env: DataFetchingEnvironment): GraphPageResponse {
         throw UnsupportedOperationException()
     }
 
