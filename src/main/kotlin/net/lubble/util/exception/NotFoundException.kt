@@ -19,8 +19,7 @@ open class NotFoundException() : RuntimeException(), ExceptionModel {
     }
 
     override fun message(): String {
-        val message: String = source().getMessage("global.exception.not.found", null, locale())
-        return message.replace("{name}", desiredName).replace("{value}", if (desiredValue is String) "'$desiredValue'" else "[object]")
+        return source().getMessage("global.exception.not.found", arrayOf(desiredName, desiredValue), locale())
     }
 
     override fun status(): HttpStatus {

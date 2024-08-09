@@ -19,8 +19,7 @@ open class AlreadyExistsException() : RuntimeException(), ExceptionModel {
     }
 
     override fun message(): String {
-        val message = source().getMessage("global.exception.already.exists", null, locale())
-        return message.replace("{name}", desiredName).replace("{value}", if (desiredValue is String) "'$desiredValue'" else "[object]")
+        return source().getMessage("global.exception.already.exists", arrayOf(desiredName, desiredValue), locale())
     }
 
     override fun status(): HttpStatus {
