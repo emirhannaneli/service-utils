@@ -80,7 +80,7 @@ interface LJPAProjection<T> {
         val query = builder.createTupleQuery()
         val root = query.from(clazz)
         val fields = spec.fields?.map { it }?.toMutableSet() ?: clazz.declaredFields.map { it.name }.toMutableSet()
-        fields.addAll(listOf("pk", "sk", "deleted", "archived", "updatedAt", "createdAt"))
+        fields.addAll(listOf("id", "pk", "sk", "deleted", "archived", "updatedAt", "createdAt"))
         val search = spec.ofSearch().toPredicate(root, query, builder)
         query.multiselect(fields.map { root.get<Any>(it).alias(it) })
             .where(search)

@@ -12,77 +12,66 @@ import java.util.*
  * A class representing a response for a graph-related request.
  * The response contains a message, a code, and optional details.
  */
-@JsonPropertyOrder("meta", "data")
-class GraphResponse() {
-
+@JsonPropertyOrder("message", "code", "details")
+class GraphResponse(
     @JsonProperty("message")
-    private lateinit var message: String
-
+    val message: String? = null,
     @JsonProperty("code")
-    private var code: String? = null
-
+    val code: String? = null,
     @JsonProperty("details")
-    private var details: Any? = null
-
-    /**
-     * Constructs a GraphResponse with a message, code, and details.
-     * @param message The message to be included in the response.
-     * @param code The code to be included in the response.
-     * @param details Additional details to be included in the response.
-     */
-    constructor(message: String, code: String?, details: Any?) : this() {
-        this.message = source().getMessage(message, null, locale())
-        this.code = code
-        this.details = details
-    }
+    val details: Any? = null,
+) {
 
     /**
      * Constructs a GraphResponse with a message and code.
      * @param message The message to be included in the response.
      * @param code The code to be included in the response.
      */
-    constructor(message: String, code: String?) : this() {
-        this.message = source().getMessage(message, null, locale())
-        this.code = code
-    }
+    constructor(message: String, code: String?) : this(
+        message = source().getMessage(message, null, locale()),
+        code = code,
+        details = null,
+    )
 
     /**
      * Constructs a GraphResponse with a message.
      * @param message The message to be included in the response.
      */
-    constructor(message: String) : this() {
-        this.message = source().getMessage(message, null, locale())
-    }
+    constructor(message: String) : this(
+        message = source().getMessage(message, null, locale()),
+        code = null
+    )
 
     /**
      * Constructs a GraphResponse with a message and details.
      * @param message The message to be included in the response.
      * @param details Additional details to be included in the response.
      */
-    constructor(message: String, details: Any) : this() {
-        this.message = source().getMessage(message, null, locale())
-        this.details = details
-    }
+    constructor(message: String, details: Any) : this(
+        message = source().getMessage(message, null, locale()),
+        code = null,
+        details = details,
+    )
 
     /**
      * Constructs a GraphResponse from an ExceptionModel.
      * @param ex The ExceptionModel to be used for constructing the response.
      */
-    constructor(ex: ExceptionModel) : this() {
-        this.message = source().getMessage(ex.message(), null, locale())
-        this.code = ex.code()
-    }
+    constructor(ex: ExceptionModel) : this(
+        message = source().getMessage(ex.message(), null, locale()),
+        code = ex.code(),
+    )
 
     /**
      * Constructs a GraphResponse from an ExceptionModel and additional details.
      * @param ex The ExceptionModel to be used for constructing the response.
      * @param details Additional details to be included in the response.
      */
-    constructor(ex: ExceptionModel, details: Any) : this() {
-        this.message = source().getMessage(ex.message(), null, locale())
-        this.code = ex.code()
-        this.details = details
-    }
+    constructor(ex: ExceptionModel, details: Any) : this(
+        message = source().getMessage(ex.message(), null, locale()),
+        code = ex.code(),
+        details = details,
+    )
 
     companion object {
         /**
@@ -117,7 +106,7 @@ class GraphResponse() {
  * A class representing a paginated response for a graph-related request.
  * The response contains metadata about the pagination and the data itself.
  */
-@JsonPropertyOrder("current", "size", "totalItems", "totalPages", "hasNext", "hasPrevious", "items")
+@JsonPropertyOrder("meta", "data")
 data class GraphPageResponse(
     @JsonProperty("meta")
     val meta: Meta,
@@ -137,6 +126,7 @@ data class GraphPageResponse(
     /**
      * A class representing metadata about the pagination.
      */
+    @JsonPropertyOrder("current", "size", "totalItems", "totalPages", "hasNext", "hasPrevious", "items")
     class Meta(
         @JsonProperty("current")
         val current: Int,
