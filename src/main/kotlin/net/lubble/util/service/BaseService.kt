@@ -48,6 +48,15 @@ interface BaseService<T, C, U, S> {
     fun findById(id: String): T
 
     /**
+     * Find an entity by its ID and fields.
+     * @param id The ID of the entity to find.
+     * @param fields The fields to find.
+     */
+    fun findById(id: String, fields: Collection<String>): T {
+        throw UnsupportedOperationException()
+    }
+
+    /**
      * Find all entities by their specification.
      * @param spec The specification to use when finding the entities.
      * @return A page of found entities.

@@ -24,10 +24,18 @@ interface LJPAProjection<T> {
      * @return an optional containing the entity if found, or empty if not found.
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T> findOne(spec: BaseSpec<T>, clazz: Class<T>): Optional<T & Any> {
+    fun <T : Any> findOne(spec: BaseSpec<T>, clazz: Class<T>): Optional<T> {
         val query = projection(spec, clazz) ?: return Optional.empty()
         val result = manager().createQuery(query).resultList
-        return Optional.ofNullable(result[0] as T)
+        if (result.isEmpty()) return Optional.empty()
+        val tuple = result[0]
+        val entity = clazz.getDeclaredConstructor().newInstance()
+        val fields = FieldUtils.getAllFields(clazz)
+        fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
+            field.isAccessible = true
+            field.set(entity, tuple.get(field.name))
+        }
+        return Optional.of(entity)
     }
 
     /**
@@ -70,7 +78,7 @@ interface LJPAProjection<T> {
         val query = builder.createTupleQuery()
         val root = query.from(clazz)
         val fields = spec.fields?.map { it }?.toMutableSet() ?: clazz.declaredFields.map { it.name }.toMutableSet()
-        fields.addAll(listOf("pk", "sk", "updatedAt", "createdAt"))
+        fields.addAll(listOf("pk", "sk", "deleted", "archived", "updatedAt", "createdAt"))
         val search = spec.ofSearch().toPredicate(root, query, builder)
         query.multiselect(fields.map { root.get<Any>(it).alias(it) })
             .where(search)

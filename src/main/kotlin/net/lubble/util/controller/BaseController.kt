@@ -15,7 +15,7 @@ import java.net.URI
 interface BaseController<C, U, R, P> {
 
     /**
-     * Create a new entity.
+     * Creates a new entity.
      *
      * @param create The entity to create.
      * @return The created entity wrapped in a ResponseEntity.
@@ -24,7 +24,7 @@ interface BaseController<C, U, R, P> {
     fun create(@RequestBody @Valid create: C): ResponseEntity<R>
 
     /**
-     * Find an entity by its ID.
+     * Finds an entity by its ID.
      *
      * @param id The ID of the entity to find.
      * @return The found entity wrapped in a ResponseEntity.
@@ -33,7 +33,7 @@ interface BaseController<C, U, R, P> {
     fun findById(@PathVariable id: String): ResponseEntity<R>
 
     /**
-     * Find all entities.
+     * Finds all entities.
      *
      * @param params The parameters to use when finding entities.
      * @return A page of found entities wrapped in a ResponseEntity.
@@ -42,7 +42,7 @@ interface BaseController<C, U, R, P> {
     fun findAll(@Valid params: P): ResponseEntity<PageResponse>
 
     /**
-     * Update an entity.
+     * Updates an existing entity.
      *
      * @param id The ID of the entity to update.
      * @param update The updated entity.
@@ -52,7 +52,7 @@ interface BaseController<C, U, R, P> {
     fun update(@PathVariable id: String, @RequestBody @Valid update: U): ResponseEntity<R>
 
     /**
-     * Delete an entity.
+     * Deletes an entity by its ID.
      *
      * @param id The ID of the entity to delete.
      * @return A response wrapped in a ResponseEntity.
@@ -61,7 +61,7 @@ interface BaseController<C, U, R, P> {
     fun delete(@PathVariable id: String): ResponseEntity<Response>
 
     /**
-     * Find all archived entities.
+     * Finds all archived entities.
      *
      * @param params The parameters to use when finding archived entities.
      * @return A page of found archived entities wrapped in a ResponseEntity.
@@ -72,7 +72,7 @@ interface BaseController<C, U, R, P> {
     }
 
     /**
-     * Archive an entity.
+     * Archives an entity.
      *
      * @param id The ID of the entity to archive.
      * @return A response wrapped in a ResponseEntity.
@@ -83,7 +83,7 @@ interface BaseController<C, U, R, P> {
     }
 
     /**
-     * Unarchive an entity.
+     * Unarchives an entity.
      *
      * @param id The ID of the entity to unarchive.
      * @return A response wrapped in a ResponseEntity.
@@ -94,7 +94,7 @@ interface BaseController<C, U, R, P> {
     }
 
     /**
-     * Find all entities in the recycle bin.
+     * Finds all entities in the recycle bin.
      *
      * @param params The parameters to use when finding entities in the recycle bin.
      * @return A page of found entities in the recycle bin wrapped in a ResponseEntity.
@@ -105,7 +105,7 @@ interface BaseController<C, U, R, P> {
     }
 
     /**
-     * Clear the recycle bin.
+     * Clears the recycle bin.
      *
      * @return A response wrapped in a ResponseEntity.
      */
@@ -115,7 +115,7 @@ interface BaseController<C, U, R, P> {
     }
 
     /**
-     * Restore an entity from the recycle bin.
+     * Restores an entity from the recycle bin.
      *
      * @param id The ID of the entity to restore.
      * @return A response wrapped in a ResponseEntity.
@@ -137,7 +137,7 @@ interface BaseController<C, U, R, P> {
     }
 
     /**
-     * Create a ResponseEntity with a 201 Created status and a location header.
+     * Creates a ResponseEntity with a 201 Created status and a location header.
      *
      * @param read The entity to include in the response.
      * @param uri The URI to include in the location header.
@@ -145,28 +145,28 @@ interface BaseController<C, U, R, P> {
     fun created(read: R, uri: String): ResponseEntity<R> = ResponseEntity.created(URI.create(uri)).body(read)
 
     /**
-     * Create a ResponseEntity with a 200 OK status.
+     * Creates a ResponseEntity with a 200 OK status.
      *
      * @param status The status to include in the response.
      */
     fun ok(status: Boolean): ResponseEntity<Boolean> = ResponseEntity.ok(status)
 
     /**
-     * Create a ResponseEntity with a 200 OK status.
+     * Creates a ResponseEntity with a 200 OK status.
      *
      * @param read The object to include in the response.
      */
     fun ok(read: R): ResponseEntity<R> = ResponseEntity.ok(read)
 
     /**
-     * Create a ResponseEntity with a 200 OK status and a message.
+     * Creates a ResponseEntity with a 200 OK status and a message.
      *
      * @param message The message to include in the response.
      */
     fun message(message: String): ResponseEntity<Response> = Response(message).build()
 
     /**
-     * Create a PageResponse from a Page and a list of data.
+     * Creates a PageResponse from a Page and a list of data.
      *
      * @param page The Page to construct the PageResponse from.
      * @param data The data to include in the PageResponse.
