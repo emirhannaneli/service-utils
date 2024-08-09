@@ -38,8 +38,14 @@ interface LJPAProjection<T> {
      * @return a page of entities matching the specification.
      */
     fun <T> findAll(spec: BaseSpec<T>, clazz: Class<T>): Page<T> {
-        val query = projection(spec, clazz) ?: return PageImpl(emptyList(), spec.ofPageable(), 0L)
-        val result = manager().createQuery(query).resultList.map { tuple ->
+        val projection = projection(spec, clazz) ?: return PageImpl(emptyList(), spec.ofPageable(), 0L)
+        val query = manager().createQuery(projection)
+
+        val pageable = spec.ofPageable()
+        query.firstResult = pageable.pageNumber * pageable.pageSize
+        query.maxResults = pageable.pageSize
+
+        val result = query.resultList.map { tuple ->
             val entity = clazz.getDeclaredConstructor().newInstance()
             val fields = FieldUtils.getAllFields(clazz)
             fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
@@ -65,8 +71,9 @@ interface LJPAProjection<T> {
         val root = query.from(clazz)
         val fields = spec.fields?.map { it }?.toMutableSet() ?: clazz.declaredFields.map { it.name }.toMutableSet()
         fields.addAll(listOf("pk", "sk", "updatedAt", "createdAt"))
+        val search = spec.ofSearch().toPredicate(root, query, builder)
         query.multiselect(fields.map { root.get<Any>(it).alias(it) })
-            .where(spec.ofSearch().toPredicate(root, query, builder))
+            .where(search)
         return query
     }
 
@@ -80,8 +87,11 @@ interface LJPAProjection<T> {
     private fun <T> count(spec: BaseSpec<T>, clazz: Class<T>): CriteriaQuery<Long> {
         val builder = manager().criteriaBuilder
         val query = builder.createQuery(Long::class.java)
-        query.select(builder.count(query.from(clazz)))
-            .where(spec.ofSearch().toPredicate(query.from(clazz), query, builder))
+        val root = query.from(clazz)
+        val search = spec.ofSearch().toPredicate(root, query, builder)
+        query.select(builder.count(root))
+            .where(search)
+        query.orderBy()
         return query
     }
 
