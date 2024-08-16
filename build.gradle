@@ -4,19 +4,19 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.16.5'
+version = '1.16.7'
 
 var snakeYamlVersion = "2.2"
 var auth0JwtVersion = "4.4.0"
 var jodaTimeVersion = "2.12.7"
 var aspectjVersion = "1.9.22"
-var googleApiClientVersion = "2.4.1"
-var reactorCoreVersion = "3.6.5"
-var jacksonCoreVersion = "2.17.0"
-var springBootVersion = "3.2.5"
-var jakartaValidationVersion = "3.0.2"
-var jakartaPersistenceVersion = "3.1.0"
-var commonsLangVersion = "3.15.0"
+var googleApiClientVersion = "2.6.0"
+var reactorCoreVersion = "3.6.9"
+var jacksonCoreVersion = "2.17.2"
+var springBootVersion = "3.3.2"
+var jakartaValidationVersion = "3.1.0"
+var jakartaPersistenceVersion = "3.2.0"
+var commonsLangVersion = "3.16.0"
 
 repositories {
     mavenCentral()

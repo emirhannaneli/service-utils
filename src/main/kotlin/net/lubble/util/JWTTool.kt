@@ -9,22 +9,19 @@ import java.time.Instant
 /**
  * JWTTool is a utility class for generating, verifying, and decoding JWT tokens.
  *
- * @param secret The secret key used to sign and verify JWT tokens.
+ * @param algorithm The algorithm used to sign and verify the JWT tokens.
  * @param issuer The issuer of the JWT tokens.
  * @param expiration The expiration time of the JWT tokens in milliseconds.
  * @param audience The audience of the JWT tokens.
  * @constructor Creates a new JWTTool with the specified secret, issuer, expiration, and audience.
  */
 class JWTTool(
-    private val secret: String,
+    private val algorithm: Algorithm,
     private var issuer: String,
     private var expiration: Long,
     private var audience: Array<String>,
 ) {
-    private val algorithm: Algorithm
-        get() = Algorithm.HMAC256(secret)
-
-    constructor(secret: String) : this(secret, "", 0, emptyArray())
+    constructor(secret: String) : this(Algorithm.HMAC512(secret), "lubble", 0, arrayOf())
 
     /**
      * Generates a JWT with the specified subject and claims.
