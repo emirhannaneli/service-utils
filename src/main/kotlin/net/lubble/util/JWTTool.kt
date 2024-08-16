@@ -21,7 +21,9 @@ class JWTTool(
     private var expiration: Long,
     private var audience: Array<String>,
 ) {
-    constructor(secret: String) : this(Algorithm.HMAC512(secret), "lubble", 0, arrayOf())
+    constructor(secret: String) : this(Algorithm.HMAC512(secret), "", 0, arrayOf())
+
+    constructor(algorithm: Algorithm) : this(algorithm, "", 0, arrayOf())
 
     /**
      * Generates a JWT with the specified subject and claims.
