@@ -111,14 +111,14 @@ class JWTTool(
      * @param token The JWT to decode.
      * @return A map of the claims in the JWT.
      */
-    fun decode(token: String): Map<String, Any?> {
+    fun decode(token: String): Map<String, String> {
         return JWT.require(algorithm)
             .withIssuer(issuer)
             .withAudience(*audience)
             .build()
             .verify(token)
             .claims
-            .mapValues { it.value }
+            .mapValues { it.value.toString() }
     }
 
     /**
@@ -128,13 +128,13 @@ class JWTTool(
      * @param key The key of the claim to return.
      * @return The value of the claim, or an empty string if the claim is not present.
      */
-    fun decode(token: String, key: String): Any? {
+    fun decode(token: String, key: String): String {
         return JWT.require(algorithm)
             .withIssuer(issuer)
             .withAudience(*audience)
             .build()
             .verify(token)
-            .claims[key]
+            .claims[key].toString()
     }
 
     /**
@@ -180,10 +180,10 @@ class JWTTool(
          * @param token The JWT to decode.
          * @return A map of the claims in the JWT.
          */
-        fun decode(token: String): Map<String, Any?> {
+        fun decode(token: String): Map<String, String> {
             return JWT.decode(token)
                 .claims
-                .mapValues { it.value }
+                .mapValues { it.value.toString() }
         }
 
         /**
@@ -193,9 +193,9 @@ class JWTTool(
          * @param key The key of the claim to return.
          * @return The value of the claim, or an empty string if the claim is not present.
          */
-        fun decode(token: String, key: String): Any? {
+        fun decode(token: String, key: String): String {
             return JWT.decode(token)
-                .claims[key]
+                .claims[key].toString()
         }
 
         /**
