@@ -2,9 +2,11 @@ package net.lubble.util
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.interfaces.Claim
 import org.joda.time.DateTime
 import java.time.Duration
 import java.time.Instant
+import java.util.*
 
 /**
  * JWTTool is a utility class for generating, verifying, and decoding JWT tokens.
@@ -26,26 +28,6 @@ class JWTTool(
     constructor(algorithm: Algorithm) : this(algorithm, "", 0, arrayOf())
 
     /**
-     * Generates a JWT with the specified subject and claims.
-     *
-     * @param subject The subject of the JWT.
-     * @param claims A map of claims to include in the JWT.
-     * @return The generated JWT.
-     */
-    fun generate(subject: String, claims: Map<String, String>): String {
-        val iat = Instant.now()
-        val eat = iat.plusMillis(expiration)
-        val jwt = JWT.create()
-            .withSubject(subject)
-            .withIssuer(issuer)
-            .withAudience(*audience)
-            .withIssuedAt(iat)
-            .withExpiresAt(eat)
-        claims.forEach { (key, value) -> jwt.withClaim(key, value) }
-        return jwt.sign(algorithm)
-    }
-
-    /**
      * Generates a JWT with the specified subject, expiration time, and claims.
      *
      * @param subject The subject of the JWT.
@@ -53,7 +35,8 @@ class JWTTool(
      * @param claims A map of claims to include in the JWT.
      * @return The generated JWT.
      */
-    fun generate(subject: String, expiration: Long, claims: Map<String, String>): String {
+    @Suppress("UNCHECKED_CAST")
+    fun generate(subject: String, expiration: Long, claims: Map<String, Any>): String {
         val iat = Instant.now()
         val eat = iat.plusMillis(expiration)
         val jwt = JWT.create()
@@ -62,8 +45,30 @@ class JWTTool(
             .withAudience(*audience)
             .withIssuedAt(iat)
             .withExpiresAt(eat)
-        claims.forEach { (key, value) -> jwt.withClaim(key, value) }
+        claims.forEach { (key, value) ->
+            when (value) {
+                is String -> jwt.withClaim(key, value)
+                is Int -> jwt.withClaim(key, value)
+                is Long -> jwt.withClaim(key, value)
+                is Double -> jwt.withClaim(key, value)
+                is Boolean -> jwt.withClaim(key, value)
+                is Date -> jwt.withClaim(key, value)
+                is Collection<*> -> jwt.withClaim(key, value.toMutableList())
+                is Map<*, *> -> jwt.withClaim(key, value as Map<String, Any>)
+            }
+        }
         return jwt.sign(algorithm)
+    }
+
+    /**
+     * Generates a JWT with the specified subject and claims.
+     *
+     * @param subject The subject of the JWT.
+     * @param claims A map of claims to include in the JWT.
+     * @return The generated JWT.
+     */
+    fun generate(subject: String, claims: Map<String, Any>): String {
+        return generate(subject, expiration, claims)
     }
 
     /**
@@ -111,14 +116,14 @@ class JWTTool(
      * @param token The JWT to decode.
      * @return A map of the claims in the JWT.
      */
-    fun decode(token: String): Map<String, String> {
+    fun decode(token: String): Map<String, Claim> {
         return JWT.require(algorithm)
             .withIssuer(issuer)
             .withAudience(*audience)
             .build()
             .verify(token)
             .claims
-            .mapValues { it.value.toString() }
+            .mapValues { it.value }
     }
 
     /**
@@ -128,13 +133,13 @@ class JWTTool(
      * @param key The key of the claim to return.
      * @return The value of the claim, or an empty string if the claim is not present.
      */
-    fun decode(token: String, key: String): String {
+    fun decode(token: String, key: String): Claim? {
         return JWT.require(algorithm)
             .withIssuer(issuer)
             .withAudience(*audience)
             .build()
             .verify(token)
-            .claims[key].toString()
+            .claims[key]
     }
 
     /**
@@ -180,10 +185,10 @@ class JWTTool(
          * @param token The JWT to decode.
          * @return A map of the claims in the JWT.
          */
-        fun decode(token: String): Map<String, String> {
+        fun decode(token: String): Map<String, Claim> {
             return JWT.decode(token)
                 .claims
-                .mapValues { it.value.toString() }
+                .mapValues { it.value }
         }
 
         /**
@@ -193,9 +198,9 @@ class JWTTool(
          * @param key The key of the claim to return.
          * @return The value of the claim, or an empty string if the claim is not present.
          */
-        fun decode(token: String, key: String): String {
+        fun decode(token: String, key: String): Claim? {
             return JWT.decode(token)
-                .claims[key].toString()
+                .claims[key]
         }
 
         /**

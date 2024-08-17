@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.16.12'
+version = '1.16.15'
 
 var snakeYamlVersion = "2.2"
 var auth0JwtVersion = "4.4.0"
@@ -23,12 +23,12 @@ repositories {
 }
 
 dependencies {
-    implementation "org.yaml:snakeyaml:$snakeYamlVersion"
-    implementation "com.auth0:java-jwt:$auth0JwtVersion"
-    implementation "joda-time:joda-time:$jodaTimeVersion"
-    implementation "org.aspectj:aspectjrt:$aspectjVersion"
-    implementation "org.aspectj:aspectjweaver:$aspectjVersion"
-    implementation "com.google.api-client:google-api-client:$googleApiClientVersion"
+    api "org.yaml:snakeyaml:$snakeYamlVersion"
+    api "com.auth0:java-jwt:$auth0JwtVersion"
+    api "joda-time:joda-time:$jodaTimeVersion"
+    api "org.aspectj:aspectjrt:$aspectjVersion"
+    api "org.aspectj:aspectjweaver:$aspectjVersion"
+    api "com.google.api-client:google-api-client:$googleApiClientVersion"
     compileOnly "io.projectreactor:reactor-core:$reactorCoreVersion"
     compileOnly "com.fasterxml.jackson.core:jackson-core:$jacksonCoreVersion"
     compileOnly "org.springframework.boot:spring-boot-starter-data-mongodb:$springBootVersion"
