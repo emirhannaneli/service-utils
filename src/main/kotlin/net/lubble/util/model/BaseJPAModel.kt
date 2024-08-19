@@ -23,15 +23,15 @@ open class BaseJPAModel(
     private var id: UUID = UUID.randomUUID(),
 
     @JvmField
-    @Column(name = "sk", unique = true, updatable = false, nullable = false)
-    var sk: LID = LID(),
-
-    @JvmField
     @Column(name = "pk", unique = true, nullable = false, updatable = false)
     var pk: Long = String.format(
         "%012d",
         abs(id.mostSignificantBits - (id.leastSignificantBits + System.currentTimeMillis())) % 1000000000000
     ).toLong(),
+
+    @JvmField
+    @Column(name = "sk", unique = true, updatable = false, nullable = false)
+    var sk: LID = LID(),
 
     @JvmField
     @Column(nullable = false)
@@ -51,11 +51,27 @@ open class BaseJPAModel(
 ) {
 
     /**
+     * Returns the id of the model.
+     * @return The id.
+     */
+    open fun getId(): UUID {
+        return id
+    }
+
+    /**
+     * Sets the id of the model.
+     * @param id The id to set.
+     */
+    open fun setId(id: UUID) {
+        this.id = id
+    }
+
+    /**
      * Returns the primary key of the model.
      * @return The primary key.
      */
-    open fun getPk(): UUID {
-        return id
+    open fun getPk(): Long {
+        return pk
     }
 
     /**
@@ -64,14 +80,6 @@ open class BaseJPAModel(
      */
     open fun getSk(): LID {
         return sk
-    }
-
-    /**
-     * Returns the id of the model.
-     * @return The id.
-     */
-    open fun getId(): Long {
-        return pk
     }
 
     /**
