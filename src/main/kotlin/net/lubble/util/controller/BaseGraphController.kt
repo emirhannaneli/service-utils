@@ -7,8 +7,6 @@ import net.lubble.util.GraphPageResponse
 import net.lubble.util.GraphResponse
 import org.springframework.data.domain.Page
 import org.springframework.graphql.data.method.annotation.Argument
-import org.springframework.graphql.data.method.annotation.MutationMapping
-import org.springframework.graphql.data.method.annotation.QueryMapping
 
 /**
  * Base interface for GraphQL controllers providing common CRUD operations.
@@ -25,7 +23,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param input The input data for creating the entity.
      * @return The created entity.
      */
-    @MutationMapping
     fun create(@Argument @Valid input: C): R
 
     /**
@@ -35,7 +32,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param env The data fetching environment.
      * @return The found entity.
      */
-    @QueryMapping
     fun findById(@Argument id: String, env: DataFetchingEnvironment): R
 
     /**
@@ -45,7 +41,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param env The data fetching environment.
      * @return A paginated response containing the entities.
      */
-    @QueryMapping
     fun findAll(@Argument @Valid options: P, env: DataFetchingEnvironment): GraphPageResponse
 
     /**
@@ -55,7 +50,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param input The input data for updating the entity.
      * @return The updated entity.
      */
-    @MutationMapping
     fun update(@Argument id: String, @Argument @Valid input: U): R
 
     /**
@@ -64,7 +58,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param id The ID of the entity to delete.
      * @return A response indicating the result of the deletion.
      */
-    @MutationMapping
     fun delete(@Argument id: String): GraphResponse
 
     /**
@@ -74,7 +67,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param env The data fetching environment.
      * @return A paginated response containing the archived entities.
      */
-    @QueryMapping
     fun findAllArchived(@Argument @Valid options: P, env: DataFetchingEnvironment): GraphPageResponse {
         throw UnsupportedOperationException()
     }
@@ -85,7 +77,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param id The ID of the entity to archive.
      * @return A response indicating the result of the archiving.
      */
-    @MutationMapping
     fun archive(@Argument id: String): GraphResponse {
         throw UnsupportedOperationException()
     }
@@ -96,7 +87,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param id The ID of the entity to unarchive.
      * @return A response indicating the result of the unarchiving.
      */
-    @MutationMapping
     fun unarchive(@Argument id: String): GraphResponse {
         throw UnsupportedOperationException()
     }
@@ -108,7 +98,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param env The data fetching environment.
      * @return A paginated response containing the entities in the recycle bin.
      */
-    @QueryMapping
     fun recycleBin(@Argument @Valid options: P, env: DataFetchingEnvironment): GraphPageResponse {
         throw UnsupportedOperationException()
     }
@@ -118,7 +107,6 @@ interface BaseGraphController<C, U, R, P> {
      *
      * @return A response indicating the result of clearing the recycle bin.
      */
-    @MutationMapping
     fun clearRecycleBin(): GraphResponse {
         throw UnsupportedOperationException()
     }
@@ -129,7 +117,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param id The ID of the entity to restore.
      * @return A response indicating the result of the restoration.
      */
-    @MutationMapping
     fun restore(@Argument id: String): GraphResponse {
         throw UnsupportedOperationException()
     }
@@ -140,7 +127,6 @@ interface BaseGraphController<C, U, R, P> {
      * @param id The ID of the entity to permanently delete.
      * @return A response indicating the result of the permanent deletion.
      */
-    @MutationMapping
     fun deletePermanently(@Argument id: String): GraphResponse {
         throw UnsupportedOperationException()
     }

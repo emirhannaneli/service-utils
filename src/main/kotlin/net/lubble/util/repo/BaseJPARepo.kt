@@ -1,6 +1,7 @@
 package net.lubble.util.repo
 
 import net.lubble.util.LJPAProjection
+import net.lubble.util.model.BaseJPAModel
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.repository.NoRepositoryBean
@@ -17,4 +18,4 @@ import java.util.*
  * @property JpaSpecificationExecutor<T> Interface to allow execution of Specifications based on the JPA criteria API.
  */
 @NoRepositoryBean
-interface BaseJPARepo<T> : JpaRepository<T, UUID>, JpaSpecificationExecutor<T>, LJPAProjection<T>
+interface BaseJPARepo<T : BaseJPAModel> : JpaRepository<T, UUID>, JpaSpecificationExecutor<T>, LJPAProjection<T>

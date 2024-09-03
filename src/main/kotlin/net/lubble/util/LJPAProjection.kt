@@ -3,7 +3,8 @@ package net.lubble.util
 import jakarta.persistence.EntityManager
 import jakarta.persistence.Tuple
 import jakarta.persistence.criteria.CriteriaQuery
-import net.lubble.util.spec.BaseSpec
+import net.lubble.util.model.BaseJPAModel
+import net.lubble.util.spec.BaseJPASpec
 import org.apache.commons.lang3.reflect.FieldUtils
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -15,7 +16,7 @@ import java.util.*
  * @param T the type of the entity.
  */
 @JvmDefaultWithCompatibility
-interface LJPAProjection<T> {
+interface LJPAProjection<T : BaseJPAModel> {
     /**
      * Finds a single entity matching the given specification.
      *
@@ -23,8 +24,7 @@ interface LJPAProjection<T> {
      * @param clazz the class of the entity.
      * @return an optional containing the entity if found, or empty if not found.
      */
-    @Suppress("UNCHECKED_CAST")
-    fun <T : Any> findOne(spec: BaseSpec<T>, clazz: Class<T>): Optional<T> {
+    fun findOne(spec: BaseJPASpec<T>, clazz: Class<T>): Optional<T> {
         val query = projection(spec, clazz) ?: return Optional.empty()
         val result = manager().createQuery(query).resultList
         if (result.isEmpty()) return Optional.empty()
@@ -45,7 +45,7 @@ interface LJPAProjection<T> {
      * @param clazz the class of the entity.
      * @return a page of entities matching the specification.
      */
-    fun <T> findAll(spec: BaseSpec<T>, clazz: Class<T>, pagination: Boolean = true): Page<T> {
+    fun findAll(spec: BaseJPASpec<T>, clazz: Class<T>, pagination: Boolean = true): Page<T> {
         val projection = projection(spec, clazz) ?: return PageImpl(emptyList(), spec.ofPageable(), 0L)
         val query = manager().createQuery(projection)
 
@@ -75,7 +75,7 @@ interface LJPAProjection<T> {
      * @param clazz the class of the entity.
      * @return a criteria query for the projection.
      */
-    private fun <T> projection(spec: BaseSpec<T>, clazz: Class<T>): CriteriaQuery<Tuple>? {
+    private fun projection(spec: BaseJPASpec<T>, clazz: Class<T>): CriteriaQuery<Tuple>? {
         val builder = manager().criteriaBuilder
         val query = builder.createTupleQuery()
         val root = query.from(clazz)
@@ -95,7 +95,7 @@ interface LJPAProjection<T> {
      * @param clazz the class of the entity.
      * @return a criteria query for counting the entities.
      */
-    private fun <T> count(spec: BaseSpec<T>, clazz: Class<T>): CriteriaQuery<Long> {
+    private fun count(spec: BaseJPASpec<T>, clazz: Class<T>): CriteriaQuery<Long> {
         val builder = manager().criteriaBuilder
         val query = builder.createQuery(Long::class.java)
         val root = query.from(clazz)
