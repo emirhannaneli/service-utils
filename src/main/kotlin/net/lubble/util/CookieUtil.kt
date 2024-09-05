@@ -90,8 +90,4 @@ class CookieUtil(private var response: HttpServletResponse) {
             response.addCookie(it)
         }
     }
-
-    fun setDomain(domain: String) {
-        this.domain = domain
-    }
 }
