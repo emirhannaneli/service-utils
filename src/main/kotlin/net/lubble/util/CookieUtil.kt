@@ -21,6 +21,9 @@ import java.util.*
 class CookieUtil(private var response: HttpServletResponse) {
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
+    var domain: String? = null
+    var sameSite: String = "None"
+
     /**
      * Logs a message indicating that the CookieUtil has been initialized.
      */
@@ -49,7 +52,8 @@ class CookieUtil(private var response: HttpServletResponse) {
         cookie.path = path
         cookie.secure = secure
         cookie.isHttpOnly = httpOnly
-        cookie.setAttribute("SameSite", "Strict")
+        domain?.let { cookie.domain = it }
+        cookie.setAttribute("SameSite", sameSite)
         cookie.setAttribute("Type", if (gzip) "gzip" else "plain")
         response.addCookie(cookie)
         return cookie
@@ -62,12 +66,13 @@ class CookieUtil(private var response: HttpServletResponse) {
      */
     fun clear(cookies: Array<String>) {
         val cleared = cookies.map { Cookie(it, null) }
-        cleared.forEach {
-            it.maxAge = 0
-            it.path = "/"
-            it.isHttpOnly = true
-            it.setAttribute("SameSite", "Strict")
-            response.addCookie(it)
+        cleared.forEach { cookie ->
+            cookie.maxAge = 0
+            cookie.path = "/"
+            cookie.isHttpOnly = true
+            domain?.let { cookie.domain = it }
+            cookie.setAttribute("SameSite", sameSite)
+            response.addCookie(cookie)
         }
     }
 
@@ -81,8 +86,12 @@ class CookieUtil(private var response: HttpServletResponse) {
             it.maxAge = 0
             it.path = "/"
             it.isHttpOnly = true
-            it.setAttribute("SameSite", "Strict")
+            it.setAttribute("SameSite", sameSite)
             response.addCookie(it)
         }
+    }
+
+    fun setDomain(domain: String) {
+        this.domain = domain
     }
 }
