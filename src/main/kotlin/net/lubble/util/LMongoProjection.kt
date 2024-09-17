@@ -51,6 +51,18 @@ interface LMongoProjection<T : BaseMongoModel> {
     }
 
     /**
+     * Checks if a document matching the given specification exists.
+     *
+     * @param spec the specification to search by
+     * @param clazz the class of the documents
+     * @return true if a document exists, false otherwise
+     */
+    fun exists(spec: BaseMongoSpec<T>, clazz: Class<T>): Boolean {
+        val query = spec.ofSearch()
+        return template().exists(query, clazz)
+    }
+
+    /**
      * Creates a projection query based on the given specification and class.
      *
      * @param spec the specification to search by

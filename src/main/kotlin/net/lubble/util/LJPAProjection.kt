@@ -34,7 +34,6 @@ interface LJPAProjection<T : BaseJPAModel> {
         fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
             field.isAccessible = true
             val value = tuple.get(field.name)
-            println("type: ${field.type}")
             field.set(entity, value)
         }
         return Optional.of(entity)
@@ -68,6 +67,18 @@ interface LJPAProjection<T : BaseJPAModel> {
         }
         val count = manager().createQuery(count(spec, clazz)).singleResult
         return PageImpl(result, spec.ofPageable(), count)
+    }
+
+    /**
+     * Checks if an entity matching the given specification exists.
+     *
+     * @param spec the specification to filter entities.
+     * @param clazz the class of the entity.
+     * @return true if an entity exists, false otherwise.
+     */
+    fun exists(spec: BaseJPASpec<T>, clazz: Class<T>): Boolean {
+        val query = count(spec, clazz)
+        return manager().createQuery(query).singleResult > 0
     }
 
     /**

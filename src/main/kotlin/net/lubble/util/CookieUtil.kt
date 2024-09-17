@@ -18,7 +18,7 @@ import java.util.*
  */
 @Component
 @ConditionalOnClass(Cookie::class)
-class CookieUtil(private var response: HttpServletResponse) {
+class CookieUtil(val response: HttpServletResponse) {
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
     var domain: String? = null
