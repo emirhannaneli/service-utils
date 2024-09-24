@@ -28,7 +28,7 @@ class AuthTool {
          * @return The credentials if the user is authenticated, null otherwise.
          */
         fun credentials(): String? {
-            if (isAnonymous()) return null;
+            if (isAnonymous()) return null
             return SecurityContextHolder.getContext().authentication.credentials as String
         }
 
@@ -51,7 +51,6 @@ class AuthTool {
         fun isAnonymous(): Boolean {
             return SecurityContextHolder.getContext().authentication == null
                     || SecurityContextHolder.getContext().authentication.principal == null
-                    || SecurityContextHolder.getContext().authentication.principal !is UserDetails
         }
 
         /**

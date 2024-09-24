@@ -1,8 +1,13 @@
 package net.lubble.util
 
 import jakarta.persistence.EntityManager
+import jakarta.persistence.ManyToMany
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Tuple
 import jakarta.persistence.criteria.CriteriaQuery
+import jakarta.persistence.criteria.JoinType
 import net.lubble.util.model.BaseJPAModel
 import net.lubble.util.spec.BaseJPASpec
 import org.apache.commons.lang3.reflect.FieldUtils
@@ -30,12 +35,7 @@ interface LJPAProjection<T : BaseJPAModel> {
         if (result.isEmpty()) return Optional.empty()
         val tuple = result[0]
         val entity = clazz.getDeclaredConstructor().newInstance()
-        val fields = FieldUtils.getAllFields(clazz)
-        fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
-            field.isAccessible = true
-            val value = tuple.get(field.name)
-            field.set(entity, value)
-        }
+        setFields(entity, tuple)
         return Optional.of(entity)
     }
 
@@ -56,15 +56,12 @@ interface LJPAProjection<T : BaseJPAModel> {
             query.maxResults = pageable.pageSize
         }
 
-        val result = query.resultList.map { tuple ->
-            val entity = clazz.getDeclaredConstructor().newInstance()
-            val fields = FieldUtils.getAllFields(clazz)
-            fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }.forEach { field ->
-                field.isAccessible = true
-                field.set(entity, tuple.get(field.name))
-            }
+        val entity = clazz.getDeclaredConstructor().newInstance()
+        val result = query.resultList
+            .map { tuple ->
+                setFields(entity, tuple)
             entity
-        }
+            }.distinctBy { it.getId() }
         val count = manager().createQuery(count(spec, clazz)).singleResult
         return PageImpl(result, spec.ofPageable(), count)
     }
@@ -92,12 +89,25 @@ interface LJPAProjection<T : BaseJPAModel> {
         val builder = manager().criteriaBuilder
         val query = builder.createTupleQuery()
         val root = query.from(clazz)
-        val fields = spec.fields?.map { it }?.toMutableSet() ?: clazz.declaredFields.map { it.name }.toMutableSet()
+        val fields = spec.fields?.map { it }?.toMutableSet() ?: FieldUtils.getAllFields(clazz).map { it.name }.toMutableSet()
         fields.addAll(listOf("id", "pk", "sk", "deleted", "archived", "updatedAt", "createdAt"))
         val search = spec.ofSearch().toPredicate(root, query, builder)
-        /*val tuple = builder.tuple(fields.map { root.get<Any>(it).alias(it) })
-        query.select(tuple).where(search)*/
-        query.multiselect(fields.map { root.get<Any>(it).alias(it) }).where(search)
+        query.multiselect(fields.map {
+            val declaredField = FieldUtils.getField(clazz, it, true)
+
+            if (declaredField.isAnnotationPresent(OneToMany::class.java) ||
+                declaredField.isAnnotationPresent(ManyToOne::class.java) ||
+                declaredField.isAnnotationPresent(OneToOne::class.java) ||
+                declaredField.isAnnotationPresent(ManyToMany::class.java)
+            ) {
+
+                val join = root.join<Any, Any>(it, JoinType.LEFT)
+                join.alias(it)
+
+            } else {
+                root.get<Any>(it).alias(it)
+            }
+        }).where(search)
         return query
     }
 
@@ -125,5 +135,24 @@ interface LJPAProjection<T : BaseJPAModel> {
      * @return the entity manager.
      */
     private fun manager(): EntityManager = AppContextUtil.bean(EntityManager::class.java)
+
+    @Suppress("UNCHECKED_CAST")
+    private fun setFields(entity: T, tuple: Tuple) {
+        val fields = FieldUtils.getAllFields(entity::class.java)
+        fields.filter { field -> field.name in tuple.elements.map { element -> element.alias } }
+            .forEach { field ->
+                field.isAccessible = true
+                val value = tuple.get(field.name)
+                if (Collection::class.java.isAssignableFrom(field.type)) {
+                    val collection = field.get(entity) as MutableCollection<Any>? ?: mutableListOf()
+                    if (value != null)
+                        collection.add(value)
+
+                    field.set(entity, collection)
+                } else {
+                    field.set(entity, value)
+                }
+            }
+    }
 }
 
