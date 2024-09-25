@@ -38,7 +38,7 @@ interface LMongoProjection<T : BaseMongoModel> {
      */
     fun findAll(spec: BaseMongoSpec<T>, clazz: Class<T>, pagination: Boolean = true): Page<T> {
         val query = projection(spec, clazz)
-        val pageable = spec.ofPageable()
+        val pageable = spec.ofSortedPageable()
 
         if (pagination) {
             query.skip(pageable.pageNumber * pageable.pageSize.toLong())

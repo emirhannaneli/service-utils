@@ -51,7 +51,7 @@ interface LJPAProjection<T : BaseJPAModel> {
         val query = manager().createQuery(projection)
 
         if (pagination) {
-            val pageable = spec.ofPageable()
+            val pageable = spec.ofSortedPageable()
             query.firstResult = pageable.pageNumber * pageable.pageSize
             query.maxResults = pageable.pageSize
         }
