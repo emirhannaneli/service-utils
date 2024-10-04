@@ -10,10 +10,10 @@ open class RequestLoggingConfig {
     @Bean
     open fun logFilter(): CommonsRequestLoggingFilter {
         val filter = CommonsRequestLoggingFilter()
-        filter.setIncludeQueryString(true)
-        filter.setIncludePayload(true)
+        filter.isIncludeQueryString = true
+        filter.isIncludePayload = true
         filter.setMaxPayloadLength(10000)
-        filter.setIncludeHeaders(true)
+        filter.isIncludeHeaders = true
         filter.setAfterMessagePrefix("payload: ")
         return filter
     }

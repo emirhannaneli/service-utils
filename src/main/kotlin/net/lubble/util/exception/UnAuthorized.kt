@@ -12,7 +12,7 @@ class UnAuthorized(private val reason: String?) : RuntimeException(), ExceptionM
     }
 
     override fun message(): String {
-        return "global.exception.unauthorized"
+        return source().getMessage("global.exception.unauthorized", null, locale())
     }
 
     override fun status(): HttpStatus {

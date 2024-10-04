@@ -25,10 +25,13 @@ import java.util.*
 class Response() {
     @JsonProperty("message")
     private lateinit var message: String
+
     @JsonProperty("status")
     private var status: HttpStatus = OK
+
     @JsonProperty("code")
     private var code: String? = null
+
     @JsonProperty("details")
     private var details: Any? = null
 
@@ -103,7 +106,7 @@ class Response() {
      * @param ex The ExceptionModel to construct the Response from.
      */
     constructor(ex: ExceptionModel) : this() {
-        this.message = source().getMessage(ex.message(), null, locale())
+        this.message = ex.message()
         this.status = ex.status()
         this.code = ex.code()
     }
@@ -114,7 +117,7 @@ class Response() {
      * @param details The additional details to include in the Response.
      */
     constructor(ex: ExceptionModel, details: Any) : this() {
-        this.message = source().getMessage(ex.message(), null, locale())
+        this.message = ex.message()
         this.status = ex.status()
         this.code = ex.code()
         this.details = details

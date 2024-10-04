@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus.UNAUTHORIZED
 
 class WrongCredentials: RuntimeException(), ExceptionModel {
     override fun message(): String {
-        return "global.exception.wrong.credentials"
+        return source().getMessage("global.exception.wrong.credentials", null, locale())
     }
 
     override fun status(): HttpStatus {

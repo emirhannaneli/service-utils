@@ -12,7 +12,7 @@ class AccessDenied(private val reason: String?) : RuntimeException(), ExceptionM
     }
 
     override fun message(): String {
-        return "global.exception.access.denied"
+        return source().getMessage("global.exception.access.denied", null, locale())
     }
 
     override fun status(): HttpStatus {
