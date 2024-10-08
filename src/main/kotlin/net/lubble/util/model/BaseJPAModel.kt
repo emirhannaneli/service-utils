@@ -1,14 +1,15 @@
 package net.lubble.util.model
 
 import jakarta.persistence.*
-import net.lubble.util.LID
+import net.lubble.util.LK
+import net.lubble.util.converter.LKToStringConverter
 import java.util.*
 import kotlin.math.abs
 
 /**
  * This is a base class for all JPA models. It provides common fields and methods that are used across different models.
  * @property id The primary key of the model. It is a UUID and is unique, not updatable, and not nullable.
- * @property sk The secondary key of the model. It is a LID and is unique, not updatable, and not nullable.
+ * @property sk The secondary key of the model. It is a LK and is unique, not updatable, and not nullable.
  * @property pk The id of the model. It is a Long and is unique, not updatable, and not nullable.
  * @property deleted A flag indicating whether the model is deleted. It is not nullable.
  * @property archived A flag indicating whether the model is archived. It is not nullable.
@@ -19,19 +20,20 @@ import kotlin.math.abs
 open class BaseJPAModel(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", unique = true, updatable = false, nullable = false)
+    @Column(name = "id", unique = true, updatable = false, nullable = false, length = 36)
     private var id: UUID = UUID.randomUUID(),
 
     @JvmField
-    @Column(name = "pk", unique = true, nullable = false, updatable = false)
+    @Column(name = "pk", unique = true, nullable = false, updatable = false, length = 12)
     var pk: Long = String.format(
         "%012d",
         abs(id.mostSignificantBits - (id.leastSignificantBits + System.currentTimeMillis())) % 1000000000000
     ).toLong(),
 
     @JvmField
-    @Column(name = "sk", unique = true, updatable = false, nullable = false)
-    var sk: LID = LID(),
+    @Convert(converter = LKToStringConverter::class)
+    @Column(name = "sk", unique = true, updatable = false, nullable = false, length = 11)
+    var sk: LK = LK(),
 
     @JvmField
     @Column(nullable = false)
@@ -78,7 +80,7 @@ open class BaseJPAModel(
      * Returns the secondary key of the model.
      * @return The secondary key.
      */
-    open fun getSk(): LID {
+    open fun getSk(): LK {
         return sk
     }
 
@@ -164,7 +166,7 @@ open class BaseJPAModel(
      * @return True if the model's id or sk matches the given id, false otherwise.
      */
     fun matchesId(id: String): Boolean {
-        val value = id.toLongOrNull() ?: LID.fromKey(id)
+        val value = id.toLongOrNull() ?: LK(id)
         return if (value is Long) {
             this.pk == value
         } else {

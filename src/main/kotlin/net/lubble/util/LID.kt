@@ -15,7 +15,9 @@ import java.util.*
  *
  * @property seed The seed string used to generate the unique identifier.
  */
-class LID(private var seed: String = Generator.password(numbers = true, upper = true, special = false, length = 5)) : Comparable<LID>, Serializable {
+@Deprecated("Not used anymore")
+class LID(private var seed: String = Generator.password(numbers = true, upper = true, special = false, length = 5)) : Comparable<LID>,
+    Serializable {
     private var value: String = "lb"
 
     private var randomInt1 = 0

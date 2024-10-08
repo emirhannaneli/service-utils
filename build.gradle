@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.17.12'
+version = '1.18.3'
 
 var snakeYamlVersion = "2.2"
 var auth0JwtVersion = "4.4.0"
@@ -17,6 +17,7 @@ var springBootVersion = "3.3.4"
 var jakartaValidationVersion = "3.1.0"
 var jakartaPersistenceVersion = "3.1.0"
 var commonsLangVersion = "3.16.0"
+var bounceCastleVersion = "1.78.1"
 
 repositories {
     mavenCentral()
@@ -29,6 +30,8 @@ dependencies {
     api "org.aspectj:aspectjrt:$aspectjVersion"
     api "org.aspectj:aspectjweaver:$aspectjVersion"
     api "com.google.api-client:google-api-client:$googleApiClientVersion"
+    api "org.bouncycastle:bcprov-jdk18on:$bounceCastleVersion"
+
     compileOnly "io.projectreactor:reactor-core:$reactorCoreVersion"
     compileOnly "com.fasterxml.jackson.core:jackson-core:$jacksonCoreVersion"
     compileOnly "org.springframework.boot:spring-boot-starter-data-mongodb:$springBootVersion"
@@ -53,7 +56,6 @@ kotlin {
 publishing {
     repositories {
         maven {
-            name = "Emirman"
             def releasesRepoUrl = "https://repo.emirman.dev/repository/maven-releases/"
             def snapshotsRepoUrl = "https://repo.emirman.dev/repository/maven-snapshots/"
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl

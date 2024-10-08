@@ -2,7 +2,7 @@ package net.lubble.util.spec
 
 import jakarta.persistence.Column
 import jakarta.persistence.criteria.*
-import net.lubble.util.LID
+import net.lubble.util.LK
 import net.lubble.util.model.BaseJPAModel
 import net.lubble.util.model.BaseMongoModel
 import net.lubble.util.model.ParameterModel
@@ -88,16 +88,14 @@ open class SpecTool(private val base: ParameterModel) {
                     if (fields.any { field ->
                             val columnValue = field.getAnnotation(Column::class.java)?.name
                             field.name == it || columnValue == it
-                        })
-                        query?.orderBy(builder.asc(root.get<Any>(it)))
+                        }) query?.orderBy(builder.asc(root.get<Any>(it)))
                 }
 
                 SortOrder.DESC -> params.sortBy?.let {
                     if (fields.any { field ->
                             val columnValue = field.getAnnotation(Column::class.java)?.name
                             field.name == it || columnValue == it
-                        })
-                        query?.orderBy(builder.desc(root.get<Any>(it)))
+                        }) query?.orderBy(builder.desc(root.get<Any>(it)))
                 }
             }
 
@@ -118,7 +116,7 @@ open class SpecTool(private val base: ParameterModel) {
             builder: CriteriaBuilder,
             id: String,
         ): Predicate {
-            val value = id.toLongOrNull() ?: LID.fromKey(id)
+            val value = id.toLongOrNull() ?: LK(id)
             val key = if (value is Long) IDType.PK else IDType.SK
             return if (key == IDType.PK) builder.and(predicate, builder.equal(root.get<Long>(key.name.lowercase()), value))
             else builder.and(predicate, builder.equal(root.get<String>(key.name.lowercase()), value))
@@ -133,7 +131,7 @@ open class SpecTool(private val base: ParameterModel) {
          * @param id The id of the entity.
          */
         fun <Z, X> idPredicate(predicate: Predicate, builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
-            val value = id.toLongOrNull() ?: LID.fromKey(id)
+            val value = id.toLongOrNull() ?: LK(id)
             val key = if (value is Long) IDType.PK else IDType.SK
             return if (key == IDType.PK) builder.and(predicate, builder.equal(join.get<Long>(key.name.lowercase()), value))
             else builder.and(predicate, builder.equal(join.get<String>(key.name.lowercase()), value))
@@ -147,7 +145,7 @@ open class SpecTool(private val base: ParameterModel) {
          * @param id The id of the entity.
          */
         fun <Z, X> idPredicate(builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
-            val value = id.toLongOrNull() ?: LID.fromKey(id)
+            val value = id.toLongOrNull() ?: LK(id)
             val key = if (value is Long) IDType.PK else IDType.SK
             return if (key == IDType.PK) builder.equal(join.get<Long>(key.name.lowercase()), value)
             else builder.equal(join.get<String>(key.name.lowercase()), value)
@@ -193,10 +191,7 @@ open class SpecTool(private val base: ParameterModel) {
             vararg fields: String,
             type: SearchType = SearchType.LIKE,
         ): Predicate {
-            val terms = search.split(" ")
-                .map { it.trim().lowercase() }
-                .filter { it.isNotEmpty() }
-                .map { term ->
+            val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
                     builder.or(
                         *fields.map { field ->
                             when (type) {
@@ -278,7 +273,7 @@ open class SpecTool(private val base: ParameterModel) {
          * @param id The id of the entity.
          */
         fun idQuery(query: Query, id: String): Query {
-            val value = id.toLongOrNull() ?: LID.fromKey(id)
+            val value = id.toLongOrNull() ?: LK(id)
             val key = if (value is Long) IDType.PK else IDType.SK
             return when (key) {
                 IDType.PK -> query.addCriteria(Criteria.where(key.name.lowercase()).`is`(value))
@@ -316,10 +311,7 @@ open class SpecTool(private val base: ParameterModel) {
          * @param fields The fields to search for.
          */
         fun searchQuery(query: Query, search: String, vararg fields: String, type: SearchType = SearchType.LIKE): Query {
-            val terms = search.split(" ")
-                .map { it.trim().lowercase() }
-                .filter { it.isNotEmpty() }
-                .map { term ->
+            val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
                     Criteria().orOperator(
                         *fields.map {
                             when (type) {
@@ -340,14 +332,10 @@ open class SpecTool(private val base: ParameterModel) {
      * IDType enum class defines the types of ids.
      * */
     private enum class IDType {
-        PK,
-        SK
+        PK, SK
     }
 
     enum class SearchType {
-        EQUAL,
-        STARTS_WITH,
-        ENDS_WITH,
-        LIKE
+        EQUAL, STARTS_WITH, ENDS_WITH, LIKE
     }
 }

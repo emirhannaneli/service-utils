@@ -1,6 +1,10 @@
 package net.lubble.util.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import net.lubble.util.LK
+import net.lubble.util.converter.LKToStringConverter
 import java.util.*
 
 /**
@@ -24,7 +28,9 @@ open class RBase {
      * A secondary key for the DTO.
      */
     @JsonProperty(index = 1)
-    open var sk: String? = null
+    @JsonSerialize(using = LKToStringConverter.Serializer::class)
+    @JsonDeserialize(using = LKToStringConverter.Deserializer::class)
+    open var sk: LK? = null
 
     /**
      * The date and time when the DTO was last updated.

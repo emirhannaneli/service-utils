@@ -2,7 +2,7 @@ package net.lubble.util.model
 
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
-import net.lubble.util.LID
+import net.lubble.util.LK
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Field
@@ -13,7 +13,7 @@ import kotlin.math.abs
  * This is a base class for all MongoDB models. It provides common fields and methods that are used across different models.
  * @property id The ObjectId of the model. It is unique and is the primary key in MongoDB.
  * @property pk The primary key of the model. It is a Long and is unique.
- * @property sk The secondary key of the model. It is a LID and is unique.
+ * @property sk The secondary key of the model. It is a LK and is unique.
  * @property deleted A flag indicating whether the model is deleted.
  * @property archived A flag indicating whether the model is archived.
  * @property createdAt The date and time when the model was created.
@@ -33,7 +33,7 @@ open class BaseMongoModel(
 
     @Field("sk")
     @Indexed(unique = true)
-    var sk: LID = LID(),
+    var sk: LK = LK(),
 
     @Indexed
     var deleted: Boolean = false,
@@ -88,7 +88,7 @@ open class BaseMongoModel(
      */
     @Suppress("unused")
     fun matchesId(id: String): Boolean {
-        val value = id.toLongOrNull() ?: LID.fromKey(id)
+        val value = id.toLongOrNull() ?: LK(id)
         return if (value is Long) {
             value == this.pk
         } else {

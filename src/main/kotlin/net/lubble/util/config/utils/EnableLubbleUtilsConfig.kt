@@ -6,9 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import jakarta.annotation.PostConstruct
 import net.lubble.util.AppContextUtil
-import net.lubble.util.LID
-import net.lubble.util.converter.LIDToStringConverter
-import net.lubble.util.converter.StringToLIDConverter
+import net.lubble.util.LK
+import net.lubble.util.converter.LKToStringConverter
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -32,7 +31,7 @@ open class EnableLubbleUtilsConfig {
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
     @PostConstruct
-    fun init(){
+    fun init() {
         AppContextUtil.initialize(context)
     }
 
@@ -48,13 +47,9 @@ open class EnableLubbleUtilsConfig {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
 
-        val lidToStringConverter = LIDToStringConverter()
-        val stringToLIDConverter = StringToLIDConverter()
-        val lidModule = SimpleModule()
-        lidModule.addSerializer(LID::class.java, lidToStringConverter)
-        lidModule.addDeserializer(LID::class.java, stringToLIDConverter)
-
-        mapper.registerModule(lidModule)
+        val lkModule = SimpleModule()
+        lkModule.addSerializer(LK::class.java, LKToStringConverter.Serializer())
+        lkModule.addDeserializer(LK::class.java, LKToStringConverter.Deserializer())
 
         return mapper
     }
@@ -63,6 +58,7 @@ open class EnableLubbleUtilsConfig {
     open fun http(): HttpClient {
         return HttpClient.newHttpClient()
     }
+
 }
 
 private const val COMPONENT_SCAN = "net.lubble.util"
