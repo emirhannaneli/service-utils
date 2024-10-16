@@ -19,7 +19,7 @@ class AuthTool {
         @Suppress("UNCHECKED_CAST")
         fun <T> principal(): T? {
             if (isAnonymous()) return null
-            return SecurityContextHolder.getContext().authentication.principal as T
+            return runCatching { SecurityContextHolder.getContext().authentication.principal as T }.getOrNull()
         }
 
         /**
