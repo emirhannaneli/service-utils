@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.18.7'
+version = '1.18.8'
 
 var snakeYamlVersion = "2.2"
 var auth0JwtVersion = "4.4.0"

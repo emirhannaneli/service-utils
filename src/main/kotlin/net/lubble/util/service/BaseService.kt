@@ -31,7 +31,7 @@ interface BaseService<T, C, U, S> {
      * @param spec The specification to use when finding the entity.
      * @return The found entity.
      */
-    fun find(spec: S): T
+    fun find(spec: S): T?
 
     /**
      * Check if an entity exists by its specification.

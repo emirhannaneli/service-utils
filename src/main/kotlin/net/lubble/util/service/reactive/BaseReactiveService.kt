@@ -34,7 +34,7 @@ interface BaseReactiveService<T, C, U, S> {
      * @param spec The specification to use when finding the entity.
      * @return The found entity wrapped in a Mono.
      */
-    fun find(spec: S): Mono<T>
+    fun find(spec: S): Mono<T?>
 
     /**
      * Check if an entity exists by its specification.
