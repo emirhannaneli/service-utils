@@ -3,7 +3,7 @@ build.gradle.kt
 ```
 repositories {
     maven {
-        url = uri("https://repo.emirman.dev/repository/maven-public/")
+        url = uri("https://repo.emirman.dev")
     }
 }
 
