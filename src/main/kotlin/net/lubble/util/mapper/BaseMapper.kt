@@ -1,5 +1,7 @@
 package net.lubble.util.mapper
 
+import org.springframework.data.domain.Page
+
 /**
  * BaseMapper interface for mapping between DTOs and Entities.
  * @param T Entity
@@ -33,34 +35,38 @@ interface BaseMapper<T : Any, R, RB, U : Any> {
     @Suppress("UNCHECKED_CAST")
     private fun objectMap(source: Any, destination: Any) {
         source::class.java.declaredFields.forEach { sourceField ->
-            destination::class.java.declaredFields.firstOrNull { it.name == sourceField.name }?.let { destinationField ->
-                sourceField.isAccessible = true
-                destinationField.isAccessible = true
+            destination::class.java.declaredFields.firstOrNull { it.name == sourceField.name }
+                ?.let { destinationField ->
+                    sourceField.isAccessible = true
+                    destinationField.isAccessible = true
 
-                val sourceValue = sourceField.get(source)
-                val destinationValue = destinationField.get(destination)
+                    val sourceValue = sourceField.get(source)
+                    val destinationValue = destinationField.get(destination)
 
-                if (sourceValue != null && destinationValue != null) {
-                    if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(List::class.java)) {
-                        // If the field is a list
-                        val sourceList = sourceValue as List<*>
-                        val destinationList = destinationValue as MutableList<Any>
-                        destinationList.clear()
-                        destinationList.addAll(sourceList.filterNotNull().map { it })
-                    } else if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(Map::class.java)) {
-                        // If the field is a map
-                        val sourceMap = sourceValue as Map<Any, Any>
-                        val destinationMap = destinationValue as MutableMap<Any, Any>
-                        destinationMap.clear()
-                        destinationMap.putAll(sourceMap)
-                    } else if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(sourceValue::class.java)) {
-                        // If the field is another class
-                        objectMap(sourceValue, destinationValue)
-                    } else {
-                        destinationField.set(destination, sourceValue)
+                    if (sourceValue != null && destinationValue != null) {
+                        if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(List::class.java)) {
+                            // If the field is a list
+                            val sourceList = sourceValue as List<*>
+                            val destinationList = destinationValue as MutableList<Any>
+                            destinationList.clear()
+                            destinationList.addAll(sourceList.filterNotNull().map { it })
+                        } else if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(Map::class.java)) {
+                            // If the field is a map
+                            val sourceMap = sourceValue as Map<Any, Any>
+                            val destinationMap = destinationValue as MutableMap<Any, Any>
+                            destinationMap.clear()
+                            destinationMap.putAll(sourceMap)
+                        } else if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(
+                                sourceValue::class.java
+                            )
+                        ) {
+                            // If the field is another class
+                            objectMap(sourceValue, destinationValue)
+                        } else {
+                            destinationField.set(destination, sourceValue)
+                        }
                     }
                 }
-            }
         }
     }
 
@@ -92,6 +98,17 @@ interface BaseMapper<T : Any, R, RB, U : Any> {
     }
 
     /**
+     * Maps the properties of each object in the source page (of type T) to a new object of type R.
+     * Returns a list of these new objects.
+     *
+     * @param source The page of source objects to map from.
+     * @return The list of new objects of type R.
+     */
+    fun map(source: Page<T>): List<R> {
+        return source.content.map { map(it) }
+    }
+
+    /**
      * Maps the properties of each object in the source collection (of type T) to a new object of type RB.
      * Returns a list of these new objects.
      *
@@ -100,5 +117,16 @@ interface BaseMapper<T : Any, R, RB, U : Any> {
      */
     fun rbMap(source: Collection<T>): List<RB> {
         return source.map { rbMap(it) }
+    }
+
+    /**
+     * Maps the properties of each object in the source page (of type T) to a new object of type RB.
+     * Returns a list of these new objects.
+     *
+     * @param source The page of source objects to map from.
+     * @return The list of new objects of type RB.
+     */
+    fun rbMap(source: Page<T>): List<RB> {
+        return source.content.map { rbMap(it) }
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import jakarta.annotation.PostConstruct
 import net.lubble.util.AppContextUtil
 import net.lubble.util.LK
@@ -15,6 +16,8 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.*
 import org.springframework.context.event.EventListener
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler
 import java.net.http.HttpClient
 
 @Configuration
@@ -46,10 +49,13 @@ open class EnableLubbleUtilsConfig {
 
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
+        mapper.registerKotlinModule()
 
         val lkModule = SimpleModule()
         lkModule.addSerializer(LK::class.java, LKToStringConverter.Serializer())
         lkModule.addDeserializer(LK::class.java, LKToStringConverter.Deserializer())
+
+        mapper.registerModule(lkModule)
 
         return mapper
     }
@@ -57,6 +63,11 @@ open class EnableLubbleUtilsConfig {
     @Bean
     open fun http(): HttpClient {
         return HttpClient.newHttpClient()
+    }
+
+    @Bean
+    open fun methodSecurityExpressionHandler(): MethodSecurityExpressionHandler {
+        return DefaultMethodSecurityExpressionHandler()
     }
 
 }
