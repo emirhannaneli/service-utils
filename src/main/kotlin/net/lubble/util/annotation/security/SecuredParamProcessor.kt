@@ -34,7 +34,7 @@ class SecuredParamProcessor() {
             arg::class.java.declaredFields.forEach { field ->
                 field.isAccessible = true
 
-                val value = field.get(arg)
+                val value = field.get(arg) ?: return@forEach
                 context.setVariable(field.name, value)
 
                 val securedParam = field.getAnnotation(PreAuthorizeParam::class.java)
@@ -66,7 +66,7 @@ class SecuredParamProcessor() {
             arg::class.java.declaredFields.forEach { field ->
                 field.isAccessible = true
 
-                val value = field.get(arg)
+                val value = field.get(arg) ?: return@forEach
                 context.setVariable(field.name, value)
 
                 val securedParam = field.getAnnotation(PostAuthorizeParam::class.java)
