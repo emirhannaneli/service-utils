@@ -1,5 +1,6 @@
 package net.lubble.util.annotation.security
 
+import net.lubble.util.PageResponse
 import net.lubble.util.exception.AccessDenied
 import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation.AfterReturning
@@ -68,7 +69,11 @@ class SecuredParamProcessor() {
 
         if (result is ResponseEntity<*>) {
             result.body?.let { body ->
-                sanitizeFields(body, context, parser)
+                if (body is PageResponse)
+                    body.items.forEach { item ->
+                        item?.let { sanitizeFields(it, context, parser) }
+                    }
+                else sanitizeFields(body, context, parser)
             }
         } else {
             sanitizeFields(result, context, parser)
@@ -86,7 +91,7 @@ class SecuredParamProcessor() {
         val fields = obj::class.java.declaredFields
 
         fields.forEach { field ->
-            field.isAccessible = true
+            runCatching { field.isAccessible = true }.onFailure { return@forEach }
 
             val value = field.get(obj) ?: return@forEach
 
@@ -118,10 +123,11 @@ class SecuredParamProcessor() {
         when (field.type) {
             String::class.java -> {
                 val str = value as String
-                var censored = str.replace(Regex("[^a-zA-Z0-9_\\.]"), "*")
+                var censored = str.replace(Regex("[a-zA-Z0-9]"), "*")
                 if (str.length > 3) censored = str.substring(0, 3) + censored.substring(3)
                 field.set(obj, censored)
             }
+
             List::class.java -> field.set(obj, emptyList<Any>())
             Map::class.java -> field.set(obj, emptyMap<Any, Any>())
             else -> field.set(obj, null)

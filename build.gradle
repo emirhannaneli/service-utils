@@ -1,10 +1,10 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.9.25'
+    id 'org.jetbrains.kotlin.jvm' version '2.0.21'
     id 'maven-publish'
 }
 
 group = 'net.lubble'
-version = '1.18.13'
+version = '1.18.15'
 
 var snakeYamlVersion = "2.3"
 var auth0JwtVersion = "4.4.0"
