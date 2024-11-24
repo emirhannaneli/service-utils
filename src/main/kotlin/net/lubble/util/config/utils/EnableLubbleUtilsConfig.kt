@@ -65,11 +65,6 @@ open class EnableLubbleUtilsConfig {
         return HttpClient.newHttpClient()
     }
 
-    @Bean
-    open fun methodSecurityExpressionHandler(): MethodSecurityExpressionHandler {
-        return DefaultMethodSecurityExpressionHandler()
-    }
-
 }
 
 private const val COMPONENT_SCAN = "net.lubble.util"
