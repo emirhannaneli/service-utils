@@ -10,7 +10,8 @@ import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.repository.NoRepositoryBean
 import java.util.*
 
-class BaseRepo {
+@NoRepositoryBean
+abstract class BaseRepo {
     @NoRepositoryBean
     interface Mongo<T : BaseModel> : MongoRepository<T, ObjectId>, LMongoProjection<T>
 
