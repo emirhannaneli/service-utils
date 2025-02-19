@@ -66,7 +66,7 @@ open class SpecTool(private val base: ParameterModel) {
             root: Root<T>,
             query: CriteriaQuery<*>?,
             builder: CriteriaBuilder,
-            params: BaseJPAModel.SearchParams,
+            params: ParameterModel,
         ): Predicate {
             var predicate = builder.conjunction()
 
@@ -237,7 +237,7 @@ open class SpecTool(private val base: ParameterModel) {
          *
          */
         fun defaultQuery(
-            params: BaseMongoModel.SearchParams
+            params: ParameterModel
         ): Query {
             val query = Query()
 
