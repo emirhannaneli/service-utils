@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import jakarta.annotation.PostConstruct
+import jakarta.persistence.EntityListeners
 import net.lubble.util.AppContextUtil
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
@@ -16,14 +17,17 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.*
 import org.springframework.context.event.EventListener
-import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler
-import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing
+import org.springframework.data.mongodb.config.EnableMongoAuditing
 import java.net.http.HttpClient
 
 @Configuration
 @ComponentScans(
     ComponentScan(COMPONENT_SCAN),
 )
+@EnableJpaAuditing
+@EnableMongoAuditing
 @EnableAspectJAutoProxy
 @ConfigurationPropertiesScan(CONFIGURATION_PROPERTIES_SCAN)
 open class EnableLubbleUtilsConfig {

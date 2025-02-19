@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
+import net.lubble.util.model.BaseModel
+import java.time.Instant
 import java.util.*
 
 /**
@@ -36,11 +38,11 @@ open class RBase {
      * The date and time when the DTO was last updated.
      */
     @JsonProperty(index = Int.MAX_VALUE - 1)
-    open var updatedAt: Date? = null
+    open var updatedAt: Instant? = null
 
     /**
      * The date and time when the DTO was created.
      */
     @JsonProperty(index = Int.MAX_VALUE)
-    open var createdAt: Date? = null
+    open var createdAt: Instant? = null
 }

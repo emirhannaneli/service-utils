@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.18.16'
+version = '1.18.17'
 
 var snakeYamlVersion = "2.3"
 var auth0JwtVersion = "4.4.0"
@@ -13,11 +13,12 @@ var aspectjVersion = "1.9.22.1"
 var googleApiClientVersion = "2.7.0"
 var reactorCoreVersion = "3.7.0"
 var jacksonCoreVersion = "2.18.1"
-var springBootVersion = "3.3.5"
+var springBootVersion = "3.4.2"
 var jakartaValidationVersion = "3.1.0"
 var jakartaPersistenceVersion = "3.1.0"
 var commonsLangVersion = "3.17.0"
 var bounceCastleVersion = "1.79"
+var ulidVersion = "8.3.0"
 
 repositories {
     mavenCentral()
@@ -32,6 +33,8 @@ dependencies {
     api "com.google.api-client:google-api-client:$googleApiClientVersion"
     api "org.bouncycastle:bcprov-jdk18on:$bounceCastleVersion"
     api "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonCoreVersion"
+    api "de.huxhorn.sulky:de.huxhorn.sulky.ulid:$ulidVersion"
+
 
     compileOnly "io.projectreactor:reactor-core:$reactorCoreVersion"
     compileOnly "com.fasterxml.jackson.core:jackson-core:$jacksonCoreVersion"

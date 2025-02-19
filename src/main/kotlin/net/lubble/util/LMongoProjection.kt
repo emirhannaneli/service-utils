@@ -1,7 +1,7 @@
 package net.lubble.util
 
 import net.lubble.util.model.BaseMongoModel
-import net.lubble.util.spec.BaseMongoSpec
+import net.lubble.util.spec.BaseSpec
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -22,7 +22,7 @@ interface LMongoProjection<T : BaseMongoModel> {
      * @param clazz the class of the document
      * @return an Optional containing the found document, or empty if not found
      */
-    fun findOne(spec: BaseMongoSpec<T>, clazz: Class<T>): Optional<T> {
+    fun findOne(spec: BaseSpec.Mongo<T>, clazz: Class<T>): Optional<T> {
         val query = projection(spec, clazz)
         val result = template().findOne(query, clazz)
         return Optional.ofNullable(result)
@@ -36,7 +36,7 @@ interface LMongoProjection<T : BaseMongoModel> {
      * @param pagination whether to apply pagination (default is true)
      * @return a Page containing the found documents
      */
-    fun findAll(spec: BaseMongoSpec<T>, clazz: Class<T>, pagination: Boolean = true): Page<T> {
+    fun findAll(spec: BaseSpec.Mongo<T>, clazz: Class<T>, pagination: Boolean = true): Page<T> {
         val query = projection(spec, clazz)
         val pageable = spec.ofSortedPageable()
 
@@ -57,7 +57,7 @@ interface LMongoProjection<T : BaseMongoModel> {
      * @param clazz the class of the documents
      * @return true if a document exists, false otherwise
      */
-    fun exists(spec: BaseMongoSpec<T>, clazz: Class<T>): Boolean {
+    fun exists(spec: BaseSpec.Mongo<T>, clazz: Class<T>): Boolean {
         val query = spec.ofSearch()
         return template().exists(query, clazz)
     }
@@ -69,7 +69,7 @@ interface LMongoProjection<T : BaseMongoModel> {
      * @param clazz the class of the documents
      * @return a Query object with the projection applied
      */
-    fun projection(spec: BaseMongoSpec<T>, clazz: Class<T>): Query {
+    fun projection(spec: BaseSpec.Mongo<T>, clazz: Class<T>): Query {
         val query = spec.ofSearch()
         val excludeFields = clazz.declaredFields.map { it.name }.toMutableSet()
         val includeFields = spec.fields?.map { it }?.toMutableSet() ?: clazz.declaredFields.map { it.name }.toMutableSet()
@@ -95,7 +95,7 @@ interface LMongoProjection<T : BaseMongoModel> {
      * @param clazz the class of the documents
      * @return the count of matching documents
      */
-    fun count(spec: BaseMongoSpec<T>, clazz: Class<T>): Long {
+    fun count(spec: BaseSpec.Mongo<T>, clazz: Class<T>): Long {
         val query = spec.ofSearch()
         return template().count(query, clazz)
     }
