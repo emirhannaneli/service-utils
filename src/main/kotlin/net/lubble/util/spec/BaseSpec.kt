@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.introspect.Annotated
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector
 import net.lubble.util.AppContextUtil
 import net.lubble.util.model.BaseJPAModel
+import net.lubble.util.model.BaseModel
 import net.lubble.util.model.BaseMongoModel
 import net.lubble.util.model.ParameterModel
 import java.util.*
@@ -19,7 +20,7 @@ class BaseSpec {
      * @param params the parameters for the specification
      * @param fields the fields to projection
      */
-    abstract class JPA<T : BaseJPAModel>(params: ParameterModel, val fields: Collection<String>? = null) : SpecTool(params),
+    abstract class JPA<T : BaseModel>(params: ParameterModel, val fields: Collection<String>? = null) : SpecTool(params),
         SpecTool.JPAModel<T> {
         fun toKey(): String {
             val mapper = AppContextUtil.bean(ObjectMapper::class.java).apply {
@@ -41,7 +42,7 @@ class BaseSpec {
      * @param params the parameters for the specification
      * @param fields the fields to projection
      */
-    abstract class Mongo<T : BaseMongoModel>(params: ParameterModel, val fields: Collection<String>? = null) : SpecTool(params),
+    abstract class Mongo<T : BaseModel>(params: ParameterModel, val fields: Collection<String>? = null) : SpecTool(params),
         SpecTool.MongoModel<T> {
         fun toKey(): String {
             val mapper = AppContextUtil.bean(ObjectMapper::class.java).apply {

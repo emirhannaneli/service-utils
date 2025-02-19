@@ -1,5 +1,6 @@
 package net.lubble.util
 
+import net.lubble.util.model.BaseModel
 import net.lubble.util.model.BaseMongoModel
 import net.lubble.util.spec.BaseSpec
 import org.springframework.data.domain.Page
@@ -13,7 +14,7 @@ import java.util.*
  *
  * @param T the type of the model extending BaseMongoModel
  */
-interface LMongoProjection<T : BaseMongoModel> {
+interface LMongoProjection<T : BaseModel> {
 
     /**
      * Finds a single document matching the given specification.

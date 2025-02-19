@@ -1,14 +1,9 @@
 package net.lubble.util
 
-import jakarta.persistence.EntityManager
-import jakarta.persistence.ManyToMany
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
-import jakarta.persistence.OneToOne
-import jakarta.persistence.Tuple
+import jakarta.persistence.*
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
-import net.lubble.util.model.BaseJPAModel
+import net.lubble.util.model.BaseModel
 import net.lubble.util.spec.BaseSpec
 import org.apache.commons.lang3.reflect.FieldUtils
 import org.springframework.data.domain.Page
@@ -21,7 +16,7 @@ import java.util.*
  * @param T the type of the entity.
  */
 @JvmDefaultWithCompatibility
-interface LJPAProjection<T : BaseJPAModel> {
+interface LJPAProjection<T : BaseModel> {
     /**
      * Finds a single entity matching the given specification.
      *
@@ -60,7 +55,7 @@ interface LJPAProjection<T : BaseJPAModel> {
         val result = query.resultList
             .map { tuple ->
                 setFields(entity, tuple)
-            entity
+                entity
             }.distinctBy { it.getId() }
         val count = manager().createQuery(count(spec, clazz)).singleResult
         return PageImpl(result, spec.ofPageable(), count)
@@ -89,7 +84,8 @@ interface LJPAProjection<T : BaseJPAModel> {
         val builder = manager().criteriaBuilder
         val query = builder.createTupleQuery()
         val root = query.from(clazz)
-        val fields = spec.fields?.map { it }?.toMutableSet() ?: FieldUtils.getAllFields(clazz).map { it.name }.toMutableSet()
+        val fields =
+            spec.fields?.map { it }?.toMutableSet() ?: FieldUtils.getAllFields(clazz).map { it.name }.toMutableSet()
         fields.addAll(listOf("id", "pk", "sk", "deleted", "archived", "updatedAt", "createdAt"))
         val search = spec.ofSearch().toPredicate(root, query, builder)
         query.multiselect(fields.map {
