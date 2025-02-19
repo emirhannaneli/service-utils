@@ -6,18 +6,21 @@ import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation.AfterReturning
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Before
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.web.SecurityFilterChain
 import org.springframework.stereotype.Component
 import java.lang.reflect.Field
 
 @Aspect
 @Component
-class SecuredParamProcessor() {
+@ConditionalOnClass(SecurityFilterChain::class)
+class SecuredParamProcessor {
 
     /**
      * Pre-authorize parameters before the execution of the target method.
