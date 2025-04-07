@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import jakarta.annotation.PostConstruct
 import jakarta.persistence.EntityListeners
@@ -54,6 +55,7 @@ open class EnableLubbleUtilsConfig {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
         mapper.registerKotlinModule()
+        mapper.registerModule(JavaTimeModule())
 
         val lkModule = SimpleModule()
         lkModule.addSerializer(LK::class.java, LKToStringConverter.Serializer())
