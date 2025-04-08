@@ -1,23 +1,23 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '2.0.21'
+    id 'org.jetbrains.kotlin.jvm' version '2.1.20'
     id 'maven-publish'
 }
 
 group = 'net.lubble'
 version = '1.19.2'
 
-var snakeYamlVersion = "2.3"
-var auth0JwtVersion = "4.4.0"
-var jodaTimeVersion = "2.13.0"
-var aspectjVersion = "1.9.22.1"
-var googleApiClientVersion = "2.7.0"
-var reactorCoreVersion = "3.7.0"
-var jacksonCoreVersion = "2.18.1"
-var springBootVersion = "3.4.2"
-var jakartaValidationVersion = "3.1.0"
-var jakartaPersistenceVersion = "3.1.0"
+var snakeYamlVersion = "2.4"
+var auth0JwtVersion = "4.5.0"
+var jodaTimeVersion = "2.14.0"
+var aspectjVersion = "1.9.23"
+var googleApiClientVersion = "2.7.2"
+var reactorCoreVersion = "3.7.4"
+var jacksonCoreVersion = "2.18.3"
+var springBootVersion = "3.4.4"
+var jakartaValidationVersion = "3.1.1"
+var jakartaPersistenceVersion = "3.2.0"
 var commonsLangVersion = "3.17.0"
-var bounceCastleVersion = "1.79"
+var bounceCastleVersion = "1.80"
 var ulidVersion = "8.3.0"
 
 repositories {
