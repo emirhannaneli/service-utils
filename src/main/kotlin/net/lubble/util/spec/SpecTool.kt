@@ -3,8 +3,6 @@ package net.lubble.util.spec
 import jakarta.persistence.Column
 import jakarta.persistence.criteria.*
 import net.lubble.util.LK
-import net.lubble.util.model.BaseJPAModel
-import net.lubble.util.model.BaseMongoModel
 import net.lubble.util.model.ParameterModel
 import net.lubble.util.model.SortOrder
 import org.springframework.data.domain.Pageable
@@ -118,7 +116,10 @@ open class SpecTool(private val base: ParameterModel) {
         ): Predicate {
             val value = id.toLongOrNull() ?: LK(id)
             val key = if (value is Long) IDType.PK else IDType.SK
-            return if (key == IDType.PK) builder.and(predicate, builder.equal(root.get<Long>(key.name.lowercase()), value))
+            return if (key == IDType.PK) builder.and(
+                predicate,
+                builder.equal(root.get<Long>(key.name.lowercase()), value)
+            )
             else builder.and(predicate, builder.equal(root.get<String>(key.name.lowercase()), value))
         }
 
@@ -130,10 +131,18 @@ open class SpecTool(private val base: ParameterModel) {
          * @param join The join type.
          * @param id The id of the entity.
          */
-        fun <Z, X> idPredicate(predicate: Predicate, builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
+        fun <Z, X> idPredicate(
+            predicate: Predicate,
+            builder: CriteriaBuilder,
+            join: Join<Z, X>,
+            id: String
+        ): Predicate {
             val value = id.toLongOrNull() ?: LK(id)
             val key = if (value is Long) IDType.PK else IDType.SK
-            return if (key == IDType.PK) builder.and(predicate, builder.equal(join.get<Long>(key.name.lowercase()), value))
+            return if (key == IDType.PK) builder.and(
+                predicate,
+                builder.equal(join.get<Long>(key.name.lowercase()), value)
+            )
             else builder.and(predicate, builder.equal(join.get<String>(key.name.lowercase()), value))
         }
 
@@ -159,7 +168,12 @@ open class SpecTool(private val base: ParameterModel) {
          * @param root The root type in the from clause.
          * @param type The type of the entity.
          */
-        fun <K> typePredicate(predicate: Predicate, builder: CriteriaBuilder, root: Root<T>, type: Class<K>): Predicate {
+        fun <K> typePredicate(
+            predicate: Predicate,
+            builder: CriteriaBuilder,
+            root: Root<T>,
+            type: Class<K>
+        ): Predicate {
             return builder.and(predicate, typePredicate(builder, root, type))
         }
 
@@ -192,17 +206,17 @@ open class SpecTool(private val base: ParameterModel) {
             type: SearchType = SearchType.LIKE,
         ): Predicate {
             val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
-                    builder.or(
-                        *fields.map { field ->
-                            when (type) {
-                                SearchType.EQUAL -> builder.equal(builder.lower(root.get(field)), term)
-                                SearchType.STARTS_WITH -> builder.like(builder.lower(root.get(field)), "$term%")
-                                SearchType.ENDS_WITH -> builder.like(builder.lower(root.get(field)), "%$term")
-                                SearchType.LIKE -> builder.like(builder.lower(root.get(field)), "%$term%")
-                            }
-                        }.toTypedArray()
-                    )
-                }
+                builder.or(
+                    *fields.map { field ->
+                        when (type) {
+                            SearchType.EQUAL -> builder.equal(builder.lower(root.get(field)), term)
+                            SearchType.STARTS_WITH -> builder.like(builder.lower(root.get(field)), "$term%")
+                            SearchType.ENDS_WITH -> builder.like(builder.lower(root.get(field)), "%$term")
+                            SearchType.LIKE -> builder.like(builder.lower(root.get(field)), "%$term%")
+                        }
+                    }.toTypedArray()
+                )
+            }
 
             return builder.and(predicate, builder.or(*terms.toTypedArray()))
         }
@@ -310,19 +324,24 @@ open class SpecTool(private val base: ParameterModel) {
          * @param search The search string.
          * @param fields The fields to search for.
          */
-        fun searchQuery(query: Query, search: String, vararg fields: String, type: SearchType = SearchType.LIKE): Query {
+        fun searchQuery(
+            query: Query,
+            search: String,
+            vararg fields: String,
+            type: SearchType = SearchType.LIKE
+        ): Query {
             val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
-                    Criteria().orOperator(
-                        *fields.map {
-                            when (type) {
-                                SearchType.EQUAL -> Criteria.where(it).`is`(term)
-                                SearchType.STARTS_WITH -> Criteria.where(it).regex("^$term.*", "i")
-                                SearchType.ENDS_WITH -> Criteria.where(it).regex(".*$term$", "i")
-                                SearchType.LIKE -> Criteria.where(it).regex(".*$term.*", "i")
-                            }
-                        }.toTypedArray()
-                    )
-                }
+                Criteria().orOperator(
+                    *fields.map {
+                        when (type) {
+                            SearchType.EQUAL -> Criteria.where(it).`is`(term)
+                            SearchType.STARTS_WITH -> Criteria.where(it).regex("^$term.*", "i")
+                            SearchType.ENDS_WITH -> Criteria.where(it).regex(".*$term$", "i")
+                            SearchType.LIKE -> Criteria.where(it).regex(".*$term.*", "i")
+                        }
+                    }.toTypedArray()
+                )
+            }
             query.addCriteria(Criteria().orOperator(*terms.toTypedArray()))
             return query
         }
