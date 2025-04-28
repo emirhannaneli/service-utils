@@ -17,7 +17,7 @@ import java.util.*
  * @property log The logger instance used for logging.
  */
 @Component
-@ConditionalOnClass(Cookie::class)
+@ConditionalOnClass(Cookie::class, HttpServletResponse::class)
 class CookieUtil(val response: HttpServletResponse) {
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
