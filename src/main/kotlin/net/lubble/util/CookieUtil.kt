@@ -6,6 +6,7 @@ import net.lubble.util.config.utils.EnableLubbleUtils
 import net.lubble.util.enum.CookieType
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.stereotype.Component
 import java.util.*
 
@@ -17,7 +18,7 @@ import java.util.*
  * @property log The logger instance used for logging.
  */
 @Component
-@ConditionalOnClass(Cookie::class, HttpServletResponse::class)
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 class CookieUtil(val response: HttpServletResponse) {
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
