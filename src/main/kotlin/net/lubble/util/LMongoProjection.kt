@@ -1,7 +1,6 @@
 package net.lubble.util
 
 import net.lubble.util.model.BaseModel
-import net.lubble.util.model.BaseMongoModel
 import net.lubble.util.spec.BaseSpec
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -12,7 +11,7 @@ import java.util.*
 /**
  * Interface for MongoDB projections.
  *
- * @param T the type of the model extending BaseMongoModel
+ * @param T the type of the model extending BaseModel
  */
 interface LMongoProjection<T : BaseModel> {
 
@@ -73,7 +72,8 @@ interface LMongoProjection<T : BaseModel> {
     fun projection(spec: BaseSpec.Mongo<T>, clazz: Class<T>): Query {
         val query = spec.ofSearch()
         val excludeFields = clazz.declaredFields.map { it.name }.toMutableSet()
-        val includeFields = spec.fields?.map { it }?.toMutableSet() ?: clazz.declaredFields.map { it.name }.toMutableSet()
+        val includeFields =
+            spec.fields?.map { it }?.toMutableSet() ?: clazz.declaredFields.map { it.name }.toMutableSet()
         includeFields.addAll(listOf("id", "pk", "sk", "deleted", "archived", "updatedAt", "createdAt"))
 
         excludeFields.removeAll(includeFields)

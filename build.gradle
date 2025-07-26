@@ -4,20 +4,20 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.19.8'
+version = '1.20.0'
 
 var snakeYamlVersion = "2.4"
 var auth0JwtVersion = "4.5.0"
 var jodaTimeVersion = "2.14.0"
 var aspectjVersion = "1.9.23"
-var googleApiClientVersion = "2.7.2"
-var reactorCoreVersion = "3.7.4"
-var jacksonCoreVersion = "2.18.3"
-var springBootVersion = "3.4.4"
+var googleApiClientVersion = "2.8.0"
+var reactorCoreVersion = "3.7.8"
+var jacksonCoreVersion = "2.19.2"
+var springBootVersion = "3.5.2"
 var jakartaValidationVersion = "3.1.1"
 var jakartaPersistenceVersion = "3.2.0"
-var commonsLangVersion = "3.17.0"
-var bounceCastleVersion = "1.80"
+var commonsLangVersion = "3.18.0"
+var bounceCastleVersion = "1.81"
 var ulidVersion = "8.3.0"
 
 repositories {
@@ -61,8 +61,8 @@ kotlin {
 publishing {
     repositories {
         maven {
-            def releasesRepoUrl = "https://repo.emirman.dev/repository/maven-releases/"
-            def snapshotsRepoUrl = "https://repo.emirman.dev/repository/maven-snapshots/"
+            def releasesRepoUrl = "https://repo.emirman.dev/releases/"
+            def snapshotsRepoUrl = "https://repo.emirman.dev/snapshots/"
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
             credentials {
                 username = System.getenv("REPO_USER") as String
