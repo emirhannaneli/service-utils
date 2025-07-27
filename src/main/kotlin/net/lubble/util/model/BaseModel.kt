@@ -17,7 +17,7 @@ import kotlin.math.abs
 @EntityListeners(AuditingEntityListener::class)
 open class BaseModel(
     @Id
-    @Column(name = "id", unique = true, updatable = false, nullable = false, length = 16)
+    @Column(name = "id", unique = true, updatable = false, nullable = false, length = 26)
     private var id: String = ULID().nextULID(),
 
     @JvmField
