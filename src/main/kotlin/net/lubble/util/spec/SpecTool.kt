@@ -64,7 +64,7 @@ open class SpecTool(private val base: ParameterModel) {
             root: Root<T>,
             query: CriteriaQuery<*>?,
             builder: CriteriaBuilder,
-            params: ParameterModel,
+            param: ParameterModel,
         ): Predicate {
             var predicate = builder.conjunction()
 
@@ -81,15 +81,15 @@ open class SpecTool(private val base: ParameterModel) {
             }
 
             val fields = root.model.javaType.declaredFields
-            when (params.sortOrder) {
-                SortOrder.ASC -> params.sortBy?.let {
+            when (param.sortOrder) {
+                SortOrder.ASC -> param.sortBy?.let {
                     if (fields.any { field ->
                             val columnValue = field.getAnnotation(Column::class.java)?.name
                             field.name == it || columnValue == it
                         }) query?.orderBy(builder.asc(root.get<Any>(it)))
                 }
 
-                SortOrder.DESC -> params.sortBy?.let {
+                SortOrder.DESC -> param.sortBy?.let {
                     if (fields.any { field ->
                             val columnValue = field.getAnnotation(Column::class.java)?.name
                             field.name == it || columnValue == it
@@ -251,7 +251,7 @@ open class SpecTool(private val base: ParameterModel) {
          *
          */
         fun defaultQuery(
-            params: ParameterModel
+            param: ParameterModel
         ): Query {
             val query = Query()
 
@@ -267,12 +267,12 @@ open class SpecTool(private val base: ParameterModel) {
                 query.addCriteria(Criteria.where("archived").`is`(it))
             }
 
-            when (params.sortOrder) {
-                SortOrder.ASC -> params.sortBy?.let {
+            when (param.sortOrder) {
+                SortOrder.ASC -> param.sortBy?.let {
                     query.with(Sort.by(Sort.Order.asc(it)))
                 }
 
-                SortOrder.DESC -> params.sortBy?.let {
+                SortOrder.DESC -> param.sortBy?.let {
                     query.with(Sort.by(Sort.Order.desc(it)))
                 }
             }

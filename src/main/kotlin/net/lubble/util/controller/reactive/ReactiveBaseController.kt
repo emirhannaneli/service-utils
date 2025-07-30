@@ -40,11 +40,11 @@ interface ReactiveBaseController<C, U, R, P> {
     /**
      * Find all entities.
      *
-     * @param params The parameters to use in the find operation.
+     * @param param The parameters to use in the find operation.
      * @return A Mono that emits the ResponseEntity of the PageResponse containing all found entities.
      */
     @GetMapping
-    fun findAll(@Valid params: P): Mono<ResponseEntity<PageResponse>>
+    fun findAll(@Valid param: P): Mono<ResponseEntity<PageResponse>>
 
     /**
      * Update an existing entity.
@@ -71,12 +71,12 @@ interface ReactiveBaseController<C, U, R, P> {
     /**
      * Find all archived entities.
      *
-     * @param params The parameters to use in the find operation.
+     * @param param The parameters to use in the find operation.
      * @return A Mono that emits the ResponseEntity of the PageResponse containing all found entities.
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @GetMapping("archive")
-    fun findAllArchived(@Valid params: P): Mono<ResponseEntity<PageResponse>> {
+    fun findAllArchived(@Valid param: P): Mono<ResponseEntity<PageResponse>> {
         throw UnsupportedOperationException()
     }
 
@@ -107,12 +107,12 @@ interface ReactiveBaseController<C, U, R, P> {
     /**
      * Get the recycle bin.
      *
-     * @param params The parameters to use in the find operation.
+     * @param param The parameters to use in the find operation.
      * @return A Mono that emits the ResponseEntity of the PageResponse containing all found entities.
      * @throws UnsupportedOperationException If the method is not overridden in the implementing class.
      */
     @GetMapping("recycle-bin")
-    fun recycleBin(@Valid params: P): Mono<ResponseEntity<PageResponse>> {
+    fun recycleBin(@Valid param: P): Mono<ResponseEntity<PageResponse>> {
         throw UnsupportedOperationException()
     }
 
