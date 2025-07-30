@@ -73,9 +73,9 @@ interface BaseReactiveService<T, C, U, S> {
     fun delete(base: T): Mono<Void>
 
     /**
-     * Delete entities based on a specification.
+     * Delete all entities that match the specification.
      * @param spec The specification to use when deleting the entities.
      * @return A void wrapped in a Mono.
      */
-    fun delete(spec: S): Mono<Void>
+    fun deleteAll(spec: S): Mono<Void>
 }
