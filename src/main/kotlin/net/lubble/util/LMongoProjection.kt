@@ -63,6 +63,17 @@ interface LMongoProjection<T : BaseModel> {
     }
 
     /**
+     * Deletes documents matching the given specification.
+     *
+     * @param spec the specification to search by
+     * @param clazz the class of the documents
+     */
+    fun delete(spec: BaseSpec.Mongo<T>, clazz: Class<T>) {
+        val query = spec.ofSearch()
+        template().remove(query, clazz)
+    }
+
+    /**
      * Creates a projection query based on the given specification and class.
      *
      * @param spec the specification to search by
