@@ -15,11 +15,11 @@ class BaseSpec {
      * Abstract base class for specifications.
      *
      * @param T the type of the JPA model
-     * @param params the parameters for the specification
+     * @param param the parameters for the specification
      * @param fields the fields to projection
      */
-    abstract class JPA<T : BaseModel>(params: ParameterModel, val fields: Collection<String>? = null) :
-        SpecTool(params),
+    abstract class JPA<T : BaseModel>(param: ParameterModel, val fields: Collection<String>? = null) :
+        SpecTool(param),
         SpecTool.JPAModel<T> {
         fun toKey(): String {
             val mapper = AppContextUtil.bean(ObjectMapper::class.java).apply {
@@ -41,11 +41,11 @@ class BaseSpec {
      * Abstract base class for specifications.
      *
      * @param T the type of the Mongo model
-     * @param params the parameters for the specification
+     * @param param the parameters for the specification
      * @param fields the fields to projection
      */
-    abstract class Mongo<T : BaseModel>(params: ParameterModel, val fields: Collection<String>? = null) :
-        SpecTool(params),
+    abstract class Mongo<T : BaseModel>(param: ParameterModel, val fields: Collection<String>? = null) :
+        SpecTool(param),
         SpecTool.MongoModel<T> {
         fun toKey(): String {
             val mapper = AppContextUtil.bean(ObjectMapper::class.java).apply {

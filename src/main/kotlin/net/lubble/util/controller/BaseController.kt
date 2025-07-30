@@ -35,11 +35,11 @@ interface BaseController<C, U, R, P> {
     /**
      * Finds all entities.
      *
-     * @param params The parameters to use when finding entities.
+     * @param param The parameters to use when finding entities.
      * @return A page of found entities wrapped in a ResponseEntity.
      */
     @GetMapping
-    fun findAll(@Valid params: P): ResponseEntity<PageResponse>
+    fun findAll(@Valid param: P): ResponseEntity<PageResponse>
 
     /**
      * Updates an existing entity.
@@ -63,11 +63,11 @@ interface BaseController<C, U, R, P> {
     /**
      * Finds all archived entities.
      *
-     * @param params The parameters to use when finding archived entities.
+     * @param param The parameters to use when finding archived entities.
      * @return A page of found archived entities wrapped in a ResponseEntity.
      */
     @GetMapping("archive")
-    fun findAllArchived(@Valid params: P): ResponseEntity<PageResponse> {
+    fun findAllArchived(@Valid param: P): ResponseEntity<PageResponse> {
         throw UnsupportedOperationException()
     }
 
@@ -96,11 +96,11 @@ interface BaseController<C, U, R, P> {
     /**
      * Finds all entities in the recycle bin.
      *
-     * @param params The parameters to use when finding entities in the recycle bin.
+     * @param param The parameters to use when finding entities in the recycle bin.
      * @return A page of found entities in the recycle bin wrapped in a ResponseEntity.
      */
     @GetMapping("recycle-bin")
-    fun recycleBin(@Valid params: P): ResponseEntity<PageResponse> {
+    fun recycleBin(@Valid param: P): ResponseEntity<PageResponse> {
         throw UnsupportedOperationException()
     }
 

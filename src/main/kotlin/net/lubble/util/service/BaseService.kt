@@ -66,4 +66,10 @@ interface BaseService<T, C, U, S> {
      * @param base The entity to delete.
      */
     fun delete(base: T)
+
+    /**
+     * Delete all entities matching the specification.
+     * @param spec The specification to use when deleting the entities.
+     */
+    fun deleteAll(spec: S)
 }
