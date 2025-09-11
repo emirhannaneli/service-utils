@@ -15,13 +15,15 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.stereotype.Component
+import org.springframework.util.ReflectionUtils
 import java.lang.reflect.Field
+import java.util.Collections
+import java.util.IdentityHashMap
 
 @Aspect
 @Component
 @ConditionalOnClass(SecurityFilterChain::class)
 class SecuredParamProcessor {
-
     /**
      * Pre-authorize parameters before the execution of the target method.
      *
@@ -41,7 +43,7 @@ class SecuredParamProcessor {
             arg::class.java.declaredFields.forEach { field ->
                 val securedParam = field.getAnnotation(PreAuthorizeParam::class.java) ?: return@forEach
 
-                field.isAccessible = true
+                ReflectionUtils.makeAccessible(field)
 
                 val value = field.get(arg) ?: return@forEach
                 context.setVariable(field.name, value)
@@ -63,6 +65,7 @@ class SecuredParamProcessor {
      */
     @AfterReturning(pointcut = "target(net.lubble.util.controller.BaseController)", returning = "result")
     fun postAuthorizeParam(result: Any) {
+        val visited = Collections.newSetFromMap(IdentityHashMap<Any, Boolean>())
         val auth = SecurityContextHolder.getContext().authentication
         val context = StandardEvaluationContext(auth)
         val parser = SpelExpressionParser()
@@ -74,12 +77,12 @@ class SecuredParamProcessor {
             result.body?.let { body ->
                 if (body is PageResponse)
                     body.items.forEach { item ->
-                        item?.let { sanitizeFields(it, context, parser) }
+                        item?.let { sanitizeFields(it, context, parser, visited) }
                     }
-                else sanitizeFields(body, context, parser)
+                else sanitizeFields(body, context, parser, visited)
             }
         } else {
-            sanitizeFields(result, context, parser)
+            sanitizeFields(result, context, parser, visited)
         }
     }
 
@@ -90,11 +93,13 @@ class SecuredParamProcessor {
      * @param context the evaluation context
      * @param parser the Spring-EL expression parser
      */
-    private fun sanitizeFields(obj: Any, context: StandardEvaluationContext, parser: SpelExpressionParser) {
+    private fun sanitizeFields(obj: Any, context: StandardEvaluationContext, parser: SpelExpressionParser, visited: MutableSet<Any> = Collections.newSetFromMap(IdentityHashMap<Any, Boolean>())) {
+        if (!visited.add(obj)) return
+
         val fields = obj::class.java.declaredFields
 
         fields.forEach { field ->
-            runCatching { field.isAccessible = true }.onFailure { return@forEach }
+            runCatching { ReflectionUtils.makeAccessible(field) }.onFailure { return@forEach }
 
             val value = field.get(obj) ?: return@forEach
 
@@ -121,7 +126,7 @@ class SecuredParamProcessor {
      * @param obj the object containing the field
      */
     private fun censorField(field: Field, obj: Any) {
-        field.isAccessible = true
+        ReflectionUtils.makeAccessible(field)
         val value = field.get(obj) ?: return
         when (field.type) {
             String::class.java -> {
