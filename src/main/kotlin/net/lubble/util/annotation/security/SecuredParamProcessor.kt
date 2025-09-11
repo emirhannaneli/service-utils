@@ -104,7 +104,7 @@ class SecuredParamProcessor {
             val value = field.get(obj) ?: return@forEach
 
             if (!field.type.isPrimitive && !field.type.isEnum && field.type != String::class.java)
-                sanitizeFields(value, context, parser)
+                sanitizeFields(value, context, parser,visited)
 
             val securedParam = field.getAnnotation(PostAuthorizeParam::class.java) ?: return@forEach
             val expression = securedParam.value
