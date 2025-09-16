@@ -41,13 +41,6 @@ interface BaseService<T, C, U, S> {
     fun exists(spec: S): Boolean
 
     /**
-     * Find an entity by its ID and fields.
-     * @param id The ID of the entity to find.
-     * @param fields The fields to find.
-     */
-    fun findById(id: String, fields: Collection<String>? = null): T
-
-    /**
      * Find all entities by their specification.
      * @param spec The specification to use when finding the entities.
      * @return A page of found entities.
