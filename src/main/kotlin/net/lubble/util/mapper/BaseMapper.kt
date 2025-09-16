@@ -1,36 +1,31 @@
 package net.lubble.util.mapper
 
+import net.lubble.util.dto.RBase
+import net.lubble.util.model.BaseModel
 import org.springframework.data.domain.Page
 
 /**
- * BaseMapper interface for mapping between DTOs and Entities.
- * @param T Entity
- * @param R Read DTO
- * @param RB Read Basic DTO
- * @param U Update DTO
- *
- * @property map(source: U, destination: T) - maps the update DTO to the entity
+ * BaseMapper interface is used for mapping between DTOs and Entities.
+ * @param T Entity type
+ * @param R Read DTO type
+ * @param U Update DTO type
  */
-interface BaseMapper<T : Any, R, RB, U : Any> {
+interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
 
     /**
-     * Maps the properties of the source object (of type U) to the destination object (of type T).
-     * Only the properties with the same name and compatible types in both source and destination are mapped.
-     *
-     * @param source The source object to map from.
-     * @param destination The destination object to map to.
+     * Maps the properties of the update DTO (type U) to the Entity (type T).
+     * @param source Source object
+     * @param destination Destination object
      */
     fun map(source: U, destination: T) {
         objectMap(source, destination)
     }
 
     /**
-     * Private function to map the properties of the source object to the destination object.
-     * This function is used internally by the public map functions.
-     * It handles the mapping of fields of type List, Map and other classes.
-     *
-     * @param source The source object to map from.
-     * @param destination The destination object to map to.
+     * Custom function that maps the properties of the source object to the destination object.
+     * Handles List, Map, and other class types.
+     * @param source Source object
+     * @param destination Destination object
      */
     @Suppress("UNCHECKED_CAST")
     private fun objectMap(source: Any, destination: Any) {
@@ -71,62 +66,50 @@ interface BaseMapper<T : Any, R, RB, U : Any> {
     }
 
     /**
-     * Maps the properties of the source object (of type T) to a new object of type R.
-     *
-     * @param source The source object to map from.
-     * @return The new object of type R.
+     * Maps the properties of the Entity (type T) to a new DTO (type R).
+     * @param source Source object
+     * @return Newly created DTO
      */
-    fun map(source: T): R
+    fun map(source: T): R {
+        val dto = mapping(source)
+        apply(source, dto)
+        return dto
+    }
 
     /**
-     * Maps the properties of the source object (of type T) to a new object of type RB.
-     *
-     * @param source The source object to map from.
-     * @return The new object of type RB.
+     * Performs the conversion from Entity (type T) to DTO (type R).
+     * @param source Source object
+     * @return DTO object
      */
-    fun rbMap(source: T): RB
+    fun mapping(source: T): R
 
     /**
-     * Maps the properties of each object in the source collection (of type T) to a new object of type R.
-     * Returns a list of these new objects.
-     *
-     * @param source The collection of source objects to map from.
-     * @return The list of new objects of type R.
+     * Maps each object in the Entity collection (type T) to a DTO (type R).
+     * @param source Source collection
+     * @return List of DTO objects
      */
     fun map(source: Collection<T>): List<R> {
         return source.map { map(it) }
     }
 
     /**
-     * Maps the properties of each object in the source page (of type T) to a new object of type R.
-     * Returns a list of these new objects.
-     *
-     * @param source The page of source objects to map from.
-     * @return The list of new objects of type R.
+     * Maps each object in the Entity page (type T) to a DTO (type R).
+     * @param source Source page
+     * @return List of DTO objects
      */
     fun map(source: Page<T>): List<R> {
         return source.content.map { map(it) }
     }
 
     /**
-     * Maps the properties of each object in the source collection (of type T) to a new object of type RB.
-     * Returns a list of these new objects.
-     *
-     * @param source The collection of source objects to map from.
-     * @return The list of new objects of type RB.
+     * Applies the basic properties of the Entity (type T) to the DTO (type R).
+     * @param source Source object
+     * @param target Target DTO
      */
-    fun rbMap(source: Collection<T>): List<RB> {
-        return source.map { rbMap(it) }
-    }
-
-    /**
-     * Maps the properties of each object in the source page (of type T) to a new object of type RB.
-     * Returns a list of these new objects.
-     *
-     * @param source The page of source objects to map from.
-     * @return The list of new objects of type RB.
-     */
-    fun rbMap(source: Page<T>): List<RB> {
-        return source.content.map { rbMap(it) }
+    fun apply(source: T, target: R) {
+        target.pk = source.pk
+        target.sk = source.sk
+        target.createdAt = source.createdAt
+        target.updatedAt = source.updatedAt
     }
 }
