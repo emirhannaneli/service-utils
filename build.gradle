@@ -56,7 +56,11 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:5.11.0"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.11.0"
     testImplementation "org.springframework.data:spring-data-commons:$springBootVersion"
+    testImplementation "org.springframework:spring-context:$springFrameworkVersion"
     testImplementation "org.springframework:spring-test:$springFrameworkVersion"
+    testImplementation "org.springframework:spring-web:$springFrameworkVersion"
+    testImplementation "org.springframework:spring-webflux:$springFrameworkVersion"
+    testImplementation "jakarta.servlet:jakarta.servlet-api:6.1.0"
 }
 
 kotlin {
