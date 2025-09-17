@@ -7,7 +7,6 @@ import org.springframework.context.MessageSource
 import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.context.support.GenericApplicationContext
 import org.springframework.context.support.StaticMessageSource
-import org.springframework.context.support.registerBean
 import java.util.Locale
 
 object TestApplicationContext {
@@ -34,10 +33,10 @@ object TestApplicationContext {
         LocaleContextHolder.setLocale(Locale.ENGLISH)
 
         val context = GenericApplicationContext().apply {
-            registerBean(MessageSource::class.java) { messageSource }
-            registerBean(ObjectMapper::class.java) { jacksonObjectMapper() }
-            registerBean(LubbleConfig::class.java) { lubbleConfig }
-            registerBean("greetingBean", String::class.java) { "hello-world" }
+            beanFactory.registerSingleton("messageSource", messageSource)
+            beanFactory.registerSingleton("objectMapper", jacksonObjectMapper())
+            beanFactory.registerSingleton("lubbleConfig", lubbleConfig)
+            beanFactory.registerSingleton("greetingBean", "hello-world")
             refresh()
         }
 
