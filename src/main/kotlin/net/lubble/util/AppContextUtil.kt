@@ -66,7 +66,9 @@ class AppContextUtil(context: ApplicationContext) {
          */
         @Suppress("UNCHECKED_CAST")
         fun <T> bean(name: String): T {
-            return instance?.context?.getBean(name) as T ?: throw RuntimeException("Could not get bean ($name)")
+            val ctx = instance?.context ?: throw RuntimeException("Could not get bean ($name)")
+            val bean = ctx.getBean(name)
+            return (bean as? T) ?: throw RuntimeException("Could not get bean ($name)")
         }
 
         /**
