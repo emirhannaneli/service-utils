@@ -296,6 +296,22 @@ open class SpecTool(private val base: ParameterModel) {
         }
 
         /**
+         * Returns the id query for a MongoDB model.
+         *
+         * @param query The query to be combined.
+         * @param field The field to search in.
+         * @param id The id of the entity.
+         */
+        fun idQuery(query: Query,field: String, id: String): Query {
+            val value = id.toLongOrNull() ?: LK(id)
+            val key = if (value is Long) IDType.PK else IDType.SK
+            return when (key) {
+                IDType.PK -> query.addCriteria(Criteria.where("$field.${key.name.lowercase()}").`is`(value))
+                IDType.SK -> query.addCriteria(Criteria.where("$field.${key.name.lowercase()}").`is`(value))
+            }
+        }
+
+        /**
          * Returns the type query for a MongoDB model.
          *
          * @param query The query to be combined.
