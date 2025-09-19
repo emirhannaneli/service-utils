@@ -1,6 +1,7 @@
 package net.lubble.util.service
 
 import org.springframework.data.domain.Page
+import org.springframework.transaction.annotation.Transactional
 
 /**
  * This interface defines the basic CRUD operations for a service.
@@ -17,6 +18,7 @@ interface BaseService<T, C, U, S> {
      * @param create The entity to create.
      * @return The created entity.
      */
+    @Transactional
     fun create(create: C): T
 
     /**
@@ -24,6 +26,7 @@ interface BaseService<T, C, U, S> {
      * @param base The entity to save.
      * @return The saved entity.
      */
+    @Transactional
     fun save(base: T): T
 
     /**
@@ -52,17 +55,20 @@ interface BaseService<T, C, U, S> {
      * @param base The entity to update.
      * @param update The updated entity.
      */
+    @Transactional
     fun update(base: T, update: U)
 
     /**
      * Delete an entity.
      * @param base The entity to delete.
      */
+    @Transactional
     fun delete(base: T)
 
     /**
      * Delete all entities matching the specification.
      * @param spec The specification to use when deleting the entities.
      */
+    @Transactional
     fun deleteAll(spec: S)
 }

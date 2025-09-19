@@ -18,23 +18,19 @@ import kotlin.math.abs
 open class BaseModel(
     @Id
     @Column(name = "id", unique = true, updatable = false, nullable = false, length = 26)
-    private var id: String = ULID().nextULID(),
+    private var id: String,
 
-    @JvmField
     @Field("pk")
     @Indexed(unique = true)
     @Column(name = "pk", unique = true, nullable = false, updatable = false, length = 12)
-    var pk: Long = String.format(
-        "%012d",
-        abs(UUID.randomUUID().mostSignificantBits - (UUID.randomUUID().leastSignificantBits + System.currentTimeMillis())) % 1000000000000
-    ).toLong(),
+    open var pk: Long,
 
-    @JvmField
+
     @Field("sk")
     @Indexed(unique = true)
     @Convert(converter = LKToStringConverter::class)
     @Column(name = "sk", unique = true, updatable = false, nullable = false, length = 11)
-    var sk: LK = LK(),
+    open var sk: LK,
 
     @Indexed
     @JvmField
@@ -56,6 +52,19 @@ open class BaseModel(
     @Column(nullable = false)
     var updatedAt: Instant = Instant.now(),
 ) {
+
+    /**
+     * Generates a new BaseModel with a unique id, pk, and sk.
+     * */
+    constructor() : this(
+        id = ULID().nextULID(),
+        pk = String.format(
+            "%012d",
+            abs(UUID.randomUUID().mostSignificantBits - (UUID.randomUUID().leastSignificantBits + System.currentTimeMillis())) % 1000000000000
+        ).toLong(),
+        sk = LK()
+    )
+
     /**
      * Returns the id of the model.
      * @return The id.
@@ -70,22 +79,6 @@ open class BaseModel(
      */
     open fun setId(id: String) {
         this.id = id
-    }
-
-    /**
-     * Returns the primary key of the model.
-     * @return The primary key.
-     */
-    open fun getPk(): Long {
-        return pk
-    }
-
-    /**
-     * Returns the secondary key of the model.
-     * @return The secondary key.
-     */
-    open fun getSk(): LK {
-        return sk
     }
 
     /**
@@ -105,18 +98,18 @@ open class BaseModel(
     }
 
     /**
-     * Returns the date and time when the model was created.
-     * @return The creation date and time.
+     * Returns the creation timestamp of the model.
+     * @return The creation timestamp.
      */
-    open fun getCreatedAt(): Instant {
+    open fun getCreatedAt(): Instant? {
         return createdAt
     }
 
     /**
-     * Returns the date and time when the model was last updated.
-     * @return The last update date and time.
+     * Returns the last updated timestamp of the model.
+     * @return The last updated timestamp.
      */
-    open fun getUpdatedAt(): Instant {
+    open fun getUpdatedAt(): Instant? {
         return updatedAt
     }
 
