@@ -1,68 +1,106 @@
-build.gradle.kt
+# Service Utils
 
-```
-repositories {
-    maven {
-        url = uri("https://repo.emirman.dev")
+Service Utils is a Kotlin toolkit that packages the shared building blocks we use across Spring Boot services. The modules are
+written to slot into existing projects with minimal wiring so current applications can upgrade without sweeping refactors.
+
+## Quick Start
+1. Add the private Maven repository and dependency.
+2. Enable the auto-configuration via `@EnableLubbleUtils` on a configuration class.
+3. Provide a `messages.properties` bundle so the built-in responses can resolve localized texts.
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven(url = "https://repo.emirman.dev")
     }
 }
 
+// build.gradle.kts
 dependencies {
     implementation("net.lubble:service-utils:<version>")
 }
 ```
 
-# Service Utils ```EN```
+```kotlin
+@EnableLubbleUtils
+@Configuration
+class ServiceConfig
+```
 
-`Service Utils` is a comprehensive library designed to enhance and streamline development within Spring Boot projects. It provides a standardized and efficient framework with the following key features:
+## Provided Modules
+- **Response helpers** – `Response`, `PageResponse`, `GraphResponse` and `GraphPageResponse` keep REST and GraphQL payloads
+  uniform and surface pagination metadata consistently.
+- **Centralized exception handling** – `ExceptionModel` plus ready-to-use `@ControllerAdvice` classes translate business
+  exceptions into localized HTTP responses and GraphQL errors.
+- **Context and request utilities** – `AppContextUtil`, `RequestTool`, `ReFormat`, and cookie helpers simplify servlet and
+  reactive request handling without leaking framework details to calling code.
+- **Persistence helpers** – specification builders, projection utilities, and codecs (`LK`, `LKCodec`, `LKToStringConverter`)
+  reduce boilerplate in Mongo and JPA repositories.
+- **Security & configuration models** – strongly typed configuration classes for OAuth, cookies, and authentication make it
+  easy to share defaults across services.
 
-## Key Features
+## Testing
+Run the unit tests locally with:
 
-1. **Streamlined Development**:
-   - Provides a cohesive structure for models, specifications, services, repositories, and DTO (Data Transfer Object) classes.
-   - Makes the development process more efficient and maintainable.
+```bash
+./gradlew test
+```
 
-2. **Flexible Structure**:
-   - Offers flexibility in organizing various components.
-   - Allows adaptation to the specific needs of projects while maintaining a consistent and logical hierarchy.
+The suite covers response serialization, cookie helpers, request utilities, and enum handling to guard against regressions.
 
-3. **Context Improvements**:
-   - Enhances context handling to manage contextual information effectively throughout the application lifecycle.
-
-4. **Automated Exception Handling**:
-   - Includes mechanisms for automatic exception handling.
-   - Ensures consistent management of exceptions across the project and reduces boilerplate code.
-
-5. **Structured Notifications**:
-   - Provides a standardized approach to handling and logging notifications.
-   - Ensures clear and consistent communication of important events and errors.
-
-`Service Utils` serves as a foundational framework that simplifies and accelerates development, promotes best practices, and helps maintain high code quality and organization in Spring Boot projects.
-
+---
 
 # Service Utils ```TR```
 
-`Service Utils`, Spring Boot projelerinde geliştirme sürecini hızlandırmak ve standartlaştırmak için tasarlanmış kapsamlı bir kütüphanedir. Bu kütüphane, aşağıdaki temel özellikleri sunarak projelerin daha verimli ve düzenli bir şekilde yönetilmesine yardımcı olur:
+Service Utils, Spring Boot tabanlı servisler arasında paylaşılan yardımcı bileşenleri paketleyen Kotlin bir araç setidir. Modüller
+mevcut projelere minimum ekleme ile uyum sağlar; böylece güncelleme için kapsamlı refaktörlere gerek kalmaz.
 
-## Temel Özellikler
+## Hızlı Başlangıç
+1. Özel Maven deposunu ve bağımlılığı ekleyin.
+2. Bir konfigürasyon sınıfına `@EnableLubbleUtils` ekleyerek otomatik yapılandırmayı aktifleştirin.
+3. Yerelleştirilmiş mesajlar için `messages.properties` dosyasını sağlayın.
 
-1. **Geliştirilmiş Geliştirme Süreci**:
-   - Modeller, spesifikasyonlar, servisler, repository'ler ve DTO (Data Transfer Object) sınıfları için uyumlu bir yapı sağlar.
-   - Geliştirme sürecini daha verimli ve sürdürülebilir hale getirir.
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven(url = "https://repo.emirman.dev")
+    }
+}
 
-2. **Esnek Yapı**:
-   - Çeşitli bileşenlerin nasıl organize edileceği konusunda esneklik sunar.
-   - Projelerin özel ihtiyaçlarına uyum sağlar ve tutarlı bir hiyerarşi sağlar.
+// build.gradle.kts
+dependencies {
+    implementation("net.lubble:service-utils:<version>")
+}
+```
 
-3. **Kapsam İyileştirmeleri**:
-   - Kapsam bilgilerini etkili bir şekilde yönetir ve uygulama yaşam döngüsü boyunca iyi bir bağlam yönetimi sağlar.
+```kotlin
+@EnableLubbleUtils
+@Configuration
+class ServiceConfig
+```
 
-4. **Otomatik İstisna Yönetimi**:
-   - İstisnaları otomatik olarak işleyen mekanizmalar içerir.
-   - İstisnaların projede tutarlı bir şekilde yönetilmesini sağlar ve fazla kod yazımını azaltır.
+## Sağlanan Modüller
+- **Yanıt yardımcıları** – `Response`, `PageResponse`, `GraphResponse` ve `GraphPageResponse` REST ve GraphQL çıktılarını
+  tutarlı hale getirir, sayfalama bilgisini aynı yapıda sunar.
+- **Merkezi istisna yönetimi** – `ExceptionModel` ve hazır `@ControllerAdvice` sınıfları iş kuralları hatalarını yerelleştirilmiş
+  HTTP/GraphQL yanıtlarına çevirir.
+- **Context ve istek yardımcıları** – `AppContextUtil`, `RequestTool`, `ReFormat` ve çerez yardımcıları servlet ve reaktif
+  istekleri çerçeve bağımlılığı sızdırmadan yönetmenizi sağlar.
+- **Veri katmanı yardımcıları** – spesifikasyon, projeksiyon ve codec yapıları (`LK`, `LKCodec`, `LKToStringConverter`) Mongo ve
+  JPA repository'lerinde tekrar eden kodu azaltır.
+- **Güvenlik ve konfigürasyon modelleri** – OAuth, çerez ve kimlik doğrulama için tip güvenli ayar sınıfları servisler arasında
+  ortak varsayılanları paylaşmayı kolaylaştırır.
 
-5. **Yapılandırılmış Bilgilendirme**:
-   - Önemli olaylar ve hataları net ve tutarlı bir şekilde iletmek için standart bir yol sunar.
-   - Bilgilendirme ve günlükleme işlemlerini düzenli bir şekilde yönetir.
+## Testler
+Yerel testleri çalıştırmak için:
 
-`Service Utils`, Spring Boot projelerinde temel bir yapı sağlar, geliştirme sürecini hızlandırır ve kod kalitesini yüksek tutar.
+```bash
+./gradlew test
+```
+
+Test paketi yanıt serileştirmesi, çerez yardımcıları, istek yardımcıları ve enum davranışını kapsar; böylece geriye dönük
+uyumluluk korunur.

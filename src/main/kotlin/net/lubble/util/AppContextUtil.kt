@@ -42,7 +42,12 @@ class AppContextUtil(context: ApplicationContext) {
          * @throws RuntimeException if the bean could not be retrieved.
          */
         fun <T> bean(clazz: Class<T>): T {
-            return instance?.context?.getBean(clazz) ?: throw RuntimeException("Could not get bean (${clazz.name})")
+            val ctx = instance?.context ?: throw RuntimeException("Could not get bean (${clazz.name})")
+            return try {
+                ctx.getBean(clazz)
+            } catch (ex: Exception) {
+                throw RuntimeException("Could not get bean (${clazz.name})", ex)
+            }
         }
 
         /**
@@ -54,7 +59,12 @@ class AppContextUtil(context: ApplicationContext) {
          * @throws RuntimeException if the bean could not be retrieved.
          */
         fun <T> bean(name: String, clazz: Class<T>): T {
-            return instance?.context?.getBean(name, clazz) ?: throw RuntimeException("Could not get bean (${clazz.name})")
+            val ctx = instance?.context ?: throw RuntimeException("Could not get bean (${clazz.name})")
+            return try {
+                ctx.getBean(name, clazz)
+            } catch (ex: Exception) {
+                throw RuntimeException("Could not get bean (${clazz.name})", ex)
+            }
         }
 
         /**
@@ -66,7 +76,13 @@ class AppContextUtil(context: ApplicationContext) {
          */
         @Suppress("UNCHECKED_CAST")
         fun <T> bean(name: String): T {
-            return instance?.context?.getBean(name) as T ?: throw RuntimeException("Could not get bean ($name)")
+            val ctx = instance?.context ?: throw RuntimeException("Could not get bean ($name)")
+            return try {
+                val bean = ctx.getBean(name)
+                (bean as? T) ?: throw RuntimeException("Could not get bean ($name)")
+            } catch (ex: Exception) {
+                throw RuntimeException("Could not get bean ($name)", ex)
+            }
         }
 
         /**

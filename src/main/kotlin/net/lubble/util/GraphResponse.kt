@@ -58,7 +58,7 @@ class GraphResponse(
      * @param ex The ExceptionModel to be used for constructing the response.
      */
     constructor(ex: ExceptionModel) : this(
-        message = source().getMessage(ex.message(), null, locale()),
+        message = ex.message(),
         code = ex.code(),
     )
 
@@ -68,7 +68,7 @@ class GraphResponse(
      * @param details Additional details to be included in the response.
      */
     constructor(ex: ExceptionModel, details: Any) : this(
-        message = source().getMessage(ex.message(), null, locale()),
+        message = ex.message(),
         code = ex.code(),
         details = details,
     )
