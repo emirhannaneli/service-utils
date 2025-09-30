@@ -172,7 +172,7 @@ open class SpecTool(private val base: ParameterModel) {
             predicate: Predicate,
             builder: CriteriaBuilder,
             root: Root<T>,
-            type: Class<K>
+            type: Class<out K>
         ): Predicate {
             return builder.and(predicate, typePredicate(builder, root, type))
         }
@@ -184,7 +184,7 @@ open class SpecTool(private val base: ParameterModel) {
          * @param root The root type in the from clause.
          * @param type The type of the entity.
          */
-        fun <K> typePredicate(builder: CriteriaBuilder, root: Root<T>, type: Class<K>): Predicate {
+        fun <K> typePredicate(builder: CriteriaBuilder, root: Root<T>, type: Class<out K>): Predicate {
             return builder.equal(root.type(), type)
         }
 
@@ -195,6 +195,7 @@ open class SpecTool(private val base: ParameterModel) {
          * @param builder Used to construct criteria queries.
          * @param root The root type in the from clause.
          * @param search The search string.
+         * @param type The type of search to perform.
          * @param fields The fields to search for.
          */
         fun searchPredicate(
@@ -202,8 +203,8 @@ open class SpecTool(private val base: ParameterModel) {
             builder: CriteriaBuilder,
             root: Root<T>,
             search: String,
-            vararg fields: String,
             type: SearchType = SearchType.LIKE,
+            vararg fields: String,
         ): Predicate {
             val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
                 builder.or(
@@ -213,6 +214,40 @@ open class SpecTool(private val base: ParameterModel) {
                             SearchType.STARTS_WITH -> builder.like(builder.lower(root.get(field)), "$term%")
                             SearchType.ENDS_WITH -> builder.like(builder.lower(root.get(field)), "%$term")
                             SearchType.LIKE -> builder.like(builder.lower(root.get(field)), "%$term%")
+                        }
+                    }.toTypedArray()
+                )
+            }
+
+            return builder.and(predicate, builder.or(*terms.toTypedArray()))
+        }
+
+        /**
+         * Returns the search predicate for a JPA model.
+         *
+         * @param predicate The predicate to be combined.
+         * @param builder Used to construct criteria queries.
+         * @param join The join type.
+         * @param search The search string.
+         * @param type The type of search to perform.
+         * @param fields The fields to search for.
+         */
+        fun <Z, X> searchPredicate(
+            predicate: Predicate,
+            builder: CriteriaBuilder,
+            join: Join<Z, X>,
+            search: String,
+            type: SearchType = SearchType.LIKE,
+            vararg fields: String,
+        ): Predicate {
+            val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
+                builder.or(
+                    *fields.map { field ->
+                        when (type) {
+                            SearchType.EQUAL -> builder.equal(builder.lower(join.get(field)), term)
+                            SearchType.STARTS_WITH -> builder.like(builder.lower(join.get(field)), "$term%")
+                            SearchType.ENDS_WITH -> builder.like(builder.lower(join.get(field)), "%$term")
+                            SearchType.LIKE -> builder.like(builder.lower(join.get(field)), "%$term%")
                         }
                     }.toTypedArray()
                 )
@@ -302,7 +337,7 @@ open class SpecTool(private val base: ParameterModel) {
          * @param field The field to search in.
          * @param id The id of the entity.
          */
-        fun idQuery(query: Query,field: String, id: String): Query {
+        fun idQuery(query: Query, field: String, id: String): Query {
             val value = id.toLongOrNull() ?: LK(id)
             val key = if (value is Long) IDType.PK else IDType.SK
             return when (key) {
