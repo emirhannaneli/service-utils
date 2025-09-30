@@ -191,7 +191,6 @@ open class SpecTool(private val base: ParameterModel) {
         /**
          * Returns the search predicate for a JPA model.
          *
-         * @param predicate The predicate to be combined.
          * @param builder Used to construct criteria queries.
          * @param root The root type in the from clause.
          * @param search The search string.
@@ -199,7 +198,6 @@ open class SpecTool(private val base: ParameterModel) {
          * @param fields The fields to search for.
          */
         fun searchPredicate(
-            predicate: Predicate,
             builder: CriteriaBuilder,
             root: Root<T>,
             search: String,
@@ -219,7 +217,61 @@ open class SpecTool(private val base: ParameterModel) {
                 )
             }
 
-            return builder.and(predicate, builder.or(*terms.toTypedArray()))
+            return builder.or(*terms.toTypedArray())
+        }
+
+        /**
+         * Returns the search predicate for a JPA model.
+         *
+         * @param predicate The predicate to be combined.
+         * @param builder Used to construct criteria queries.
+         * @param root The root type in the from clause.
+         * @param search The search string.
+         * @param type The type of search to perform.
+         * @param fields The fields to search for.
+         */
+        fun searchPredicate(
+            predicate: Predicate,
+            builder: CriteriaBuilder,
+            root: Root<T>,
+            search: String,
+            type: SearchType = SearchType.LIKE,
+            vararg fields: String,
+        ): Predicate {
+            return builder.and(predicate, searchPredicate(builder, root, search, type, *fields))
+        }
+
+        /**
+         * Returns the search predicate for a JPA model.
+         *
+         * @param predicate The predicate to be combined.
+         * @param builder Used to construct criteria queries.
+         * @param join The join type.
+         * @param search The search string.
+         * @param type The type of search to perform.
+         * @param fields The fields to search for.
+         */
+        fun <Z, X> searchPredicate(
+            builder: CriteriaBuilder,
+            join: Join<Z, X>,
+            search: String,
+            type: SearchType = SearchType.LIKE,
+            vararg fields: String,
+        ): Predicate {
+            val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
+                builder.or(
+                    *fields.map { field ->
+                        when (type) {
+                            SearchType.EQUAL -> builder.equal(builder.lower(join.get(field)), term)
+                            SearchType.STARTS_WITH -> builder.like(builder.lower(join.get(field)), "$term%")
+                            SearchType.ENDS_WITH -> builder.like(builder.lower(join.get(field)), "%$term")
+                            SearchType.LIKE -> builder.like(builder.lower(join.get(field)), "%$term%")
+                        }
+                    }.toTypedArray()
+                )
+            }
+
+            return builder.or(*terms.toTypedArray())
         }
 
         /**
@@ -240,22 +292,10 @@ open class SpecTool(private val base: ParameterModel) {
             type: SearchType = SearchType.LIKE,
             vararg fields: String,
         ): Predicate {
-            val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
-                builder.or(
-                    *fields.map { field ->
-                        when (type) {
-                            SearchType.EQUAL -> builder.equal(builder.lower(join.get(field)), term)
-                            SearchType.STARTS_WITH -> builder.like(builder.lower(join.get(field)), "$term%")
-                            SearchType.ENDS_WITH -> builder.like(builder.lower(join.get(field)), "%$term")
-                            SearchType.LIKE -> builder.like(builder.lower(join.get(field)), "%$term%")
-                        }
-                    }.toTypedArray()
-                )
-            }
-
-            return builder.and(predicate, builder.or(*terms.toTypedArray()))
+            return builder.and(predicate, searchPredicate(builder, join, search, type, *fields))
         }
     }
+
 
     /**
      * MongoModel interface defines the specifications for MongoDB models.
