@@ -109,7 +109,7 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
     fun <AR : RBase> apply(source: BaseModel, target: AR) {
         target.pk = source.pk
         target.sk = source.sk
-        target.createdAt = source.getCreatedAt()
-        target.updatedAt = source.getUpdatedAt()
+        target.createdAt = source.createdAt
+        target.updatedAt = source.updatedAt
     }
 }

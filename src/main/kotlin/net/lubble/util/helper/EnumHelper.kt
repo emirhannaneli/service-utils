@@ -7,19 +7,13 @@ import org.springframework.context.MessageSource
 import org.springframework.context.i18n.LocaleContextHolder
 
 /**
- * This interface should be implemented by enums that will be used in the frontend.
- * It provides methods to get the label, value, color, and icon of the enum.
- * It also provides methods to find an enum by its name or value, and to convert the enum to a constant.
+ * Helper interface for enums with label and value.
  * @property label The label of the enum.
  * @property value The value of the enum.
- * @property color The color of the enum.
- * @property icon The icon of the enum.
  */
 interface EnumHelper {
     val label: String
     val value: String
-    val color: String?
-    val icon: String?
 
     companion object {
         /**
@@ -58,7 +52,7 @@ interface EnumHelper {
      * @return The constant.
      */
     fun toConstant(): EnumConstant {
-        return EnumConstant(labelLocalized(), value, color, icon)
+        return EnumConstant(labelLocalized(), value)
     }
 
     /**

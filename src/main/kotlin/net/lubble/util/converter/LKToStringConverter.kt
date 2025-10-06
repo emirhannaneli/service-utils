@@ -11,15 +11,26 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
 import net.lubble.util.LK
+import org.springframework.data.elasticsearch.core.mapping.PropertyValueConverter
 import java.io.IOException
 
 @Converter(autoApply = true)
-class LKToStringConverter : AttributeConverter<LK, String> {
+class LKToStringConverter : AttributeConverter<LK, String>, PropertyValueConverter {
     override fun convertToDatabaseColumn(value: LK): String {
         return value.toString()
     }
 
     override fun convertToEntityAttribute(value: String): LK {
+        return LK(value)
+    }
+
+    override fun write(value: Any): Any {
+        if (value !is LK) return value
+        return value.value
+    }
+
+    override fun read(value: Any): Any {
+        if (value !is String) return value
         return LK(value)
     }
 
@@ -29,7 +40,7 @@ class LKToStringConverter : AttributeConverter<LK, String> {
             jgen.writeString(value.toString())
         }
 
-        override fun convert(source: LK): String? {
+        override fun convert(source: LK): String {
             return source.toString()
         }
     }
@@ -41,7 +52,7 @@ class LKToStringConverter : AttributeConverter<LK, String> {
             return LK(node.asText())
         }
 
-        override fun convert(source: String): LK? {
+        override fun convert(source: String): LK {
             return LK(source)
         }
     }

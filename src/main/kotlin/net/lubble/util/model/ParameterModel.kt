@@ -35,17 +35,9 @@ enum class SortOrder : EnumHelper {
     ASC {
         override val label: String = "sort.order.asc"
         override val value: String = name.uppercase()
-        override val color: String?
-            get() = null
-        override val icon: String?
-            get() = null
     },
     DESC {
         override val label: String = "sort.order.desc"
         override val value: String = name.uppercase()
-        override val color: String?
-            get() = null
-        override val icon: String?
-            get() = null
     }
 }

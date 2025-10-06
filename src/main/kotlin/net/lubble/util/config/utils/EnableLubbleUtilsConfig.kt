@@ -3,25 +3,30 @@ package net.lubble.util.config.utils
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import jakarta.annotation.PostConstruct
-import jakarta.persistence.EntityListeners
 import net.lubble.util.AppContextUtil
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.*
 import org.springframework.context.event.EventListener
-import org.springframework.data.jpa.domain.support.AuditingEntityListener
+import org.springframework.core.convert.converter.Converter
+import org.springframework.data.elasticsearch.core.convert.ElasticsearchCustomConversions
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing
 import org.springframework.data.mongodb.config.EnableMongoAuditing
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import java.net.http.HttpClient
+import java.time.Instant
 
 @Configuration
 @ComponentScans(
@@ -49,21 +54,28 @@ open class EnableLubbleUtilsConfig {
     }
 
     @Bean
-    open fun mapper(): ObjectMapper {
-        val mapper = ObjectMapper()
+    open fun mapper(builder: Jackson2ObjectMapperBuilder): ObjectMapper {
+        return builder.createXmlMapper(false).build<ObjectMapper>().apply {
+            configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+            configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false)
+            configure(SerializationFeature.WRITE_SELF_REFERENCES_AS_NULL, true)
+            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
+            registerKotlinModule()
+            registerModule(JavaTimeModule())
 
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
-        mapper.registerKotlinModule()
-        mapper.registerModule(JavaTimeModule())
+            val lkModule = SimpleModule()
+            lkModule.addSerializer(LK::class.java, LKToStringConverter.Serializer())
+            lkModule.addDeserializer(LK::class.java, LKToStringConverter.Deserializer())
 
-        val lkModule = SimpleModule()
-        lkModule.addSerializer(LK::class.java, LKToStringConverter.Serializer())
-        lkModule.addDeserializer(LK::class.java, LKToStringConverter.Deserializer())
+            val hibernate6 = Hibernate6Module()
+            hibernate6.disable(Hibernate6Module.Feature.USE_TRANSIENT_ANNOTATION)
+            hibernate6.enable(Hibernate6Module.Feature.SERIALIZE_IDENTIFIER_FOR_LAZY_NOT_LOADED_OBJECTS)
+            registerModule(hibernate6)
 
-        mapper.registerModule(lkModule)
-
-        return mapper
+            registerModule(lkModule)
+        }
     }
 
     @Bean

@@ -1,7 +1,7 @@
 package net.lubble.util.service
 
+import net.lubble.util.model.BaseModel
 import org.springframework.data.domain.Page
-import org.springframework.transaction.annotation.Transactional
 
 /**
  * This interface defines the basic CRUD operations for a service.
@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional
  * @param U The update type.
  * @param S The specification type.
  */
-interface BaseService<T, C, U, S> {
+interface BaseService<T : BaseModel, C, U, S> {
 
     /**
      * Create a new entity.

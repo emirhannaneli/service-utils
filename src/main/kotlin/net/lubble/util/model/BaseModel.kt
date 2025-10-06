@@ -1,56 +1,80 @@
 package net.lubble.util.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import de.huxhorn.sulky.ulid.ULID
 import jakarta.persistence.*
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
+import org.springframework.data.elasticsearch.annotations.DateFormat
+import org.springframework.data.elasticsearch.annotations.ValueConverter
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import org.springframework.data.mongodb.core.index.Indexed
-import org.springframework.data.mongodb.core.mapping.Field
 import java.time.Instant
 import java.util.*
 import kotlin.math.abs
+import org.springframework.data.elasticsearch.annotations.Field as ElasticField
+import org.springframework.data.elasticsearch.annotations.FieldType as ElasticFieldType
+import org.springframework.data.mongodb.core.mapping.Field as MongoField
+import org.springframework.data.mongodb.core.mapping.FieldType as MongoFieldType
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener::class)
 open class BaseModel(
     @Id
+    @field:JsonIgnore
     @Column(name = "id", unique = true, updatable = false, nullable = false, length = 26)
     private var id: String,
 
-    @Field("pk")
+    @JvmField
     @Indexed(unique = true)
+    @MongoField("pk")
+    @ElasticField("pk")
+    @field:JsonProperty(index = Int.MIN_VALUE)
     @Column(name = "pk", unique = true, nullable = false, updatable = false, length = 12)
-    open var pk: Long,
+    var pk: Long,
 
-
-    @Field("sk")
+    @JvmField
     @Indexed(unique = true)
+    @MongoField("sk", targetType = MongoFieldType.STRING)
+    @ElasticField("sk", type = ElasticFieldType.Keyword)
+    @ValueConverter(LKToStringConverter::class)
     @Convert(converter = LKToStringConverter::class)
     @Column(name = "sk", unique = true, updatable = false, nullable = false, length = 11)
-    open var sk: LK,
+    @field:JsonProperty(index = Int.MIN_VALUE + 1)
+    @field:JsonSerialize(using = LKToStringConverter.Serializer::class)
+    @field:JsonDeserialize(using = LKToStringConverter.Deserializer::class)
+    var sk: LK,
 
     @Indexed
     @JvmField
+    @JsonIgnore
     @Column(nullable = false)
     var deleted: Boolean = false,
 
     @Indexed
     @JvmField
+    @JsonIgnore
     @Column(nullable = false)
     var archived: Boolean = false,
 
-    @JvmField
     @CreatedDate
-    @Column(nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now(),
+    @MongoField(name = "createdAt", targetType = MongoFieldType.DATE_TIME)
+    @ElasticField(name = "createdAt", type = ElasticFieldType.Date, format = [DateFormat.epoch_millis])
+    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP")
+    @field:JsonProperty(index = Int.MAX_VALUE - 1)
+    open var createdAt: Instant = Instant.now(),
 
-    @JvmField
     @LastModifiedDate
-    @Column(nullable = false)
-    var updatedAt: Instant = Instant.now(),
+    @Column(nullable = false, columnDefinition = "TIMESTAMP")
+    @MongoField(name = "updatedAt", targetType = MongoFieldType.DATE_TIME)
+    @ElasticField(name = "updatedAt", type = ElasticFieldType.Date, format = [DateFormat.epoch_millis])
+    @field:JsonProperty(index = Int.MAX_VALUE)
+    open var updatedAt: Instant = Instant.now(),
 ) {
 
     /**
@@ -82,6 +106,22 @@ open class BaseModel(
     }
 
     /**
+     * Returns the pk of the model.
+     * @return The pk.
+     */
+    open fun getPk(): Long {
+        return pk
+    }
+
+    /**
+     * Returns the sk of the model.
+     * @return The sk.
+     */
+    open fun getSk(): LK {
+        return sk
+    }
+
+    /**
      * Returns whether the model is deleted.
      * @return True if the model is deleted, false otherwise.
      */
@@ -97,21 +137,6 @@ open class BaseModel(
         return archived
     }
 
-    /**
-     * Returns the creation timestamp of the model.
-     * @return The creation timestamp.
-     */
-    open fun getCreatedAt(): Instant? {
-        return createdAt
-    }
-
-    /**
-     * Returns the last updated timestamp of the model.
-     * @return The last updated timestamp.
-     */
-    open fun getUpdatedAt(): Instant? {
-        return updatedAt
-    }
 
     /**
      * Checks if the model matches the given id.
