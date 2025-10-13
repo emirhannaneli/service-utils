@@ -93,13 +93,12 @@ interface LJPAProjection<T : BaseModel> {
         val search = spec.ofSearch().toPredicate(root, query, builder)
         return query.select(builder.count(root))
             .where(search)
-            .apply { orderBy() }
     }
 
 
     @Suppress("UNCHECKED_CAST")
     private fun setFields(entity: T, tuple: Tuple) {
-        val tupleAliases = tuple.elements.mapTo(HashSet()) { it.alias }
+        val tupleAliases = tuple.elements.mapTo(HashSet()) { it.alias }.filterNotNull()
 
         FieldUtils.getAllFields(entity::class.java)
             .filter { it.name in tupleAliases }
@@ -109,8 +108,11 @@ interface LJPAProjection<T : BaseModel> {
 
                 when {
                     Collection::class.java.isAssignableFrom(field.type) -> {
-                        val collection = (field.get(entity) as? MutableCollection<Any>) ?: mutableListOf()
+                        var collection = (field.get(entity) as? MutableSet<Any>) ?: mutableSetOf()
                         value?.let { collection.add(it) }
+                        collection = collection.distinctBy {
+                            if (it is BaseModel) it.getId() else it.hashCode()
+                        }.toMutableSet()
                         field.set(entity, collection)
                     }
 

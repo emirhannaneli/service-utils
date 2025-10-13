@@ -107,8 +107,10 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param target Target DTO
      */
     fun <AR : RBase> apply(source: BaseModel, target: AR) {
-        target.pk = source.pk
-        target.sk = source.sk
+        target.pk = source.getPk()
+        target.sk = source.getSk()
+        target.archived = source.archived
+        target.deleted = source.deleted
         target.createdAt = source.createdAt
         target.updatedAt = source.updatedAt
     }

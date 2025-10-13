@@ -82,6 +82,8 @@ interface JPATool<T> {
             }
         }
 
+        query.distinct(true)
+
         return predicate
     }
 

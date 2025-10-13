@@ -5,6 +5,7 @@ import net.lubble.util.model.BaseModel
 import net.lubble.util.spec.BaseSpec
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
 import java.util.*
@@ -41,22 +42,28 @@ interface LMongoProjection<T : BaseModel> {
      * Finds all documents matching the given specification, with optional pagination.
      *
      * @param spec the specification to search by
-     * @param pagination whether to apply pagination (default is true)
-     * @return a Page containing the found documents
      */
-    fun findAll(spec: BaseSpec.Mongo<T>, pagination: Boolean = true): Page<T> {
+    fun findAll(spec: BaseSpec.Mongo<T>): List<T> {
         val clazz = spec.clazz
         val query = projection(spec)
-        val pageable = spec.ofSortedPageable()
 
-        if (pagination) {
-            query.skip(pageable.pageNumber * pageable.pageSize.toLong())
-            query.limit(pageable.pageSize)
-        }
+        return template.find(query, clazz)
+    }
 
-        val result = template.find(query, clazz)
-        val count = count(spec)
-        return PageImpl(result, pageable, count)
+    /**
+     * Finds all documents matching the given specification, with pagination.
+     *
+     * @param spec the specification to search by
+     * @param pageable the pagination information
+     * @return a Page containing the found documents
+     */
+    fun findAll(spec: BaseSpec.Mongo<T>, pageable: Pageable): Page<T> {
+        val clazz = spec.clazz
+        val query = projection(spec)
+        val total = template.count(query, clazz)
+        query.with(pageable)
+        val content = template.find(query, clazz)
+        return PageImpl(content, pageable, total)
     }
 
     /**
