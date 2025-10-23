@@ -122,6 +122,24 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
     }
 
     /**
+     * Maps each object in the Documented Entity collection (type T) to a Documented DTO (type R).
+     * @param source Source collection
+     * @return List of Documented DTO objects
+     */
+    fun dMap(source: Collection<BaseDocumented<T>>): List<R> {
+        return source.map { dMap(it) }
+    }
+
+    /**
+     * Maps each object in the Documented Entity page (type T) to a Documented DTO (type R).
+     * @param source Source page
+     * @return List of Documented DTO objects
+     */
+    fun dMap(source: Page<BaseDocumented<T>>): List<R> {
+        return source.content.map { dMap(it) }
+    }
+
+    /**
      * Applies the basic properties of the Entity (type T) to the DTO (type R).
      * @param source Source object
      * @param target Target DTO
