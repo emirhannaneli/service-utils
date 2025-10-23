@@ -106,7 +106,7 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source object
      * @return Newly created Documented DTO
      */
-    fun<D: BaseDocumented<T>> dMap(source: D): R {
+    fun dMap(source: BaseDocumented<T>): R {
         val dto = dMapping(source)
         apply(source, dto)
         return dto
@@ -117,7 +117,7 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source object
      * @return Documented DTO object
      */
-    fun <D: BaseDocumented<T>> dMapping(source: D): R {
+    fun dMapping(source: BaseDocumented<T>): R {
         throw NotImplementedError("Always override dMapping function if you want to use dMap")
     }
 
