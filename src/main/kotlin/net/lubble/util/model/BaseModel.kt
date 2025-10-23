@@ -78,6 +78,17 @@ open class BaseModel(
 ) {
 
     /**
+     * Generates a new BaseModel with a unique id and the given pk and sk.
+     * @param pk The partition key.
+     * @param sk The sort key.
+     * */
+    constructor(pk: Long, sk: LK) : this(
+        id = ULID().nextULID(),
+        pk = pk,
+        sk = sk
+    )
+
+    /**
      * Generates a new BaseModel with a unique id, pk, and sk.
      * */
     constructor() : this(

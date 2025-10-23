@@ -49,10 +49,10 @@ abstract class BaseDocumented<T : BaseModel>(
 
     companion object {
         val registry = ThreadLocal.withInitial {
-            mutableMapOf<String, BaseDocumented<*>>() // id → node
+            mutableMapOf<String, BaseDocumented<*>>()
         }
         val visiting = ThreadLocal.withInitial {
-            mutableSetOf<String>() // aktif stack (cycle kontrolü için)
+            mutableSetOf<String>()
         }
 
         fun id(source: BaseModel?): String? =

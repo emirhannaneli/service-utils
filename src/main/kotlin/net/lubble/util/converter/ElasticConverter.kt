@@ -1,6 +1,7 @@
 package net.lubble.util.converter
 
 import net.lubble.util.LK
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.convert.converter.Converter
@@ -8,6 +9,7 @@ import org.springframework.data.elasticsearch.core.convert.ElasticsearchCustomCo
 import java.time.Instant
 
 @Configuration
+@ConditionalOnClass(ElasticsearchCustomConversions::class)
 open class ElasticConverter() {
     class LKToString : Converter<LK, String> {
         override fun convert(source: LK): String {

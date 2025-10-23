@@ -1,6 +1,7 @@
 package net.lubble.util.mapper
 
 import net.lubble.util.dto.RBase
+import net.lubble.util.model.BaseDocumented
 import net.lubble.util.model.BaseModel
 import org.springframework.data.domain.Page
 
@@ -11,7 +12,6 @@ import org.springframework.data.domain.Page
  * @param U Update DTO type
  */
 interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
-
     /**
      * Maps the properties of the update DTO (type U) to the Entity (type T).
      * @param source Source object
@@ -99,6 +99,26 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      */
     fun map(source: Page<T>): List<R> {
         return source.content.map { map(it) }
+    }
+
+    /**
+     * Maps the properties of the Entity (type T) to a new Documented DTO (type D).
+     * @param source Source object
+     * @return Newly created Documented DTO
+     */
+    fun<D: BaseDocumented<T>> dMap(source: D): R {
+        val dto = dMapping(source)
+        apply(source, dto)
+        return dto
+    }
+
+    /**
+     * Performs the conversion from Entity (type T) to Documented DTO (type D).
+     * @param source Source object
+     * @return Documented DTO object
+     */
+    fun <D: BaseDocumented<T>> dMapping(source: D): R {
+        throw NotImplementedError("Always override dMapping function if you want to use dMap")
     }
 
     /**
