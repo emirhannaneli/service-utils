@@ -1,14 +1,16 @@
 package net.lubble.util.model
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import org.springframework.data.annotation.Transient
 import java.io.Serializable
 
 abstract class BaseDocumented<T : BaseModel>(
-    override var source: T?
+    @Transient
+    override var ref: T? = null
 ) : BaseModel(), BaseDocumentedSchema<T> {
 
     init {
-        val id = id(source)
+        val id = id(ref)
         val reg = registry.get()
         val stack = visiting.get()
 
@@ -16,8 +18,7 @@ abstract class BaseDocumented<T : BaseModel>(
             stack.add(id)
             reg[id] = this
 
-            // mapping + apply
-            source?.let { src ->
+            ref?.let { src ->
                 @Suppress("UNCHECKED_CAST")
                 val typedNode = this as BaseDocumented<BaseModel>
                 typedNode.apply(src, typedNode)
@@ -26,7 +27,6 @@ abstract class BaseDocumented<T : BaseModel>(
 
             stack.remove(id)
         }
-        this.source = null
     }
 
     private fun id(source: BaseModel?): String? =
@@ -67,9 +67,7 @@ abstract class BaseDocumented<T : BaseModel>(
             val reg = registry.get()
             val stack = visiting.get()
 
-            if (id in stack) {
-                return null
-            }
+            if (id in stack) return null
 
             @Suppress("UNCHECKED_CAST")
             val existing = reg[id] as? D
@@ -82,16 +80,11 @@ abstract class BaseDocumented<T : BaseModel>(
 
             return newObj
         }
-
-        fun clear() {
-            registry.get().clear()
-            visiting.get().clear()
-        }
     }
 }
 
-@JsonIgnoreProperties(ignoreUnknown = true, value = ["source"])
+@JsonIgnoreProperties(ignoreUnknown = true, value = ["ref"])
 interface BaseDocumentedSchema<T : BaseModel> : Serializable {
-    var source: T?
+    var ref: T?
     fun mapping(source: T): BaseDocumented<T>
 }

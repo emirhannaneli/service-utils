@@ -44,9 +44,9 @@ interface ElasticTool<T : BaseModel> {
      * Returns the default query for an ElasticSearch model.
      *
      */
-    fun defaultQuery(
+    fun defaultCriteria(
         param: ParameterModel
-    ): CriteriaQuery {
+    ): Criteria {
         val criteria = Criteria()
 
         id?.let {
@@ -61,6 +61,16 @@ interface ElasticTool<T : BaseModel> {
             criteria.and(Criteria.where("archived").`is`(it))
         }
 
+        return criteria
+    }
+
+    /**
+     * Builds the query with sorting for an ElasticSearch model.
+     *
+     * @param param The parameter model containing sorting information.
+     * @param criteria The criteria to be combined.
+     */
+    fun buildQuery(param: ParameterModel, criteria: Criteria): CriteriaQuery {
         var query = CriteriaQuery(criteria)
 
         val fields = clazz.declaredFields
@@ -79,7 +89,6 @@ interface ElasticTool<T : BaseModel> {
                     }) query = CriteriaQuery(criteria).addSort(Sort.by(Sort.Order.desc(it)))
             }
         }
-
         return query
     }
 
