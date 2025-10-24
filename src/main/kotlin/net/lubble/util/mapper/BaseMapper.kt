@@ -106,7 +106,7 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source object
      * @return Newly created Documented DTO
      */
-    fun dMap(source: BaseDocumented<T>): R {
+    fun <D : BaseDocumented<T>> dMap(source: D): R {
         val dto = dMapping(source)
         apply(source, dto)
         return dto
@@ -117,7 +117,7 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source object
      * @return Documented DTO object
      */
-    fun dMapping(source: BaseDocumented<T>): R {
+    fun <D : BaseDocumented<T>> dMapping(source: D): R {
         throw NotImplementedError("Always override dMapping function if you want to use dMap")
     }
 
@@ -126,7 +126,7 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source collection
      * @return List of Documented DTO objects
      */
-    fun dMap(source: Collection<BaseDocumented<T>>): List<R> {
+    fun <D : BaseDocumented<T>> dMap(source: Collection<D>): List<R> {
         return source.map { dMap(it) }
     }
 
@@ -135,7 +135,7 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source page
      * @return List of Documented DTO objects
      */
-    fun dMap(source: Page<BaseDocumented<T>>): List<R> {
+    fun <D : BaseDocumented<T>> dMap(source: Page<D>): List<R> {
         return source.content.map { dMap(it) }
     }
 
