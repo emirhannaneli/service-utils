@@ -11,7 +11,7 @@ import org.springframework.data.domain.Page
  * @param D The type of the DTO (Data Transfer Object).
  * @param S The type of the specification or criteria used for querying.
  */
-interface DocumentedBaseService<T : BaseModel, D : BaseDocumented<T>, S> {
+interface BaseDocumentedService<T : BaseModel, D : BaseDocumented<T>, S> {
 
     /**
      * Saves the given DTO.
