@@ -47,18 +47,18 @@ interface ElasticTool<T : BaseModel> {
     fun defaultCriteria(
         param: ParameterModel
     ): Criteria {
-        val criteria = Criteria()
+        var criteria = Criteria()
 
         id?.let {
-            criteria.and(idQuery(criteria, it))
+            criteria = idQuery(criteria, it)
         }
 
         deleted?.let {
-            criteria.and(Criteria.where("deleted").`is`(it))
+            criteria = criteria.and(Criteria.where("deleted").`is`(it))
         }
 
         archived?.let {
-            criteria.and(Criteria.where("archived").`is`(it))
+            criteria = criteria.and(Criteria.where("archived").`is`(it))
         }
 
         return criteria
@@ -95,31 +95,44 @@ interface ElasticTool<T : BaseModel> {
     /**
      * Returns the id query for an ElasticSearch model.
      *
-     * @param criteria The criteria to be combined.
      * @param id The id of the entity.
      */
-    fun idQuery(criteria: Criteria, id: String): Criteria {
+    fun idQuery(id: String): Criteria {
         val value = id.toLongOrNull() ?: LK(id)
         val key = if (value is Long) IDType.PK else IDType.SK
-        return when (key) {
-            IDType.PK -> Criteria.where(key.name.lowercase()).`is`(value)
-            IDType.SK -> Criteria.where(key.name.lowercase()).`is`(value)
-        }
+        return Criteria.where(key.name.lowercase()).`is`(value)
     }
 
     /**
      * Returns the id query for an ElasticSearch model.
      *
-     * @param criteria The criteria to be combined.
+     * @param criteria The existing criteria to combine with.
+     * @param id The id of the entity.
+     */
+    fun idQuery(criteria: Criteria, id: String): Criteria {
+        return criteria.and(idQuery(id))
+    }
+
+    /**
+     * Returns the id query for an ElasticSearch model.
+     *
+     * @param field The field to search in.
+     * @param id The id of the entity.
+     */
+    fun idQuery(field: String, id: String): Criteria {
+        val value = id.toLongOrNull() ?: LK(id)
+        val key = if (value is Long) IDType.PK else IDType.SK
+        return Criteria.where("$field.${key.name.lowercase()}").`is`(value)
+    }
+
+    /**
+     * Returns the id query for an ElasticSearch model.
+     *
+     * @param criteria The existing criteria to combine with.
      * @param field The field to search in.
      * @param id The id of the entity.
      */
     fun idQuery(criteria: Criteria, field: String, id: String): Criteria {
-        val value = id.toLongOrNull() ?: LK(id)
-        val key = if (value is Long) IDType.PK else IDType.SK
-        return when (key) {
-            IDType.PK -> Criteria.where("$field.${key.name.lowercase()}").`is`(value)
-            IDType.SK -> Criteria.where("$field.${key.name.lowercase()}").`is`(value)
-        }
+        return criteria.and(idQuery(field, id))
     }
 }
