@@ -80,6 +80,11 @@ abstract class BaseDocumented<T : BaseModel>(
 
             return newObj
         }
+
+        fun clearRegistry() {
+            registry.get().clear()
+            visiting.get().clear()
+        }
     }
 }
 
