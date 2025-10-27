@@ -1,5 +1,6 @@
 package net.lubble.util.mapper
 
+import net.lubble.util.MapperRegistryHolder
 import net.lubble.util.dto.RBase
 import net.lubble.util.model.BaseDocumented
 import net.lubble.util.model.BaseModel
@@ -71,9 +72,14 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @return Newly created DTO
      */
     fun map(source: T): R {
+        MapperRegistryHolder.get<R>(source)?.let {
+            return it
+        }
         val dto = mapping(source)
         apply(source, dto)
-        return dto
+        return dto.also {
+            MapperRegistryHolder.put(source, it)
+        }
     }
 
     /**
@@ -107,9 +113,14 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @return Newly created Documented DTO
      */
     fun <D : BaseDocumented<T>> dMap(source: D): R {
+        MapperRegistryHolder.get<R>(source)?.let {
+            return it
+        }
         val dto = dMapping(source)
         apply(source, dto)
-        return dto
+        return dto.also {
+            MapperRegistryHolder.put(source, it)
+        }
     }
 
     /**

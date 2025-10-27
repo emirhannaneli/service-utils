@@ -41,7 +41,7 @@ class BaseSpec {
                 }
             }
 
-        fun toKey(): String {
+        fun toCacheKey(): String {
             val mapper = AppContextUtil.bean(ObjectMapper::class.java).apply {
                 setAnnotationIntrospector(object : JacksonAnnotationIntrospector() {
                     override fun findPropertyIgnoralByName(
@@ -81,7 +81,7 @@ class BaseSpec {
                 }
             }
 
-        fun toKey(): String {
+        fun toCacheKey(): String {
             val mapper = AppContextUtil.bean(ObjectMapper::class.java).apply {
                 setAnnotationIntrospector(object : JacksonAnnotationIntrospector() {
                     override fun findPropertyIgnoralByName(
@@ -114,7 +114,7 @@ class BaseSpec {
                 }
             }
 
-        fun toKey(): String {
+        fun toCacheKey(): String {
             val mapper = AppContextUtil.bean(ObjectMapper::class.java).apply {
                 setAnnotationIntrospector(object : JacksonAnnotationIntrospector() {
                     override fun findPropertyIgnoralByName(
