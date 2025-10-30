@@ -1,7 +1,6 @@
 package net.lubble.util.model
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import net.lubble.util.DocumentRegistryHolder
 import org.springframework.data.annotation.Transient
 import java.io.Serializable
 
@@ -9,44 +8,9 @@ abstract class BaseDocumented<T : BaseModel>(
     @Transient
     override var ref: T? = null
 ) : BaseModel(), BaseDocumentedSchema<T> {
-
-    @Transient
-    private var rootContextOwner: Boolean = false
-
     init {
-        val ctx = if (!DocumentRegistryHolder.hasContext()) {
-            rootContextOwner = true
-            DocumentRegistryHolder.createContext()
-        } else {
-            DocumentRegistryHolder.current()!!
-        }
-
-        val id = id(ref)
-        val reg = ctx.registry
-        val stack = ctx.visiting
-
-        if (id != null && !reg.containsKey(id)) {
-            stack.add(id)
-            try {
-                reg[id] = this
-                ref?.let { src ->
-                    @Suppress("UNCHECKED_CAST")
-                    val typedNode = this as BaseDocumented<BaseModel>
-                    typedNode.apply(src, typedNode)
-                    typedNode.mapping(src)
-                }
-            } finally {
-                stack.remove(id)
-            }
-        }
-
-        if (rootContextOwner) {
-            DocumentRegistryHolder.closeContext()
-        }
+        ref?.let { from(it, ::map) }
     }
-
-    private fun id(source: BaseModel?): String? =
-        source?.let { "${it::class.simpleName}-${it.pk}-${it.sk}" }
 
     fun map(source: T): BaseDocumented<T> {
         apply(source, this)
@@ -64,46 +28,36 @@ abstract class BaseDocumented<T : BaseModel>(
     }
 
     companion object {
-        val registry = ThreadLocal.withInitial {
-            mutableMapOf<String, BaseDocumented<*>>()
-        }
-        val visiting = ThreadLocal.withInitial {
-            mutableSetOf<String>()
-        }
+        val VISITED: ThreadLocal<MutableSet<String>> = ThreadLocal()
 
-        fun id(source: BaseModel?): String? =
-            source?.let { "${it::class.simpleName}-${it.pk}-${it.sk}" }
-
-        @Suppress("UNCHECKED_CAST")
-        inline fun <reified T : BaseModel, D : BaseDocumented<T>> from(
-            source: T?,
-            factory: (T) -> D
-        ): D? {
-            if (source == null) return null
-            val id = id(source) ?: return null
-            val reg = registry.get()
-            val stack = visiting.get()
-
-            if (id in stack) {
-                return null
-            }
-
-            val existing = reg[id] as? D
-            if (existing != null) return existing
-
-            stack.add(id)
-            return try {
-                val newObj = factory(source)
-                reg[id] = newObj
-                newObj
+        inline fun <R> mapSession(block: () -> R): R {
+            try {
+                VISITED.set(mutableSetOf())
+                return block()
             } finally {
-                stack.remove(id)
+                VISITED.remove()
             }
+        }
+
+        fun <T : BaseModel, D : BaseDocumented<T>> from(
+            source: T?,
+            mapper: (T) -> D
+        ): D? {
+            source ?: return null
+            val visited = VISITED.get() ?: mutableSetOf<String>().also { VISITED.set(it) }
+            val id = source.getId()
+
+            if (!visited.add(id)) return null
+
+            val documented = mapper(source)
+            documented.apply(source, documented)
+            documented.mapping(source)
+            return documented
         }
     }
 }
 
-@JsonIgnoreProperties(ignoreUnknown = true, value = ["ref", "rootContextOwner"])
+@JsonIgnoreProperties(ignoreUnknown = true, value = ["ref"])
 interface BaseDocumentedSchema<T : BaseModel> : Serializable {
     var ref: T?
     fun mapping(source: T): BaseDocumented<T>

@@ -18,9 +18,7 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source object
      * @param destination Destination object
      */
-    fun map(source: U, destination: T) {
-        objectMap(source, destination)
-    }
+    fun map(source: U, destination: T) = objectMap(source, destination)
 
     /**
      * Custom function that maps the properties of the source object to the destination object.
@@ -94,60 +92,38 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source collection
      * @return List of DTO objects
      */
-    fun map(source: Collection<T>): List<R> {
-        return source.map { map(it) }
-    }
+    fun map(source: Collection<T>): List<R> = source.map { map(it) }
 
     /**
      * Maps each object in the Entity page (type T) to a DTO (type R).
      * @param source Source page
      * @return List of DTO objects
      */
-    fun map(source: Page<T>): List<R> {
-        return source.content.map { map(it) }
-    }
+    fun map(source: Page<T>): List<R> = source.content.map { map(it) }
 
     /**
-     * Maps the properties of the Entity (type T) to a new Documented DTO (type D).
+     * Maps the properties of the Documented Entity (type T) to a new Documented DTO (type R).
      * @param source Source object
      * @return Newly created Documented DTO
      */
-    fun <D : BaseDocumented<T>> dMap(source: D): R {
+    fun <D : BaseDocumented<T>> map(source: D): R {
         MapperRegistryHolder.get<R>(source)?.let {
             return it
         }
-        val dto = dMapping(source)
-        apply(source, dto)
-        return dto.also {
+        val doc = mapping(source)
+        apply(source, doc)
+        return doc.also {
             MapperRegistryHolder.put(source, it)
         }
     }
 
     /**
-     * Performs the conversion from Entity (type T) to Documented DTO (type D).
+     * Performs the conversion from Documented Entity (type T) to Documented DTO (type R).
      * @param source Source object
      * @return Documented DTO object
      */
-    fun <D : BaseDocumented<T>> dMapping(source: D): R {
+    fun <D : BaseDocumented<T>> mapping(source: D): R {
         throw NotImplementedError("Always override dMapping function if you want to use dMap")
-    }
-
-    /**
-     * Maps each object in the Documented Entity collection (type T) to a Documented DTO (type R).
-     * @param source Source collection
-     * @return List of Documented DTO objects
-     */
-    fun <D : BaseDocumented<T>> dMap(source: Collection<D>): List<R> {
-        return source.map { dMap(it) }
-    }
-
-    /**
-     * Maps each object in the Documented Entity page (type T) to a Documented DTO (type R).
-     * @param source Source page
-     * @return List of Documented DTO objects
-     */
-    fun <D : BaseDocumented<T>> dMap(source: Page<D>): List<R> {
-        return source.content.map { dMap(it) }
     }
 
     /**
@@ -155,7 +131,8 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source object
      * @param target Target DTO
      */
-    fun <AR : RBase> apply(source: BaseModel, target: AR) {
+    fun apply(source: BaseModel, target: R) {
+        target.setId(source.getId())
         target.pk = source.getPk()
         target.sk = source.getSk()
         target.archived = source.archived
@@ -164,3 +141,21 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
         target.updatedAt = source.updatedAt
     }
 }
+
+/**
+ * Maps each object in the Documented Entity collection (type T) to a Documented DTO (type R).
+ * @param source Source collection
+ * @return List of Documented DTO objects
+ */
+fun <T : BaseModel, R : RBase, U : Any, D : BaseDocumented<T>>
+        BaseMapper<T, R, U>.map(source: Collection<D>): List<R> =
+    source.map { map(it) }
+
+/**
+ * Maps each object in the Documented Entity page (type T) to a Documented DTO (type R).
+ * @param source Source page
+ * @return List of Documented DTO objects
+ */
+fun <T : BaseModel, R : RBase, U : Any, D : BaseDocumented<T>>
+        BaseMapper<T, R, U>.map(source: Page<D>): List<R> =
+    source.content.map { map(it) }

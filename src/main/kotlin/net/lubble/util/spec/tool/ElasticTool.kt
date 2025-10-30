@@ -37,7 +37,7 @@ interface ElasticTool<T : BaseModel> {
     /**
      * Returns the query for search.
      */
-    fun ofSearch(): CriteriaQuery
+    fun ofSearch(): Criteria
 
 
     /**
@@ -89,6 +89,7 @@ interface ElasticTool<T : BaseModel> {
                     }) query = CriteriaQuery(criteria).addSort(Sort.by(Sort.Order.desc(it)))
             }
         }
+
         return query
     }
 

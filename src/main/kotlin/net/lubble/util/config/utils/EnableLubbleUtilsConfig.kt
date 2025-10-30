@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import jakarta.annotation.PostConstruct
 import net.lubble.util.AppContextUtil
@@ -14,19 +15,15 @@ import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.*
 import org.springframework.context.event.EventListener
-import org.springframework.core.convert.converter.Converter
-import org.springframework.data.elasticsearch.core.convert.ElasticsearchCustomConversions
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing
 import org.springframework.data.mongodb.config.EnableMongoAuditing
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import java.net.http.HttpClient
-import java.time.Instant
 
 @Configuration
 @ComponentScans(
@@ -63,7 +60,9 @@ open class EnableLubbleUtilsConfig {
             disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
             registerKotlinModule()
+
             registerModule(JavaTimeModule())
+            registerModule(AfterburnerModule())
 
             val lkModule = SimpleModule()
             lkModule.addSerializer(LK::class.java, LKToStringConverter.Serializer())

@@ -6,44 +6,69 @@ import net.lubble.util.spec.BaseSpec
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
-import org.springframework.data.elasticsearch.core.get
-import org.springframework.data.elasticsearch.core.multiGet
+import org.springframework.data.elasticsearch.core.SearchHitSupport
 import org.springframework.data.elasticsearch.core.query.CriteriaQueryBuilder
 
-
+/**
+ * Interface for performing Elasticsearch operations on entities of type T.
+ *
+ * @param T The type of the entity, which must extend BaseModel.
+ */
 interface LElasticProjection<T : BaseModel> {
+
+    /**
+     * Provides an instance of ElasticsearchOperations.
+     */
     private val operations: ElasticsearchOperations
         get() = AppContextUtil.bean(ElasticsearchOperations::class.java)
 
+    /**
+     * Searches for entities similar to the given specification.
+     *
+     * @param spec The specification containing search criteria, pageable, and entity class.
+     * @return A Page containing the search results.
+     */
     fun searchSimilar(spec: BaseSpec.Elastic<T>): Page<T> {
         val clazz = spec.clazz
+        val criteria = spec.ofSearch()
         val pageable = spec.ofSortedPageable()
-        val query = spec.ofSearch().let {
-            CriteriaQueryBuilder(it.criteria)
-                .withPageable(pageable)
-                .build()
-        }
 
-        val searchHits = operations.search(query, clazz)
-        val results = searchHits.map { it.content }.distinctBy { it.getId() }
-        val count = operations.count(query, clazz)
-        return PageImpl(results, pageable, count)
+        val query = CriteriaQueryBuilder(criteria)
+            .withPageable(pageable)
+            .build()
+
+        val hits = operations.search(query, clazz)
+        val page = SearchHitSupport.searchPageFor(hits, pageable)
+
+        @Suppress("UNCHECKED_CAST")
+        return SearchHitSupport.unwrapSearchHits(page) as Page<T>? ?: PageImpl(emptyList(), pageable, 0)
     }
 
+    /**
+     * Finds a single entity matching the given specification.
+     *
+     * @param spec The specification containing search criteria and entity class.
+     * @return The first matching entity, or null if no match is found.
+     */
     fun findOne(spec: BaseSpec.Elastic<T>): T? {
         val clazz = spec.clazz
         val query = spec.ofSearch().let {
-            CriteriaQueryBuilder(it.criteria)
+            CriteriaQueryBuilder(it)
                 .build()
         }
-        return operations.search(query, clazz).map { it.content }.firstOrNull()
+        return operations.search(query, clazz).firstNotNullOfOrNull { it.content }
     }
 
+    /**
+     * Checks if any entity exists matching the given specification.
+     *
+     * @param spec The specification containing search criteria and entity class.
+     * @return True if at least one entity matches the criteria, false otherwise.
+     */
     fun exists(spec: BaseSpec.Elastic<T>): Boolean {
         val clazz = spec.clazz
         val query = spec.ofSearch().let {
-            CriteriaQueryBuilder(it.criteria)
-                .withPageable(spec.ofSortedPageable())
+            CriteriaQueryBuilder(it)
                 .build()
         }
 

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'net.lubble'
-version = '1.21.0-SNAPSHOT'
+version = '1.21.1-SNAPSHOT'
 
 var snakeYamlVersion = "2.5"
 var auth0JwtVersion = "4.5.0"
@@ -54,6 +54,7 @@ dependencies {
     compileOnly "jakarta.validation:jakarta.validation-api:$jakartaValidationVersion"
     implementation "jakarta.persistence:jakarta.persistence-api:$jakartaPersistenceVersion"
     compileOnly "org.apache.commons:commons-lang3:$commonsLangVersion"
+    implementation "com.fasterxml.jackson.module:jackson-module-afterburner:$jacksonVersion"
 
     implementation "org.jetbrains.kotlin:kotlin-script-runtime:1.9.23"
 
