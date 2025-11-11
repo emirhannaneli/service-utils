@@ -11,7 +11,7 @@ import org.springframework.data.domain.Page
  * @param D The type of the DTO (Data Transfer Object).
  * @param S The type of the specification or criteria used for querying.
  */
-interface BaseDocumentedService<T : BaseModel, D : BaseDocumented<T>, S> {
+interface BaseDocumentedService<T : BaseModel, D : BaseDocumented<in T>, S> {
 
     /**
      * Saves the given DTO.
@@ -44,7 +44,15 @@ interface BaseDocumentedService<T : BaseModel, D : BaseDocumented<T>, S> {
      * @param spec The specification or criteria to find DTOs.
      * @return A page of matching DTOs.
      */
-    fun search(spec: S): Page<D>
+    fun searchPaged(spec: S): Page<D> = throw NotImplementedError("Paged search not implemented")
+
+    /**
+     * Finds all DTOs matching the given specification.
+     *
+     * @param spec The specification or criteria to find DTOs.
+     * @return A list of matching DTOs.
+     */
+    fun search(spec: S): List<D>
 
     /**
      * Deletes the given DTO.

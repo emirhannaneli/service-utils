@@ -5,9 +5,11 @@ import net.lubble.util.model.BaseModel
 import net.lubble.util.spec.BaseSpec
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.SearchHitSupport
 import org.springframework.data.elasticsearch.core.query.CriteriaQueryBuilder
+import org.springframework.data.elasticsearch.core.query.FetchSourceFilter
 
 /**
  * Interface for performing Elasticsearch operations on entities of type T.
@@ -28,13 +30,20 @@ interface LElasticProjection<T : BaseModel> {
      * @param spec The specification containing search criteria, pageable, and entity class.
      * @return A Page containing the search results.
      */
-    fun searchSimilar(spec: BaseSpec.Elastic<T>): Page<T> {
+    fun searchPaged(spec: BaseSpec.Elastic<T>): Page<T> {
         val clazz = spec.clazz
         val criteria = spec.ofSearch()
         val pageable = spec.ofSortedPageable()
 
         val query = CriteriaQueryBuilder(criteria)
             .withPageable(pageable)
+            .withSourceFilter(
+                FetchSourceFilter(
+                    null,
+                    spec.fields?.toTypedArray(),
+                    null
+                )
+            )
             .build()
 
         val hits = operations.search(query, clazz)
@@ -42,6 +51,26 @@ interface LElasticProjection<T : BaseModel> {
 
         @Suppress("UNCHECKED_CAST")
         return SearchHitSupport.unwrapSearchHits(page) as Page<T>? ?: PageImpl(emptyList(), pageable, 0)
+    }
+
+    fun search(spec: BaseSpec.Elastic<T>): List<T> {
+        val clazz = spec.clazz
+        val criteria = spec.ofSearch()
+
+        val query = CriteriaQueryBuilder(criteria)
+            .withPageable(Pageable.unpaged())
+            .withSourceFilter(
+                FetchSourceFilter(
+                    null,
+                    spec.fields?.toTypedArray(),
+                    null
+                )
+            )
+            .build()
+
+        val hits = operations.search(query, clazz)
+        @Suppress("UNCHECKED_CAST")
+        return hits.searchHits.map { it.content }
     }
 
     /**

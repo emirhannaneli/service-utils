@@ -30,39 +30,49 @@ open class BaseModel(
     @Column(name = "id", unique = true, updatable = false, nullable = false, length = 26)
     private var id: String,
 
-    @JvmField
     @Indexed(unique = true)
     @MongoField("pk")
-    @ElasticField("pk")
+    @Basic(fetch = FetchType.EAGER)
+    @ElasticField("pk", type = ElasticFieldType.Keyword, index = true)
     @field:JsonProperty(index = Int.MIN_VALUE)
     @Column(name = "pk", unique = true, nullable = false, updatable = false, length = 12)
-    var pk: Long,
+    open var pk: Long,
 
-    @JvmField
     @Indexed(unique = true)
+    @Basic(fetch = FetchType.EAGER)
     @MongoField("sk", targetType = MongoFieldType.STRING)
-    @ElasticField("sk", type = ElasticFieldType.Keyword)
+    @ElasticField("sk", type = ElasticFieldType.Keyword, index = true)
     @ValueConverter(LKToStringConverter::class)
     @Convert(converter = LKToStringConverter::class)
-    @Column(name = "sk", unique = true, updatable = false, nullable = false, length = 11)
+    @Column(
+        name = "sk",
+        unique = true,
+        updatable = false,
+        nullable = false,
+        length = 11,
+        columnDefinition = "varchar(11)"
+    )
     @field:JsonProperty(index = Int.MIN_VALUE + 1)
     @field:JsonSerialize(using = LKToStringConverter.Serializer::class)
     @field:JsonDeserialize(using = LKToStringConverter.Deserializer::class)
-    var sk: LK,
+    open var sk: LK,
 
     @Indexed
-    @JvmField
     @JsonIgnore
+    @Basic(fetch = FetchType.EAGER)
+    @ElasticField(name = "deleted", type = ElasticFieldType.Boolean, index = true)
     @Column(nullable = false)
-    var deleted: Boolean = false,
+    open var deleted: Boolean = false,
 
     @Indexed
-    @JvmField
     @JsonIgnore
+    @Basic(fetch = FetchType.EAGER)
+    @ElasticField(name = "archived", type = ElasticFieldType.Boolean, index = true)
     @Column(nullable = false)
-    var archived: Boolean = false,
+    open var archived: Boolean = false,
 
     @CreatedDate
+    @Basic(fetch = FetchType.EAGER)
     @MongoField(name = "createdAt", targetType = MongoFieldType.DATE_TIME)
     @ElasticField(name = "createdAt", type = ElasticFieldType.Date, format = [DateFormat.epoch_millis])
     @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP")
@@ -70,6 +80,7 @@ open class BaseModel(
     open var createdAt: Instant = Instant.now(),
 
     @LastModifiedDate
+    @Basic(fetch = FetchType.EAGER)
     @Column(nullable = false, columnDefinition = "TIMESTAMP")
     @MongoField(name = "updatedAt", targetType = MongoFieldType.DATE_TIME)
     @ElasticField(name = "updatedAt", type = ElasticFieldType.Date, format = [DateFormat.epoch_millis])
@@ -120,33 +131,53 @@ open class BaseModel(
      * Returns the pk of the model.
      * @return The pk.
      */
+    /*@Basic(fetch = FetchType.EAGER)
     open fun getPk(): Long {
         return pk
-    }
+    }*/
+
+    /*open fun setPk(pk: Long) {
+        this.pk = pk
+    }*/
 
     /**
      * Returns the sk of the model.
      * @return The sk.
      */
+    /*@Basic(fetch = FetchType.EAGER)
     open fun getSk(): LK {
         return sk
-    }
+    }*/
+
+    /*open fun setSk(sk: LK) {
+        this.sk = sk
+    }*/
 
     /**
      * Returns whether the model is deleted.
      * @return True if the model is deleted, false otherwise.
      */
+    /*@Basic(fetch = FetchType.EAGER)
     open fun getDeleted(): Boolean {
         return deleted
-    }
+    }*/
+
+    /*open fun setDeleted(deleted: Boolean) {
+        this.deleted = deleted
+    }*/
 
     /**
      * Returns whether the model is archived.
      * @return True if the model is archived, false otherwise.
      */
-    open fun getArchived(): Boolean {
+    @Basic(fetch = FetchType.EAGER)
+    /*open fun getArchived(): Boolean {
         return archived
-    }
+    }*/
+
+    /*open fun setArchived(archived: Boolean) {
+        this.archived = archived
+    }*/
 
 
     /**
@@ -154,7 +185,6 @@ open class BaseModel(
      * @param id The id to check.
      * @return True if the model's pk or sk matches the given id, false otherwise.
      */
-    @Suppress("unused")
     fun matchesId(id: String): Boolean {
         val value = id.toLongOrNull() ?: LK(id)
         return if (value is Long) {

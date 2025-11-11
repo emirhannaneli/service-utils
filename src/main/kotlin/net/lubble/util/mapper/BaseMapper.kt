@@ -1,5 +1,8 @@
 package net.lubble.util.mapper
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import net.lubble.util.MapperRegistryHolder
 import net.lubble.util.dto.RBase
 import net.lubble.util.model.BaseDocumented
@@ -92,14 +95,14 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source collection
      * @return List of DTO objects
      */
-    fun map(source: Collection<T>): List<R> = source.map { map(it) }
+     fun map(source: Collection<T>): List<R> = runBlocking { source.map { async { map(it) } }.awaitAll() }
 
     /**
      * Maps each object in the Entity page (type T) to a DTO (type R).
      * @param source Source page
      * @return List of DTO objects
      */
-    fun map(source: Page<T>): List<R> = source.content.map { map(it) }
+     fun map(source: Page<T>): List<R> = runBlocking { source.content.map { async { map(it) } }.awaitAll() }
 
     /**
      * Maps the properties of the Documented Entity (type T) to a new Documented DTO (type R).
@@ -133,8 +136,8 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      */
     fun apply(source: BaseModel, target: R) {
         target.setId(source.getId())
-        target.pk = source.getPk()
-        target.sk = source.getSk()
+        target.pk = source.pk
+        target.sk = source.sk
         target.archived = source.archived
         target.deleted = source.deleted
         target.createdAt = source.createdAt

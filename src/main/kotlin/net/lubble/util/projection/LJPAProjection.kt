@@ -33,7 +33,7 @@ interface LJPAProjection<T : BaseModel> {
 
     fun findAll(spec: BaseSpec.JPA<T>, pagination: Boolean = true): Page<T> {
         val clazz = spec.clazz
-        val projection = projection(spec) ?: return PageImpl(emptyList(), spec.ofPageable(), 0L)
+        val projection = projection(spec) ?: return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
         val query = manager.createQuery(projection)
 
         if (pagination) {
@@ -55,7 +55,7 @@ interface LJPAProjection<T : BaseModel> {
     fun exists(spec: BaseSpec.JPA<T>): Boolean =
         manager.createQuery(count(spec, spec.clazz)).singleResult > 0
 
-    private fun projection(spec: BaseSpec.JPA<T>): CriteriaQuery<Tuple>? {
+    /*private fun projection(spec: BaseSpec.JPA<T>): CriteriaQuery<Tuple>? {
         val clazz = spec.clazz
         val builder = manager.criteriaBuilder
         val query = builder.createTupleQuery()
@@ -69,22 +69,54 @@ interface LJPAProjection<T : BaseModel> {
             val field = FieldUtils.getField(clazz, fieldName, true)
 
             when {
-                field.isAnnotationPresent(OneToMany::class.java) ||
-                        field.isAnnotationPresent(ManyToOne::class.java) ||
-                        field.isAnnotationPresent(OneToOne::class.java) ||
-                        field.isAnnotationPresent(ManyToMany::class.java) -> {
-                    root.join<Any, Any>(fieldName, JoinType.LEFT).apply {
-                        alias(fieldName)
-                    }
+                field.isAnnotationPresent(ManyToOne::class.java)
+                        || field.isAnnotationPresent(OneToOne::class.java)
+                        || field.isAnnotationPresent(OneToMany::class.java)
+                        || field.isAnnotationPresent(ManyToMany::class.java) -> {
+                    root.fetch<Any, Any>(fieldName, JoinType.LEFT)
+                    null
                 }
-
                 else -> root.get<Any>(fieldName).alias(fieldName)
             }
         }
 
         val search = spec.ofSearch().toPredicate(root, query, builder)
         return query.select(builder.tuple(selections)).where(search)
+    }*/
+
+    private fun projection(spec: BaseSpec.JPA<T>): CriteriaQuery<Tuple>? {
+        val clazz = spec.clazz
+        val builder = manager.criteriaBuilder
+        val query = builder.createTupleQuery()
+        val root = query.from(clazz)
+
+        val requiredFields = setOf("id", "pk", "sk", "deleted", "archived", "updatedAt", "createdAt")
+        val fields = (spec.fields?.toSet() ?: clazz.kotlin.memberProperties.map { it.name }.toSet())
+            .plus(requiredFields)
+
+        val selections = fields.mapNotNull { fieldName ->
+            val field = FieldUtils.getField(clazz, fieldName, true)
+            when {
+                field.isAnnotationPresent(ManyToOne::class.java)
+                        || field.isAnnotationPresent(OneToOne::class.java)
+                        || field.isAnnotationPresent(OneToMany::class.java)
+                        || field.isAnnotationPresent(ManyToMany::class.java) -> {
+                    root.join<Any, Any>(fieldName, JoinType.LEFT).alias(fieldName)
+                }
+                else -> root.get<Any>(fieldName).alias(fieldName)
+            }
+        }
+        val graph = manager.createEntityGraph(clazz)
+        clazz.declaredFields
+            .filter { it.isAnnotationPresent(ManyToOne::class.java) || it.isAnnotationPresent(OneToOne::class.java) }
+            .forEach { graph.addAttributeNodes(it.name) }
+
+        val search = spec.ofSearch().toPredicate(root, query, builder)
+
+        query.distinct(true)
+        return query.select(builder.tuple(*selections.toTypedArray())).where(search)
     }
+
 
     private fun count(spec: BaseSpec.JPA<T>, clazz: Class<T>): CriteriaQuery<Long> {
         val builder = manager.criteriaBuilder

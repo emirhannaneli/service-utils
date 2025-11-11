@@ -26,7 +26,7 @@ class BaseSpec {
      */
     abstract class JPA<T : BaseModel>(
         param: ParameterModel,
-        val fields: Collection<String>? = null,
+        var fields: Collection<String>? = null,
     ) : SpecTool(param), JPATool<T> {
         @Suppress("UNCHECKED_CAST")
         override val clazz: Class<T>
@@ -66,7 +66,7 @@ class BaseSpec {
      */
     abstract class Mongo<T : BaseModel>(
         param: ParameterModel,
-        val fields: Collection<String>? = null,
+        var fields: Collection<String>? = null,
     ) : SpecTool(param), MongoTool<T> {
         @Suppress("UNCHECKED_CAST")
         override val clazz: Class<T>
@@ -99,7 +99,7 @@ class BaseSpec {
 
     abstract class Elastic<T : BaseModel>(
         param: ParameterModel,
-        val fields: Collection<String>? = null
+        var fields: Collection<String>? = null
     ) : SpecTool(param), ElasticTool<T> {
         @Suppress("UNCHECKED_CAST")
         override val clazz: Class<T>

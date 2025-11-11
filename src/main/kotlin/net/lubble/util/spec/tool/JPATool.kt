@@ -24,6 +24,11 @@ interface JPATool<T> {
     var id: String?
 
     /**
+     * The list of ids of the entity.
+     * */
+    var ids: List<String>?
+
+    /**
      * The deleted status of the entity.
      * */
     var deleted: Boolean?
@@ -57,6 +62,10 @@ interface JPATool<T> {
             predicate = idPredicate(predicate, root, builder, it)
         }
 
+        ids?.let {
+            predicate = idsPredicate(predicate, builder, root, it)
+        }
+
         deleted?.let {
             predicate = builder.and(predicate, builder.equal(root.get<Any>("deleted"), deleted))
         }
@@ -87,6 +96,90 @@ interface JPATool<T> {
         return predicate
     }
 
+    private fun idKeyAndValue(id: String): Pair<IDType, Any> {
+        val value = id.toLongOrNull() ?: LK(id)
+        val key = if (value is Long) IDType.PK else IDType.SK
+        return key to value
+    }
+
+    private fun applyIdPredicate(
+        builder: CriteriaBuilder,
+        path: Path<*>,
+        id: String,
+    ): Predicate {
+        val (key, value) = idKeyAndValue(id)
+        return if (key == IDType.PK) builder.equal(path.get<Long>(key.name.lowercase()), value as Long)
+        else builder.equal(path.get<String>(key.name.lowercase()), value as LK)
+    }
+
+    private fun applyIdPredicate(
+        predicate: Predicate,
+        builder: CriteriaBuilder,
+        path: Path<*>,
+        id: String,
+    ): Predicate {
+        return builder.and(predicate, applyIdPredicate(builder, path, id))
+    }
+
+    private fun partitionIds(ids: List<String>): Pair<List<Long>, List<LK>> {
+        val pkValues = ids.mapNotNull { it.toLongOrNull() }
+        val skValues = ids.mapNotNull { id -> if (id.toLongOrNull() == null) LK(id) else null }
+        return pkValues to skValues
+    }
+
+    private fun buildIdsOrPredicate(
+        builder: CriteriaBuilder,
+        path: Path<*>,
+        ids: List<String>,
+    ): Predicate? {
+        val (pkValues, skValues) = partitionIds(ids)
+        val predicates = mutableListOf<Predicate>()
+        if (pkValues.isNotEmpty()) {
+            predicates.add(path.get<Long>(IDType.PK.name.lowercase()).`in`(pkValues))
+        }
+        if (skValues.isNotEmpty()) {
+            predicates.add(path.get<String>(IDType.SK.name.lowercase()).`in`(skValues))
+        }
+        return if (predicates.isNotEmpty()) builder.or(*predicates.toTypedArray()) else null
+    }
+
+    private fun applyIdsPredicate(
+        predicate: Predicate,
+        builder: CriteriaBuilder,
+        path: Path<*>,
+        ids: List<String>,
+    ): Predicate {
+        val orPredicate = buildIdsOrPredicate(builder, path, ids) ?: return predicate
+        return builder.and(predicate, orPredicate)
+    }
+
+    private fun buildSearchPredicate(
+        builder: CriteriaBuilder,
+        getter: (String) -> Expression<String>,
+        search: String,
+        type: SearchType,
+        vararg fields: String,
+    ): Predicate {
+        val terms = search.split(" ")
+            .map { it.trim().lowercase() }
+            .filter { it.isNotEmpty() }
+            .map { term ->
+                builder.or(
+                    *fields.map { field ->
+                        val expr = getter(field)
+                        when (type) {
+                            SearchType.EQUAL -> builder.equal(builder.lower(expr), term)
+                            SearchType.STARTS_WITH -> builder.like(builder.lower(expr), "$term%")
+                            SearchType.ENDS_WITH -> builder.like(builder.lower(expr), "%$term")
+                            SearchType.LIKE -> builder.like(builder.lower(expr), "%$term%")
+                        }
+                    }.toTypedArray()
+                )
+            }
+
+        return builder.or(*terms.toTypedArray())
+    }
+
     /**
      * Returns the id predicate for a JPA model.
      *
@@ -101,13 +194,7 @@ interface JPATool<T> {
         builder: CriteriaBuilder,
         id: String,
     ): Predicate {
-        val value = id.toLongOrNull() ?: LK(id)
-        val key = if (value is Long) IDType.PK else IDType.SK
-        return if (key == IDType.PK) builder.and(
-            predicate,
-            builder.equal(root.get<Long>(key.name.lowercase()), value)
-        )
-        else builder.and(predicate, builder.equal(root.get<String>(key.name.lowercase()), value))
+        return applyIdPredicate(predicate, builder, root, id)
     }
 
     /**
@@ -124,13 +211,7 @@ interface JPATool<T> {
         join: Join<Z, X>,
         id: String
     ): Predicate {
-        val value = id.toLongOrNull() ?: LK(id)
-        val key = if (value is Long) IDType.PK else IDType.SK
-        return if (key == IDType.PK) builder.and(
-            predicate,
-            builder.equal(join.get<Long>(key.name.lowercase()), value)
-        )
-        else builder.and(predicate, builder.equal(join.get<String>(key.name.lowercase()), value))
+        return applyIdPredicate(predicate, builder, join, id)
     }
 
     /**
@@ -141,10 +222,41 @@ interface JPATool<T> {
      * @param id The id of the entity.
      */
     fun <Z, X> idPredicate(builder: CriteriaBuilder, join: Join<Z, X>, id: String): Predicate {
-        val value = id.toLongOrNull() ?: LK(id)
-        val key = if (value is Long) IDType.PK else IDType.SK
-        return if (key == IDType.PK) builder.equal(join.get<Long>(key.name.lowercase()), value)
-        else builder.equal(join.get<String>(key.name.lowercase()), value)
+        return applyIdPredicate(builder, join, id)
+    }
+
+    /**
+     * Returns the ids predicate for a JPA model.
+     *
+     * @param predicate The predicate to be combined.
+     * @param builder Used to construct criteria queries.
+     * @param join The join type.
+     * @param ids The list of ids of the entity.
+     */
+    fun <Z, X> idsPredicate(
+        predicate: Predicate,
+        builder: CriteriaBuilder,
+        join: Join<Z, X>,
+        ids: List<String>
+    ): Predicate {
+        return applyIdsPredicate(predicate, builder, join, ids)
+    }
+
+    /**
+     * Returns the ids predicate for a JPA model.
+     *
+     * @param predicate The predicate to be combined.
+     * @param builder Used to construct criteria queries.
+     * @param root The root type in the from clause.
+     * @param ids The list of ids of the entity.
+     */
+    fun idsPredicate(
+        predicate: Predicate,
+        builder: CriteriaBuilder,
+        root: Root<T>,
+        ids: List<String>
+    ): Predicate {
+        return applyIdsPredicate(predicate, builder, root, ids)
     }
 
     /**
@@ -191,20 +303,7 @@ interface JPATool<T> {
         type: SearchType = SearchType.LIKE,
         vararg fields: String,
     ): Predicate {
-        val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
-            builder.or(
-                *fields.map { field ->
-                    when (type) {
-                        SearchType.EQUAL -> builder.equal(builder.lower(root.get(field)), term)
-                        SearchType.STARTS_WITH -> builder.like(builder.lower(root.get(field)), "$term%")
-                        SearchType.ENDS_WITH -> builder.like(builder.lower(root.get(field)), "%$term")
-                        SearchType.LIKE -> builder.like(builder.lower(root.get(field)), "%$term%")
-                    }
-                }.toTypedArray()
-            )
-        }
-
-        return builder.or(*terms.toTypedArray())
+        return buildSearchPredicate(builder, { f -> root.get<String>(f) }, search, type, *fields)
     }
 
     /**
@@ -231,7 +330,6 @@ interface JPATool<T> {
     /**
      * Returns the search predicate for a JPA model.
      *
-     * @param predicate The predicate to be combined.
      * @param builder Used to construct criteria queries.
      * @param join The join type.
      * @param search The search string.
@@ -245,20 +343,7 @@ interface JPATool<T> {
         type: SearchType = SearchType.LIKE,
         vararg fields: String,
     ): Predicate {
-        val terms = search.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }.map { term ->
-            builder.or(
-                *fields.map { field ->
-                    when (type) {
-                        SearchType.EQUAL -> builder.equal(builder.lower(join.get(field)), term)
-                        SearchType.STARTS_WITH -> builder.like(builder.lower(join.get(field)), "$term%")
-                        SearchType.ENDS_WITH -> builder.like(builder.lower(join.get(field)), "%$term")
-                        SearchType.LIKE -> builder.like(builder.lower(join.get(field)), "%$term%")
-                    }
-                }.toTypedArray()
-            )
-        }
-
-        return builder.or(*terms.toTypedArray())
+        return buildSearchPredicate(builder, { f -> join.get<String>(f) }, search, type, *fields)
     }
 
     /**
