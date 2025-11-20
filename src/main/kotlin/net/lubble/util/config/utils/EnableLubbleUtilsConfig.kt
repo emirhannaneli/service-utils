@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import jakarta.annotation.PostConstruct
 import net.lubble.util.AppContextUtil
@@ -59,7 +60,10 @@ open class EnableLubbleUtilsConfig {
             configure(SerializationFeature.WRITE_SELF_REFERENCES_AS_NULL, true)
             disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
-            registerKotlinModule()
+
+            registerModule(KotlinModule.Builder()
+                .withReflectionCacheSize(512)
+                .build())
 
             registerModule(JavaTimeModule())
             registerModule(AfterburnerModule())

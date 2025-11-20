@@ -1,6 +1,7 @@
 package net.lubble.util.model
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import net.lubble.util.DocumentRegistryHolder
 import org.springframework.data.annotation.Transient
 import java.io.Serializable
 
@@ -28,14 +29,13 @@ abstract class BaseDocumented<T : BaseModel>(
     }
 
     companion object {
-        val VISITED: ThreadLocal<MutableSet<String>> = ThreadLocal()
-
+        
         inline fun <R> mapSession(block: () -> R): R {
             try {
-                VISITED.set(mutableSetOf())
+                DocumentRegistryHolder.createContext()
                 return block()
             } finally {
-                VISITED.remove()
+                DocumentRegistryHolder.closeContext()
             }
         }
 
@@ -44,15 +44,33 @@ abstract class BaseDocumented<T : BaseModel>(
             mapper: (T) -> D
         ): D? {
             source ?: return null
-            val visited = VISITED.get() ?: mutableSetOf<String>().also { VISITED.set(it) }
+
+            val context = DocumentRegistryHolder.current() ?: return null
             val id = source.getId()
 
-            if (!visited.add(id)) return null
+            @Suppress("UNCHECKED_CAST")
+            val existing = context.registry[id] as? D
+            if (existing != null) {
+                return existing
+            }
 
-            val documented = mapper(source)
-            documented.apply(source, documented)
-            documented.mapping(source)
-            return documented
+            if (!context.visiting.add(id)) {
+                return null
+            }
+
+            try {
+                val documented = mapper(source)
+                documented.apply(source, documented)
+                documented.mapping(source)
+                
+                documented.ref = null
+                
+                context.registry[id] = documented
+                
+                return documented
+            } finally {
+                context.visiting.remove(id)
+            }
         }
     }
 }
