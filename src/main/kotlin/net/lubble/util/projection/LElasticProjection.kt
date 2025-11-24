@@ -73,6 +73,26 @@ interface LElasticProjection<T : BaseModel> {
         return hits.searchHits.map { it.content }
     }
 
+    fun search(spec: BaseSpec.Elastic<T>, pageable: Pageable): List<T> {
+        val clazz = spec.clazz
+        val criteria = spec.ofSearch()
+
+        val query = CriteriaQueryBuilder(criteria)
+            .withPageable(pageable)
+            .withSourceFilter(
+                FetchSourceFilter(
+                    null,
+                    spec.fields?.toTypedArray(),
+                    null
+                )
+            )
+            .build()
+
+        val hits = operations.search(query, clazz)
+        @Suppress("UNCHECKED_CAST")
+        return hits.searchHits.map { it.content }
+    }
+
     /**
      * Finds a single entity matching the given specification.
      *
