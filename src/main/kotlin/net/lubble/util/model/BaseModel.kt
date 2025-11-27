@@ -8,6 +8,7 @@ import de.huxhorn.sulky.ulid.ULID
 import jakarta.persistence.*
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
+import net.lubble.util.dto.RBase
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.elasticsearch.annotations.DateFormat

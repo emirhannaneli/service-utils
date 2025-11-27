@@ -66,7 +66,6 @@ open class EnableLubbleUtilsConfig {
                 .build())
 
             registerModule(JavaTimeModule())
-            registerModule(AfterburnerModule())
 
             val lkModule = SimpleModule()
             lkModule.addSerializer(LK::class.java, LKToStringConverter.Serializer())
