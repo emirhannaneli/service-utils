@@ -8,7 +8,7 @@ import de.huxhorn.sulky.ulid.ULID
 import jakarta.persistence.*
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
-import net.lubble.util.dto.RBase
+import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.elasticsearch.annotations.DateFormat
@@ -77,7 +77,7 @@ open class BaseModel(
     @MongoField(name = "createdAt", targetType = MongoFieldType.DATE_TIME)
     @ElasticField(name = "createdAt", type = ElasticFieldType.Date, format = [DateFormat.epoch_millis])
     @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP")
-    @field:JsonProperty(index = Int.MAX_VALUE - 1)
+    @field:JsonProperty(index = Int.MAX_VALUE - 3)
     open var createdAt: Instant = Instant.now(),
 
     @LastModifiedDate
@@ -85,8 +85,25 @@ open class BaseModel(
     @Column(nullable = false, columnDefinition = "TIMESTAMP")
     @MongoField(name = "updatedAt", targetType = MongoFieldType.DATE_TIME)
     @ElasticField(name = "updatedAt", type = ElasticFieldType.Date, format = [DateFormat.epoch_millis])
-    @field:JsonProperty(index = Int.MAX_VALUE)
+    @field:JsonProperty(index = Int.MAX_VALUE - 2)
     open var updatedAt: Instant = Instant.now(),
+
+    @CreatedBy
+    @JsonIgnore
+    @Basic(fetch = FetchType.EAGER)
+    @MongoField(name = "created_by", targetType = MongoFieldType.STRING)
+    @ElasticField(name = "created_by", type = ElasticFieldType.Keyword)
+    @Column(name = "created_by", nullable = false, updatable = false, length = 50)
+    @field:JsonProperty(index = Int.MAX_VALUE - 1)
+    open var createdBy: String = "",
+
+    @JsonIgnore
+    @Basic(fetch = FetchType.EAGER)
+    @MongoField(name = "updated_by", targetType = MongoFieldType.STRING)
+    @ElasticField(name = "updated_by", type = ElasticFieldType.Keyword)
+    @Column(name = "updated_by", nullable = false, updatable = true, length = 50)
+    @field:JsonProperty(index = Int.MAX_VALUE)
+    open var updatedBy: String = "",
 ) {
 
     /**
@@ -127,58 +144,6 @@ open class BaseModel(
     open fun setId(id: String) {
         this.id = id
     }
-
-    /**
-     * Returns the pk of the model.
-     * @return The pk.
-     */
-    /*@Basic(fetch = FetchType.EAGER)
-    open fun getPk(): Long {
-        return pk
-    }*/
-
-    /*open fun setPk(pk: Long) {
-        this.pk = pk
-    }*/
-
-    /**
-     * Returns the sk of the model.
-     * @return The sk.
-     */
-    /*@Basic(fetch = FetchType.EAGER)
-    open fun getSk(): LK {
-        return sk
-    }*/
-
-    /*open fun setSk(sk: LK) {
-        this.sk = sk
-    }*/
-
-    /**
-     * Returns whether the model is deleted.
-     * @return True if the model is deleted, false otherwise.
-     */
-    /*@Basic(fetch = FetchType.EAGER)
-    open fun getDeleted(): Boolean {
-        return deleted
-    }*/
-
-    /*open fun setDeleted(deleted: Boolean) {
-        this.deleted = deleted
-    }*/
-
-    /**
-     * Returns whether the model is archived.
-     * @return True if the model is archived, false otherwise.
-     */
-    @Basic(fetch = FetchType.EAGER)
-    /*open fun getArchived(): Boolean {
-        return archived
-    }*/
-
-    /*open fun setArchived(archived: Boolean) {
-        this.archived = archived
-    }*/
 
 
     /**

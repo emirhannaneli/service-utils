@@ -2,7 +2,7 @@ package net.lubble.util.projection
 
 import jakarta.persistence.*
 import jakarta.persistence.criteria.CriteriaQuery
-import jakarta.persistence.criteria.JoinType
+import jakarta.persistence.criteria.Selection
 import net.lubble.util.AppContextUtil
 import net.lubble.util.model.BaseModel
 import net.lubble.util.spec.BaseSpec
@@ -10,146 +10,181 @@ import org.apache.commons.lang3.reflect.FieldUtils
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import java.util.*
-import kotlin.reflect.full.memberProperties
 
 interface LJPAProjection<T : BaseModel> {
     private val manager: EntityManager
         get() = AppContextUtil.bean(EntityManager::class.java)
 
-
     fun findOne(spec: BaseSpec.JPA<T>): Optional<T> {
         val clazz = spec.clazz
-        val query = projection(spec) ?: return Optional.empty()
-        return manager.createQuery(query).resultList
-            .firstOrNull()
-            ?.let { tuple ->
-                clazz.getDeclaredConstructor().newInstance().apply {
-                    setFields(this, tuple)
-                }
-            }
+        val builder = manager.criteriaBuilder
+        val query = builder.createQuery(clazz)
+        val root = query.from(clazz)
+
+        // Apply Predicates (Search)
+        val predicate = spec.ofSearch().toPredicate(root, query, builder)
+        query.where(predicate)
+
+        // Entity Graph (Fetch Strategy)
+        val entityGraph = createDynamicEntityGraph(spec, clazz)
+
+        val typedQuery = manager.createQuery(query)
+        typedQuery.maxResults = 1
+
+        if (entityGraph.attributeNodes.isNotEmpty()) {
+            typedQuery.setHint("jakarta.persistence.fetchgraph", entityGraph)
+        }
+
+        return typedQuery.resultList.firstOrNull()
             ?.let { Optional.of(it) }
             ?: Optional.empty()
     }
 
     fun findAll(spec: BaseSpec.JPA<T>, pagination: Boolean = true): Page<T> {
         val clazz = spec.clazz
-        val projection = projection(spec) ?: return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
-        val query = manager.createQuery(projection)
+
+        // 1. Count Query
+        var totalCount: Long = 0
+        if (pagination) {
+            val countQuery = manager.createQuery(count(spec, clazz))
+            totalCount = countQuery.singleResult
+            if (totalCount == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
+        }
+
+        // 2. ID Fetching (Pagination in Memory Prevention)
+        val ids = if (pagination) {
+            val cb = manager.criteriaBuilder
+            
+            // PostgreSQL "SELECT DISTINCT + ORDER BY" hatası için çözüm: Tuple Query kullanımı
+            val idQuery = cb.createTupleQuery()
+            val root = idQuery.from(clazz)
+            
+            // Search/Filter
+            val predicate = spec.ofSearch().toPredicate(root, idQuery, cb)
+            
+            // JPATool.defaultPredicates içinde eklenen orderBy'ı temizle (Select listesinde olmadığı için hata verebilir)
+            idQuery.orderBy(emptyList())
+            
+            val selections = mutableListOf<Selection<*>>(root.get<Any>("id").alias("id"))
+            
+            // Sort
+            val pageable = spec.ofSortedPageable()
+            if (pageable.sort.isSorted) {
+                val orders = pageable.sort.map { order ->
+                    val path = root.get<Any>(order.property)
+                    selections.add(path) // Sort alanını da select'e ekle
+                    if (order.isAscending) cb.asc(path) else cb.desc(path)
+                }.toList()
+                idQuery.orderBy(orders)
+            }
+            
+            idQuery.where(predicate)
+            idQuery.multiselect(selections)
+            idQuery.distinct(true) // ID'ler için distinct önemli
+
+            val typedIdQuery = manager.createQuery(idQuery)
+            typedIdQuery.firstResult = pageable.pageNumber * pageable.pageSize
+            typedIdQuery.maxResults = pageable.pageSize
+            
+            val fetchedTuples = typedIdQuery.resultList
+            if (fetchedTuples.isEmpty()) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
+            
+            // Tuple'dan sadece ID'yi al (ilk eleman)
+            fetchedTuples.map { it.get(0) as String }
+        } else {
+            emptyList() // Pagination yoksa ID listesi boş, aşağıda kontrol edeceğiz
+        }
+
+        // 3. Entity Fetching (Data Loading)
+        val cb = manager.criteriaBuilder
+        val query = cb.createQuery(clazz)
+        val root = query.from(clazz)
 
         if (pagination) {
+            // ID listesine göre filtrele
+            query.where(root.get<String>("id").`in`(ids))
+            // Sıralama: IN clause sıralamayı garanti etmez, bu yüzden memory'de sıralayacağız veya
+            // veritabanı spesifik FIELD() fonksiyonu gerekebilir ki bu standart JPA değil.
+            // En temizi memory'de ID listesine göre sıralamak.
+        } else {
+            // Pagination yoksa tüm filtreleri uygula
+            val predicate = spec.ofSearch().toPredicate(root, query, cb)
+            query.where(predicate)
+            query.distinct(true) // Join varsa distinct entity için
+
+            // Sort (Pagination olmadığında da sıralamayı uygula)
             val pageable = spec.ofSortedPageable()
-            query.firstResult = pageable.pageNumber * pageable.pageSize
-            query.maxResults = pageable.pageSize
+            if (pageable.sort.isSorted) {
+                val orders = pageable.sort.map { order ->
+                    if (order.isAscending) cb.asc(root.get<Any>(order.property))
+                    else cb.desc(root.get<Any>(order.property))
+                }.toList()
+                query.orderBy(orders)
+            }
         }
 
-        val results = query.resultList.map { tuple ->
-            clazz.getDeclaredConstructor().newInstance().apply {
-                setFields(this, tuple)
-            }
-        }.distinctBy { it.getId() }
+        val typedQuery = manager.createQuery(query)
 
-        val count = manager.createQuery(count(spec, clazz)).singleResult
-        return PageImpl(results, spec.ofPageable(), count)
+        // Entity Graph ile N+1 önleme
+        val entityGraph = createDynamicEntityGraph(spec, clazz)
+        if (entityGraph.attributeNodes.isNotEmpty()) {
+            typedQuery.setHint("jakarta.persistence.fetchgraph", entityGraph)
+        }
+
+        var results = typedQuery.resultList
+
+        // Eğer pagination varsa ve ID listesi ile çekildiyse, sıralamayı koru
+        if (pagination && ids.isNotEmpty()) {
+            val entityMap = results.associateBy { it.getId() }
+            results = ids.mapNotNull { entityMap[it] }
+        }
+
+        // Count işlemi (Eğer yukarıda yapılmadıysa - pagination=false durumu)
+        if (!pagination) {
+            totalCount = results.size.toLong()
+        }
+
+        return PageImpl(results, spec.ofSortedPageable(), totalCount)
     }
 
-    fun exists(spec: BaseSpec.JPA<T>): Boolean =
-        manager.createQuery(count(spec, spec.clazz)).singleResult > 0
+    private fun createDynamicEntityGraph(spec: BaseSpec.JPA<T>, clazz: Class<T>): EntityGraph<T> {
+        val entityGraph = manager.createEntityGraph(clazz)
+        val requestedFields =
+            spec.fields?.toSet() ?: return entityGraph // Eğer field belirtilmediyse default graph (boş)
 
-    /*private fun projection(spec: BaseSpec.JPA<T>): CriteriaQuery<Tuple>? {
-        val clazz = spec.clazz
-        val builder = manager.criteriaBuilder
-        val query = builder.createTupleQuery()
-        val root = query.from(clazz)
+        // Sadece entity üzerinde tanımlı ve ilişki içeren alanları ekle
+        // Field Exposure riski için: Sadece class'ta tanımlı alanlar kontrol ediliyor.
+        // Hassas veriler @JsonIgnore ile korunmalı.
 
-        val requiredFields = setOf("id", "pk", "sk", "deleted", "archived", "updatedAt", "createdAt")
-        val fields = (spec.fields?.toSet() ?: clazz.kotlin.memberProperties.map { it.name }.toSet())
-            .plus(requiredFields)
+        requestedFields.forEach { fieldName ->
+            // Field kontrolü (güvenlik ve varlık kontrolü)
+            val field = FieldUtils.getField(clazz, fieldName, true) ?: return@forEach
 
-        val selections = fields.map { fieldName ->
-            val field = FieldUtils.getField(clazz, fieldName, true)
+            // Sadece ilişkisel alanları graph'a ekle (EAGER fetch için)
+            // Basit alanlar zaten default olarak gelir.
+            if (field.isAnnotationPresent(ManyToOne::class.java) ||
+                field.isAnnotationPresent(OneToOne::class.java) ||
+                field.isAnnotationPresent(OneToMany::class.java) ||
+                field.isAnnotationPresent(ManyToMany::class.java)
+            ) {
 
-            when {
-                field.isAnnotationPresent(ManyToOne::class.java)
-                        || field.isAnnotationPresent(OneToOne::class.java)
-                        || field.isAnnotationPresent(OneToMany::class.java)
-                        || field.isAnnotationPresent(ManyToMany::class.java) -> {
-                    root.fetch<Any, Any>(fieldName, JoinType.LEFT)
-                    null
+                // Nested path desteği yok, sadece direct attribute
+                if (!entityGraph.attributeNodes.any { it.attributeName == fieldName }) {
+                    entityGraph.addAttributeNodes(fieldName)
                 }
-                else -> root.get<Any>(fieldName).alias(fieldName)
             }
         }
-
-        val search = spec.ofSearch().toPredicate(root, query, builder)
-        return query.select(builder.tuple(selections)).where(search)
-    }*/
-
-    private fun projection(spec: BaseSpec.JPA<T>): CriteriaQuery<Tuple>? {
-        val clazz = spec.clazz
-        val builder = manager.criteriaBuilder
-        val query = builder.createTupleQuery()
-        val root = query.from(clazz)
-
-        val requiredFields = setOf("id", "pk", "sk", "deleted", "archived", "updatedAt", "createdAt")
-        val fields = (spec.fields?.toSet() ?: clazz.kotlin.memberProperties.map { it.name }.toSet())
-            .plus(requiredFields)
-
-        val selections = fields.mapNotNull { fieldName ->
-            val field = FieldUtils.getField(clazz, fieldName, true)
-            when {
-                field.isAnnotationPresent(ManyToOne::class.java)
-                        || field.isAnnotationPresent(OneToOne::class.java)
-                        || field.isAnnotationPresent(OneToMany::class.java)
-                        || field.isAnnotationPresent(ManyToMany::class.java) -> {
-                    root.join<Any, Any>(fieldName, JoinType.LEFT).alias(fieldName)
-                }
-                else -> root.get<Any>(fieldName).alias(fieldName)
-            }
-        }
-        val graph = manager.createEntityGraph(clazz)
-        clazz.declaredFields
-            .filter { it.isAnnotationPresent(ManyToOne::class.java) || it.isAnnotationPresent(OneToOne::class.java) }
-            .forEach { graph.addAttributeNodes(it.name) }
-
-        val search = spec.ofSearch().toPredicate(root, query, builder)
-
-        query.distinct(true)
-        return query.select(builder.tuple(*selections.toTypedArray())).where(search)
+        return entityGraph
     }
-
 
     private fun count(spec: BaseSpec.JPA<T>, clazz: Class<T>): CriteriaQuery<Long> {
         val builder = manager.criteriaBuilder
         val query = builder.createQuery(Long::class.java)
         val root = query.from(clazz)
         val search = spec.ofSearch().toPredicate(root, query, builder)
-        return query.select(builder.count(root))
+        // Distinct count - ID üzerinden sayma daha performanslı olabilir
+        query.select(builder.countDistinct(root))
             .where(search)
-    }
-
-
-    @Suppress("UNCHECKED_CAST")
-    private fun setFields(entity: T, tuple: Tuple) {
-        val tupleAliases = tuple.elements.mapTo(HashSet()) { it.alias }.filterNotNull()
-
-        FieldUtils.getAllFields(entity::class.java)
-            .filter { it.name in tupleAliases }
-            .forEach { field ->
-                field.isAccessible = true
-                val value = tuple.get(field.name)
-
-                when {
-                    Collection::class.java.isAssignableFrom(field.type) -> {
-                        var collection = (field.get(entity) as? MutableSet<Any>) ?: mutableSetOf()
-                        value?.let { collection.add(it) }
-                        collection = collection.distinctBy {
-                            if (it is BaseModel) it.getId() else it.hashCode()
-                        }.toMutableSet()
-                        field.set(entity, collection)
-                    }
-
-                    else -> field.set(entity, value)
-                }
-            }
+        return query
     }
 }

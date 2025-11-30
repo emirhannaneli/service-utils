@@ -13,7 +13,7 @@ import net.lubble.util.spec.PaginationSpec
  * @property sortBy The field to sort by. It is transient, meaning it is not persisted in the database.
  * @property sortOrder The order to sort in. It is transient, meaning it is not persisted in the database.
  */
-@JsonIgnoreProperties(value = ["page", "size", "sortBy", "sortOrder", "search"])
+@JsonIgnoreProperties(value = ["page", "size", "sortBy", "sortOrder", "search", "isFiltering"])
 open class ParameterModel : PaginationSpec() {
     @Transient
     var search: String? = null
@@ -25,6 +25,31 @@ open class ParameterModel : PaginationSpec() {
 
     @Transient
     var sortOrder: SortOrder = SortOrder.ASC
+
+    val isFiltering: Boolean
+        @Transient
+        get() {
+            if (!search.isNullOrBlank()) return true
+
+            var clazz: Class<*>? = this::class.java
+            while (clazz != null && clazz != ParameterModel::class.java && clazz != Any::class.java) {
+                for (field in clazz.declaredFields) {
+                    if (java.lang.reflect.Modifier.isStatic(field.modifiers) || field.isSynthetic || field.name.startsWith("$")) continue
+                    try {
+                        field.isAccessible = true
+                        val value = field.get(this)
+                        if (value != null) {
+                            if (value is String && value.isBlank()) continue
+                            return true
+                        }
+                    } catch (e: Exception) {
+                        // Ignore reflection errors
+                    }
+                }
+                clazz = clazz.superclass
+            }
+            return false
+        }
 }
 
 /**

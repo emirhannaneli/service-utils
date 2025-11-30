@@ -8,11 +8,26 @@ import net.lubble.util.model.SortOrder
 import net.lubble.util.spec.tool.SpecTool.IDType
 import net.lubble.util.spec.tool.SpecTool.SearchType
 import org.springframework.data.jpa.domain.Specification
+import java.lang.reflect.Field
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * JPATool interface defines the specifications for JPA models.
  */
 interface JPATool<T> {
+    companion object {
+        // Reflection cache'leri - performans için
+        private val fieldCache = ConcurrentHashMap<Class<*>, Array<Field>>()
+        private val columnNameCache = ConcurrentHashMap<Field, String>()
+        // lowercaseCache memory leak riski nedeniyle kaldırıldı.
+
+        // Lowercase işlemi modern JVM'lerde yeterince hızlıdır.
+        private fun normalizeString(str: String): String {
+            return str.lowercase(Locale.ENGLISH)
+        }
+    }
+
     /**
      * The class of the entity.
      * */
@@ -74,26 +89,48 @@ interface JPATool<T> {
             predicate = builder.and(predicate, builder.equal(root.get<Any>("archived"), archived))
         }
 
-        val fields = root.model.javaType.declaredFields
+        // Field cache kullan - performans optimizasyonu
+        val fields = getCachedFields(root.model.javaType)
         when (param.sortOrder) {
-            SortOrder.ASC -> param.sortBy?.let {
-                if (fields.any { field ->
-                        val columnValue = field.getAnnotation(Column::class.java)?.name
-                        field.name == it || columnValue == it
-                    }) query?.orderBy(builder.asc(root.get<Any>(it)))
+            SortOrder.ASC -> param.sortBy?.let { sortField ->
+                if (isValidSortField(fields, sortField)) {
+                    query?.orderBy(builder.asc(root.get<Any>(sortField)))
+                }
             }
 
-            SortOrder.DESC -> param.sortBy?.let {
-                if (fields.any { field ->
-                        val columnValue = field.getAnnotation(Column::class.java)?.name
-                        field.name == it || columnValue == it
-                    }) query?.orderBy(builder.desc(root.get<Any>(it)))
+            SortOrder.DESC -> param.sortBy?.let { sortField ->
+                if (isValidSortField(fields, sortField)) {
+                    query?.orderBy(builder.desc(root.get<Any>(sortField)))
+                }
             }
         }
 
-        query?.distinct(true)
+        // query?.distinct(true) // Distinct performansı düşürebilir, gerektiğinde kullanılmalı
 
         return predicate
+    }
+
+    // Field cache - reflection performansı için
+    private fun getCachedFields(clazz: Class<*>): Array<Field> {
+        return Companion.fieldCache.getOrPut(clazz) {
+            clazz.declaredFields
+        }
+    }
+
+    // Column name cache - annotation performansı için
+    private fun getCachedColumnName(field: Field): String? {
+        val cachedName = columnNameCache.getOrPut(field) {
+            field.getAnnotation(Column::class.java)?.name ?: ""
+        }
+
+        return cachedName.takeIf { it.isNotEmpty() }
+    }
+
+    // Sort field validation - optimize edilmiş
+    private fun isValidSortField(fields: Array<Field>, sortField: String): Boolean {
+        return fields.any { field ->
+            field.name == sortField || getCachedColumnName(field) == sortField
+        }
     }
 
     private fun idKeyAndValue(id: String): Pair<IDType, Any> {
@@ -108,8 +145,12 @@ interface JPATool<T> {
         id: String,
     ): Predicate {
         val (key, value) = idKeyAndValue(id)
-        return if (key == IDType.PK) builder.equal(path.get<Long>(key.name.lowercase()), value as Long)
-        else builder.equal(path.get<String>(key.name.lowercase()), value as LK)
+        val fieldName = Companion.normalizeString(key.name)
+        return if (key == IDType.PK) {
+            builder.equal(path.get<Long>(fieldName), value as Long)
+        } else {
+            builder.equal(path.get<String>(fieldName), value as LK)
+        }
     }
 
     private fun applyIdPredicate(
@@ -122,8 +163,19 @@ interface JPATool<T> {
     }
 
     private fun partitionIds(ids: List<String>): Pair<List<Long>, List<LK>> {
-        val pkValues = ids.mapNotNull { it.toLongOrNull() }
-        val skValues = ids.mapNotNull { id -> if (id.toLongOrNull() == null) LK(id) else null }
+        // Optimize edilmiş - her id için sadece bir kez toLongOrNull çağrılıyor
+        val pkValues = mutableListOf<Long>()
+        val skValues = mutableListOf<LK>()
+
+        ids.forEach { id ->
+            val longValue = id.toLongOrNull()
+            if (longValue != null) {
+                pkValues.add(longValue)
+            } else {
+                skValues.add(LK(id))
+            }
+        }
+
         return pkValues to skValues
     }
 
@@ -135,10 +187,10 @@ interface JPATool<T> {
         val (pkValues, skValues) = partitionIds(ids)
         val predicates = mutableListOf<Predicate>()
         if (pkValues.isNotEmpty()) {
-            predicates.add(path.get<Long>(IDType.PK.name.lowercase()).`in`(pkValues))
+            predicates.add(path.get<Long>(Companion.normalizeString(IDType.PK.name)).`in`(pkValues))
         }
         if (skValues.isNotEmpty()) {
-            predicates.add(path.get<String>(IDType.SK.name.lowercase()).`in`(skValues))
+            predicates.add(path.get<String>(Companion.normalizeString(IDType.SK.name)).`in`(skValues))
         }
         return if (predicates.isNotEmpty()) builder.or(*predicates.toTypedArray()) else null
     }
@@ -160,24 +212,28 @@ interface JPATool<T> {
         type: SearchType,
         vararg fields: String,
     ): Predicate {
+        // Optimize edilmiş - string işlemleri önceden yapılıyor
         val terms = search.split(" ")
-            .map { it.trim().lowercase() }
-            .filter { it.isNotEmpty() }
-            .map { term ->
-                builder.or(
-                    *fields.map { field ->
-                        val expr = getter(field)
-                        when (type) {
-                            SearchType.EQUAL -> builder.equal(builder.lower(expr), term)
-                            SearchType.STARTS_WITH -> builder.like(builder.lower(expr), "$term%")
-                            SearchType.ENDS_WITH -> builder.like(builder.lower(expr), "%$term")
-                            SearchType.LIKE -> builder.like(builder.lower(expr), "%$term%")
-                        }
-                    }.toTypedArray()
-                )
-            }
+            .mapNotNull { it.trim().takeIf { it.isNotEmpty() } }
+            .map { Companion.normalizeString(it) }
+            .takeIf { it.isNotEmpty() }
+            ?: return builder.conjunction() // Boş search için
 
-        return builder.or(*terms.toTypedArray())
+        val termPredicates = terms.map { term ->
+            val fieldPredicates = fields.map { field ->
+                val expr = getter(field)
+                when (type) {
+                    SearchType.EQUAL -> builder.equal(builder.lower(expr), term)
+                    SearchType.STARTS_WITH -> builder.like(builder.lower(expr), "$term%")
+                    SearchType.ENDS_WITH -> builder.like(builder.lower(expr), "%$term")
+                    SearchType.LIKE -> builder.like(builder.lower(expr), "%$term%")
+                }
+            }
+            builder.or(*fieldPredicates.toTypedArray())
+        }
+
+        // Kelime grupları arasında AND kullanıyoruz (Ahmet AND Yılmaz)
+        return builder.and(*termPredicates.toTypedArray())
     }
 
     /**

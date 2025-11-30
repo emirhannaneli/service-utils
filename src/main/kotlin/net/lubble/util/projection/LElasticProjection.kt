@@ -11,6 +11,8 @@ import org.springframework.data.elasticsearch.core.SearchHitSupport
 import org.springframework.data.elasticsearch.core.query.CriteriaQueryBuilder
 import org.springframework.data.elasticsearch.core.query.FetchSourceFilter
 
+import org.springframework.data.domain.PageRequest
+
 /**
  * Interface for performing Elasticsearch operations on entities of type T.
  *
@@ -57,8 +59,10 @@ interface LElasticProjection<T : BaseModel> {
         val clazz = spec.clazz
         val criteria = spec.ofSearch()
 
+        // Pageable.unpaged() ElasticSearch'te tehlikeli olabilir (max_result_window limiti).
+        // Güvenlik için 10.000 (default limit) ile sınırlandırıyoruz.
         val query = CriteriaQueryBuilder(criteria)
-            .withPageable(Pageable.unpaged())
+            .withPageable(PageRequest.of(0, 10000))
             .withSourceFilter(
                 FetchSourceFilter(
                     null,
@@ -103,6 +107,7 @@ interface LElasticProjection<T : BaseModel> {
         val clazz = spec.clazz
         val query = spec.ofSearch().let {
             CriteriaQueryBuilder(it)
+                .withPageable(PageRequest.of(0, 1)) // Sadece 1 kayıt çek - performans optimizasyonu
                 .build()
         }
         return operations.search(query, clazz).firstNotNullOfOrNull { it.content }

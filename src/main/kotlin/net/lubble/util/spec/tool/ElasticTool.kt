@@ -9,11 +9,24 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.elasticsearch.annotations.Field
 import org.springframework.data.elasticsearch.core.query.Criteria
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery
+import java.lang.reflect.Field as ReflectField
+import java.util.concurrent.ConcurrentHashMap
+import java.util.*
 
 /**
  * ElasticTool interface defines the specifications for ElasticSearch models.
  */
 interface ElasticTool<T : BaseModel> {
+    companion object {
+        // Reflection cache'leri - performans için
+        private val fieldCache = ConcurrentHashMap<Class<*>, Array<ReflectField>>()
+        private val columnNameCache = ConcurrentHashMap<ReflectField, String>()
+
+        // Lowercase işlemi modern JVM'lerde yeterince hızlıdır.
+        private fun normalizeString(str: String): String {
+            return str.lowercase(Locale.ENGLISH)
+        }
+    }
     /**
      * The class of the entity.
      * */
@@ -82,24 +95,44 @@ interface ElasticTool<T : BaseModel> {
     fun buildQuery(param: ParameterModel, criteria: Criteria): CriteriaQuery {
         var query = CriteriaQuery(criteria)
 
-        val fields = clazz.declaredFields
+        val fields = getCachedFields(clazz)
         when (param.sortOrder) {
-            SortOrder.ASC -> param.sortBy?.let {
-                if (fields.any { field ->
-                        val columnValue = field.getAnnotation(Field::class.java)?.name
-                        field.name == it || columnValue == it
-                    }) query = CriteriaQuery(criteria).addSort(Sort.by(Sort.Order.asc(it)))
+            SortOrder.ASC -> param.sortBy?.let { sortField ->
+                if (isValidSortField(fields, sortField)) {
+                    query = CriteriaQuery(criteria).addSort(Sort.by(Sort.Order.asc(sortField)))
+                }
             }
 
-            SortOrder.DESC -> param.sortBy?.let {
-                if (fields.any { field ->
-                        val columnValue = field.getAnnotation(Field::class.java)?.name
-                        field.name == it || columnValue == it
-                    }) query = CriteriaQuery(criteria).addSort(Sort.by(Sort.Order.desc(it)))
+            SortOrder.DESC -> param.sortBy?.let { sortField ->
+                if (isValidSortField(fields, sortField)) {
+                    query = CriteriaQuery(criteria).addSort(Sort.by(Sort.Order.desc(sortField)))
+                }
             }
         }
 
         return query
+    }
+
+    // Field cache - reflection performansı için
+    private fun getCachedFields(clazz: Class<*>): Array<ReflectField> {
+        return Companion.fieldCache.getOrPut(clazz) {
+            clazz.declaredFields
+        }
+    }
+
+    // Column name cache - annotation performansı için
+    private fun getCachedFieldName(field: ReflectField): String? {
+        val cachedName = Companion.columnNameCache.getOrPut(field) {
+            field.getAnnotation(Field::class.java)?.name ?: ""
+        }
+        return cachedName.takeIf { it.isNotEmpty() }
+    }
+
+    // Sort field validation - optimize edilmiş
+    private fun isValidSortField(fields: Array<ReflectField>, sortField: String): Boolean {
+        return fields.any { field ->
+            field.name == sortField || getCachedFieldName(field) == sortField
+        }
     }
 
     // region private helpers to eliminate duplication
@@ -111,18 +144,26 @@ interface ElasticTool<T : BaseModel> {
 
     private fun applyIdCriteria(id: String): Criteria {
         val (key, value) = idKeyAndValue(id)
-        return Criteria.where(key.name.lowercase()).`is`(value)
+        return Criteria.where(Companion.normalizeString(key.name)).`is`(value)
     }
 
     private fun applyIdCriteria(field: String, id: String): Criteria {
         val (key, value) = idKeyAndValue(id)
-        return Criteria.where("$field.${key.name.lowercase()}").`is`(value)
+        return Criteria.where("$field.${Companion.normalizeString(key.name)}").`is`(value)
     }
 
     private fun partitionIds(ids: List<String>): Pair<List<Long>, List<Any>> {
-        val pkValues: List<Long> = ids.mapNotNull { it.toLongOrNull() }
+        val pkValues = mutableListOf<Long>()
         val skValues = mutableListOf<Any>()
-        ids.forEach { id -> if (id.toLongOrNull() == null) skValues.add(LK(id)) }
+        
+        ids.forEach { id ->
+            val longVal = id.toLongOrNull()
+            if (longVal != null) {
+                pkValues.add(longVal)
+            } else {
+                skValues.add(LK(id))
+            }
+        }
         return pkValues to skValues
     }
 
