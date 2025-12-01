@@ -12,6 +12,7 @@ import net.lubble.util.spec.tool.ElasticTool
 import net.lubble.util.spec.tool.JPATool
 import net.lubble.util.spec.tool.MongoTool
 import net.lubble.util.spec.tool.SpecTool
+import jakarta.persistence.Entity
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.TypeVariable
 import java.util.*
@@ -36,10 +37,98 @@ class BaseSpec {
                 return when (type) {
                     is Class<*> -> type as Class<T>
                     is ParameterizedType -> type.rawType as Class<T>
-                    is TypeVariable<*> -> BaseModel::class.java as Class<T>
+                    is TypeVariable<*> -> {
+                        // TypeVariable durumunda, class hierarchy'sini tarayarak gerçek entity sınıfını bul
+                        resolveEntityClassFromHierarchy() ?: throw IllegalStateException(
+                            "Cannot resolve entity class for ${this::class}. " +
+                            "Please ensure your specification class properly extends BaseSpec.JPA with a concrete entity type."
+                        )
+                    }
                     else -> throw IllegalStateException("Cannot resolve generic type for ${this::class}")
                 }
             }
+        
+        @Suppress("UNCHECKED_CAST")
+        private fun resolveEntityClassFromHierarchy(): Class<T>? {
+            // Class hierarchy'sini tarayarak gerçek entity sınıfını bul
+            var currentClass: Class<*>? = this::class.java
+            
+            while (currentClass != null) {
+                // Generic superclass'ı kontrol et
+                val genericSuperclass = currentClass.genericSuperclass
+                if (genericSuperclass is ParameterizedType) {
+                    val typeArgs = genericSuperclass.actualTypeArguments
+                    if (typeArgs.isNotEmpty()) {
+                        val firstTypeArg = typeArgs[0]
+                        when (firstTypeArg) {
+                            is Class<*> -> {
+                                // Entity annotation'ı kontrol et
+                                if (firstTypeArg.isAnnotationPresent(Entity::class.java)) {
+                                    return firstTypeArg as Class<T>
+                                }
+                            }
+                            is ParameterizedType -> {
+                                val rawType = firstTypeArg.rawType
+                                if (rawType is Class<*> && rawType.isAnnotationPresent(Entity::class.java)) {
+                                    return rawType as Class<T>
+                                }
+                            }
+                            is TypeVariable<*> -> {
+                                // TypeVariable durumunda, upper bound'ları kontrol et
+                                val bounds = firstTypeArg.bounds
+                                for (bound in bounds) {
+                                    when (bound) {
+                                        is Class<*> -> {
+                                            if (bound.isAnnotationPresent(Entity::class.java)) {
+                                                return bound as Class<T>
+                                            }
+                                        }
+                                        is ParameterizedType -> {
+                                            val rawType = bound.rawType
+                                            if (rawType is Class<*> && rawType.isAnnotationPresent(Entity::class.java)) {
+                                                return rawType as Class<T>
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Ayrıca, mevcut class'ın generic type parameter'larını da kontrol et
+                // (örneğin ProductSpec<T : Product> durumunda)
+                val typeParameters = currentClass.typeParameters
+                for (typeParam in typeParameters) {
+                    val bounds = typeParam.bounds
+                    for (bound in bounds) {
+                        when (bound) {
+                            is Class<*> -> {
+                                if (bound.isAnnotationPresent(Entity::class.java)) {
+                                    return bound as Class<T>
+                                }
+                            }
+                            is ParameterizedType -> {
+                                val rawType = bound.rawType
+                                if (rawType is Class<*> && rawType.isAnnotationPresent(Entity::class.java)) {
+                                    return rawType as Class<T>
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Superclass'a geç
+                currentClass = currentClass.superclass
+                
+                // BaseSpec.JPA'ya ulaştıysak dur
+                if (currentClass?.name == "net.lubble.util.spec.BaseSpec\$JPA") {
+                    break
+                }
+            }
+            
+            return null
+        }
 
         fun toCacheKey(): String {
             val mapper = AppContextUtil.bean(ObjectMapper::class.java).apply {

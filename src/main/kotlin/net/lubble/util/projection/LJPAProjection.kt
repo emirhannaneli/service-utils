@@ -17,6 +17,7 @@ interface LJPAProjection<T : BaseModel> {
 
     fun findOne(spec: BaseSpec.JPA<T>): Optional<T> {
         val clazz = spec.clazz
+        validateEntity(clazz)
         val builder = manager.criteriaBuilder
         val query = builder.createQuery(clazz)
         val root = query.from(clazz)
@@ -42,6 +43,7 @@ interface LJPAProjection<T : BaseModel> {
 
     fun findAll(spec: BaseSpec.JPA<T>, pagination: Boolean = true): Page<T> {
         val clazz = spec.clazz
+        validateEntity(clazz)
 
         // 1. Count Query
         var totalCount: Long = 0
@@ -177,7 +179,20 @@ interface LJPAProjection<T : BaseModel> {
         return entityGraph
     }
 
+    private fun validateEntity(clazz: Class<*>): Unit {
+        // Entity kontrolü: BaseModel bir @MappedSuperclass olduğu için entity değil
+        // Eğer clazz BaseModel ise, bu bir hata durumudur
+        if (clazz == BaseModel::class.java || !isEntity(clazz)) {
+            throw IllegalArgumentException(
+                "Not an entity: ${clazz.name}. " +
+                "BaseModel is a @MappedSuperclass and cannot be used directly in queries. " +
+                "Please ensure your specification uses a concrete entity class that extends BaseModel."
+            )
+        }
+    }
+    
     private fun count(spec: BaseSpec.JPA<T>, clazz: Class<T>): CriteriaQuery<Long> {
+        validateEntity(clazz)
         val builder = manager.criteriaBuilder
         val query = builder.createQuery(Long::class.java)
         val root = query.from(clazz)
@@ -186,5 +201,20 @@ interface LJPAProjection<T : BaseModel> {
         query.select(builder.countDistinct(root))
             .where(search)
         return query
+    }
+    
+    private fun isEntity(clazz: Class<*>): Boolean {
+        // @Entity annotation'ı kontrolü
+        if (clazz.isAnnotationPresent(Entity::class.java)) {
+            return true
+        }
+        
+        // EntityManager'ın Metamodel'ini kullanarak kontrol
+        return try {
+            manager.metamodel.managedType(clazz)
+            true
+        } catch (e: IllegalArgumentException) {
+            false
+        }
     }
 }
