@@ -23,16 +23,16 @@ import java.util.*
  */
 @JsonPropertyOrder("message", "status", "code", "details")
 class Response() {
-    @JsonProperty("message")
+    @field:JsonProperty("message")
     private lateinit var message: String
 
-    @JsonProperty("status")
+    @field:JsonProperty("status")
     private var status: HttpStatus = OK
 
-    @JsonProperty("code")
+    @field:JsonProperty("code")
     private var code: String? = null
 
-    @JsonProperty("details")
+    @field:JsonProperty("details")
     private var details: Any? = null
 
     /**

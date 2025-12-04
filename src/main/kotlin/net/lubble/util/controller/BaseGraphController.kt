@@ -41,7 +41,7 @@ interface BaseGraphController<C, U, R, P> {
      * @param env The data fetching environment.
      * @return A paginated response containing the entities.
      */
-    fun findAll(@Argument @Valid options: P, env: DataFetchingEnvironment): GraphPageResponse
+    fun findAll(@Argument @Valid options: P?, env: DataFetchingEnvironment): GraphPageResponse
 
     /**
      * Updates an existing entity.
@@ -67,7 +67,7 @@ interface BaseGraphController<C, U, R, P> {
      * @param env The data fetching environment.
      * @return A paginated response containing the archived entities.
      */
-    fun findAllArchived(@Argument @Valid options: P, env: DataFetchingEnvironment): GraphPageResponse {
+    fun findAllArchived(@Argument @Valid options: P?, env: DataFetchingEnvironment): GraphPageResponse {
         throw UnsupportedOperationException()
     }
 
@@ -98,7 +98,7 @@ interface BaseGraphController<C, U, R, P> {
      * @param env The data fetching environment.
      * @return A paginated response containing the entities in the recycle bin.
      */
-    fun recycleBin(@Argument @Valid options: P, env: DataFetchingEnvironment): GraphPageResponse {
+    fun recycleBin(@Argument @Valid options: P?, env: DataFetchingEnvironment): GraphPageResponse {
         throw UnsupportedOperationException()
     }
 

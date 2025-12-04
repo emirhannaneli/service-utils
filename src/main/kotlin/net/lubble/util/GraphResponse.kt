@@ -14,11 +14,11 @@ import java.util.*
  */
 @JsonPropertyOrder("message", "code", "details")
 class GraphResponse(
-    @JsonProperty("message")
+    @field:JsonProperty("message")
     val message: String? = null,
-    @JsonProperty("code")
+    @field:JsonProperty("code")
     val code: String? = null,
-    @JsonProperty("details")
+    @field:JsonProperty("details")
     val details: Any? = null,
 ) {
 
@@ -108,9 +108,9 @@ class GraphResponse(
  */
 @JsonPropertyOrder("meta", "data")
 data class GraphPageResponse(
-    @JsonProperty("meta")
+    @field:JsonProperty("meta")
     val meta: Meta,
-    @JsonProperty("data")
+    @field:JsonProperty("data")
     val data: Collection<*>,
 ) {
     /**
@@ -128,17 +128,17 @@ data class GraphPageResponse(
      */
     @JsonPropertyOrder("current", "size", "totalItems", "totalPages", "hasNext", "hasPrevious", "items")
     class Meta(
-        @JsonProperty("current")
+        @field:JsonProperty("current")
         val current: Int,
-        @JsonProperty("size")
+        @field:JsonProperty("size")
         val size: Int,
-        @JsonProperty("totalItems")
+        @field:JsonProperty("totalItems")
         val totalItems: Long,
-        @JsonProperty("totalPages")
+        @field:JsonProperty("totalPages")
         val totalPages: Int,
-        @JsonProperty("hasNext")
+        @field:JsonProperty("hasNext")
         val hasNext: Boolean,
-        @JsonProperty("hasPrevious")
+        @field:JsonProperty("hasPrevious")
         val hasPrevious: Boolean,
     ) {
         /**
