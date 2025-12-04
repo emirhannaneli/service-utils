@@ -37,17 +37,12 @@ interface LElasticProjection<T : BaseModel> {
         val criteria = spec.ofSearch()
         val pageable = spec.ofSortedPageable()
 
-        val query = CriteriaQueryBuilder(criteria)
+        val queryBuilder = CriteriaQueryBuilder(criteria)
             .withPageable(pageable)
-            .withSourceFilter(
-                FetchSourceFilter(
-                    null,
-                    spec.fields?.toTypedArray(),
-                    null
-                )
-            )
-            .build()
 
+        applySourceFilter(queryBuilder, spec.fields)
+
+        val query = queryBuilder.build()
         val hits = operations.search(query, clazz)
         val page = SearchHitSupport.searchPageFor(hits, pageable)
 
@@ -59,19 +54,13 @@ interface LElasticProjection<T : BaseModel> {
         val clazz = spec.clazz
         val criteria = spec.ofSearch()
 
-        // Pageable.unpaged() ElasticSearch'te tehlikeli olabilir (max_result_window limiti).
-        // Güvenlik için 10.000 (default limit) ile sınırlandırıyoruz.
-        val query = CriteriaQueryBuilder(criteria)
+        val queryBuilder = CriteriaQueryBuilder(criteria)
             .withPageable(PageRequest.of(0, 10000))
-            .withSourceFilter(
-                FetchSourceFilter(
-                    null,
-                    spec.fields?.toTypedArray(),
-                    null
-                )
-            )
-            .build()
 
+        applySourceFilter(queryBuilder, spec.fields)
+
+
+        val query = queryBuilder.build()
         val hits = operations.search(query, clazz)
         @Suppress("UNCHECKED_CAST")
         return hits.searchHits.map { it.content }
@@ -81,17 +70,12 @@ interface LElasticProjection<T : BaseModel> {
         val clazz = spec.clazz
         val criteria = spec.ofSearch()
 
-        val query = CriteriaQueryBuilder(criteria)
+        val queryBuilder = CriteriaQueryBuilder(criteria)
             .withPageable(pageable)
-            .withSourceFilter(
-                FetchSourceFilter(
-                    null,
-                    spec.fields?.toTypedArray(),
-                    null
-                )
-            )
-            .build()
 
+        applySourceFilter(queryBuilder, spec.fields)
+
+        val query = queryBuilder.build()
         val hits = operations.search(query, clazz)
         @Suppress("UNCHECKED_CAST")
         return hits.searchHits.map { it.content }
@@ -105,11 +89,14 @@ interface LElasticProjection<T : BaseModel> {
      */
     fun findOne(spec: BaseSpec.Elastic<T>): T? {
         val clazz = spec.clazz
-        val query = spec.ofSearch().let {
-            CriteriaQueryBuilder(it)
-                .withPageable(PageRequest.of(0, 1)) // Sadece 1 kayıt çek - performans optimizasyonu
-                .build()
-        }
+        val criteria = spec.ofSearch()
+
+        val queryBuilder = CriteriaQueryBuilder(criteria)
+            .withPageable(PageRequest.of(0, 1))
+
+        applySourceFilter(queryBuilder, spec.fields)
+
+        val query = queryBuilder.build()
         return operations.search(query, clazz).firstNotNullOfOrNull { it.content }
     }
 
@@ -127,5 +114,13 @@ interface LElasticProjection<T : BaseModel> {
         }
 
         return operations.count(query, clazz) > 0
+    }
+
+    private fun applySourceFilter(queryBuilder: CriteriaQueryBuilder, fields: Collection<String>?) {
+        if (!fields.isNullOrEmpty()) {
+            queryBuilder.withSourceFilter(
+                FetchSourceFilter(null, fields.toTypedArray(), null)
+            )
+        }
     }
 }

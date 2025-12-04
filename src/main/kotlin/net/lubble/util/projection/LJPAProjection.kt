@@ -2,6 +2,10 @@ package net.lubble.util.projection
 
 import jakarta.persistence.*
 import jakarta.persistence.criteria.CriteriaQuery
+import jakarta.persistence.criteria.From
+import jakarta.persistence.criteria.Join
+import jakarta.persistence.criteria.JoinType
+import jakarta.persistence.criteria.Root
 import jakarta.persistence.criteria.Selection
 import net.lubble.util.AppContextUtil
 import net.lubble.util.model.BaseModel
@@ -44,6 +48,11 @@ interface LJPAProjection<T : BaseModel> {
     fun findAll(spec: BaseSpec.JPA<T>, pagination: Boolean = true): Page<T> {
         val clazz = spec.clazz
         validateEntity(clazz)
+
+        // Eğer projection (field seçimi) istenmişse, özel işlem yap
+        if (!spec.fields.isNullOrEmpty()) {
+            return fetchWithProjection(spec, clazz, pagination)
+        }
 
         // 1. Count Query
         var totalCount: Long = 0
@@ -216,5 +225,161 @@ interface LJPAProjection<T : BaseModel> {
         } catch (e: IllegalArgumentException) {
             false
         }
+    }
+
+    private fun fetchWithProjection(spec: BaseSpec.JPA<T>, clazz: Class<T>, pagination: Boolean): Page<T> {
+        val cb = manager.criteriaBuilder
+
+        // --- 1. COUNT QUERY (Değişiklik yok) ---
+        var totalCount: Long = 0
+        if (pagination) {
+            val countQuery = manager.createQuery(count(spec, clazz))
+            totalCount = countQuery.singleResult
+            if (totalCount == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
+        }
+
+        // --- 2. TUPLE QUERY HAZIRLIĞI ---
+        val tupleQuery = cb.createTupleQuery()
+        val root = tupleQuery.from(clazz)
+
+        // Join'leri tekrar tekrar yapmamak için cache (Örn: hem user.name hem user.email istenirse user tablosuna 1 kere join atılır)
+        val joinMap = mutableMapOf<String, Join<*, *>>()
+
+        val requestedFields = spec.fields ?: emptyList()
+        val selections = mutableListOf<Selection<*>>()
+
+        // ID'yi her zaman ekle (Mapping için referans noktası)
+        selections.add(root.get<Any>("id").alias("id"))
+
+        requestedFields.forEach { fieldPath ->
+            try {
+                // "category.name" -> Path çözümlemesi ve Join işlemleri
+                val path = getOrCreatePath(root, fieldPath, joinMap)
+                selections.add(path.alias(fieldPath))
+            } catch (e: Exception) {
+                // Field bulunamazsa loglanabilir, şimdilik yutuyoruz.
+            }
+        }
+
+        tupleQuery.multiselect(selections)
+
+        // Search Filters
+        val predicate = spec.ofSearch().toPredicate(root, tupleQuery, cb)
+        tupleQuery.where(predicate)
+
+        // Sorting
+        val pageable = spec.ofSortedPageable()
+        if (pageable.sort.isSorted) {
+            val orders = pageable.sort.map { order ->
+                // Sort alanları için de path çözümlemesi gerekebilir
+                val path = getOrCreatePath(root, order.property, joinMap)
+                if (order.isAscending) cb.asc(path) else cb.desc(path)
+            }.toList()
+            tupleQuery.orderBy(orders)
+        }
+
+        val typedQuery = manager.createQuery(tupleQuery)
+
+        if (pagination) {
+            typedQuery.firstResult = pageable.pageNumber * pageable.pageSize
+            typedQuery.maxResults = pageable.pageSize
+        }
+
+        val tuples = typedQuery.resultList
+
+        // --- 3. MAPPING (Flat Tuple -> Nested Object) ---
+        val results = tuples.map { tuple ->
+            val entity = clazz.getDeclaredConstructor().newInstance()
+
+            tuple.elements.forEach { tupleElement ->
+                val fieldPath = tupleElement.alias // örn: "category.name"
+                val value = tuple.get(fieldPath)
+
+                if (fieldPath != null && value != null) {
+                    try {
+                        writeNestedField(entity, fieldPath, value)
+                    } catch (e: Exception) {
+                        e.printStackTrace() // Detaylı hata takibi için
+                    }
+                }
+            }
+            entity
+        }
+
+        if (!pagination) totalCount = results.size.toLong()
+
+        return PageImpl(results, pageable, totalCount)
+    }
+
+    /**
+     * Verilen field path (örn: "category.subCategory.name") için gerekli Join'leri yapar
+     * ve son path'i döner. JoinMap kullanarak mükerrer join'leri engeller.
+     */
+    private fun getOrCreatePath(
+        root: Root<*>,
+        fieldPath: String,
+        joinMap: MutableMap<String, Join<*, *>>
+    ): jakarta.persistence.criteria.Path<Any> {
+        if (!fieldPath.contains(".")) {
+            return root.get(fieldPath)
+        }
+
+        val parts = fieldPath.split(".")
+        var currentFrom: From<*, *> = root
+        var currentPathKey = ""
+
+        // Son parça hariç (attribute) diğerleri ilişkidir (relation)
+        for (i in 0 until parts.size - 1) {
+            val part = parts[i]
+            currentPathKey = if (currentPathKey.isEmpty()) part else "$currentPathKey.$part"
+
+            // Join varsa kullan, yoksa oluştur ve map'e at
+            if (joinMap.containsKey(currentPathKey)) {
+                currentFrom = joinMap[currentPathKey] as From<*, *>
+            } else {
+                // LEFT JOIN önemli: İlişki null ise (örn: category yoksa) ana kayıt gelmeye devam etsin.
+                val join = currentFrom.join<Any, Any>(part, JoinType.LEFT)
+                joinMap[currentPathKey] = join
+                currentFrom = join
+            }
+        }
+
+        // Son parça attribute'un kendisidir
+        return currentFrom.get(parts.last())
+    }
+
+    /**
+     * Reflection ile iç içe objeleri oluşturur ve değeri set eder.
+     * Örn: target=Product, path="category.name", value="Electronics"
+     * Bu metod Product içinde Category instance'ı yoksa oluşturur, sonra name'i set eder.
+     */
+    private fun writeNestedField(target: Any, path: String, value: Any) {
+        if (!path.contains(".")) {
+            FieldUtils.writeField(target, path, value, true)
+            return
+        }
+
+        val parts = path.split(".")
+        var currentObject = target
+
+        for (i in 0 until parts.size - 1) {
+            val fieldName = parts[i]
+            val field = FieldUtils.getField(currentObject.javaClass, fieldName, true)
+
+            // Mevcut değeri oku
+            var nestedObject = FieldUtils.readField(field, currentObject, true)
+
+            // Eğer null ise yeni instance oluştur
+            if (nestedObject == null) {
+                val fieldType = field.type
+                // Parametresiz constructor ile instance yarat (Hibernate entityleri buna sahip olmalı)
+                nestedObject = fieldType.getDeclaredConstructor().newInstance()
+                FieldUtils.writeField(field, currentObject, nestedObject, true)
+            }
+            currentObject = nestedObject
+        }
+
+        // Son alana değeri yaz
+        FieldUtils.writeField(currentObject, parts.last(), value, true)
     }
 }

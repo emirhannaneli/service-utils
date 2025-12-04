@@ -96,21 +96,18 @@ interface LMongoProjection<T : BaseModel> {
      * @return a Query object with the projection applied
      */
     fun projection(spec: BaseSpec.Mongo<T>): Query {
-        val clazz = spec.clazz
         val query = spec.ofSearch()
-        val excludeFields = clazz.declaredFields.map { it.name }.toMutableSet()
-        val includeFields =
-            spec.fields?.map { it }?.toMutableSet() ?: clazz.declaredFields.map { it.name }.toMutableSet()
-        includeFields.addAll(listOf("id", "pk", "sk", "deleted", "archived", "updatedAt", "createdAt"))
 
-        excludeFields.removeAll(includeFields)
-
-        includeFields.forEach {
-            query.fields().include(it)
+        if (spec.fields.isNullOrEmpty()) {
+            return query
         }
 
-        excludeFields.forEach {
-            query.fields().exclude(it)
+        val fields = query.fields()
+        val mandatoryFields = setOf("id", "pk", "sk", "deleted", "archived", "updatedAt", "createdAt")
+        mandatoryFields.forEach { fields.include(it) }
+
+        spec.fields?.forEach { fieldName ->
+            fields.include(fieldName)
         }
 
         return query

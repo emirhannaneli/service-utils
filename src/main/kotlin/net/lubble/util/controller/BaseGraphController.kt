@@ -1,6 +1,8 @@
 package net.lubble.util.controller
 
 import graphql.language.Field
+import graphql.language.InlineFragment
+import graphql.language.SelectionSet
 import graphql.schema.DataFetchingEnvironment
 import jakarta.validation.Valid
 import net.lubble.util.GraphPageResponse
@@ -149,32 +151,43 @@ interface BaseGraphController<C, U, R, P> {
     fun paged(page: Page<*>, data: Collection<*>): GraphPageResponse = GraphResponse.of(page, data)
 
     /**
-     * Retrieves the fields for a pagination query from the data fetching environment.
+     * Extracts the requested fields from the GraphQL query.
      *
      * @param env The data fetching environment.
-     * @return A list of field names for the pagination query.
+     * @return A list of requested field names.
      */
-    fun pQueryFields(env: DataFetchingEnvironment): List<String> {
-        return env.field.selectionSet.selections.find {
-            val field = it as Field
-            field.name == "data"
-        }?.let {
-            val items = it as Field
-            items.selectionSet.selections.map { field -> (field as Field).name }
-        } ?: emptyList()
+    fun queryFields(env: DataFetchingEnvironment): List<String> {
+        val dataField = env.field.selectionSet.selections
+            .filterIsInstance<Field>()
+            .find { it.name == "data" }
+
+        if (dataField == null || dataField.selectionSet == null) {
+            return emptyList()
+        }
+
+        return extractFields(dataField.selectionSet)
     }
 
+    private fun extractFields(selectionSet: SelectionSet, prefix: String = ""): List<String> {
+        val fields = mutableListOf<String>()
 
-    /**
-     * Retrieves the fields for a read query from the data fetching environment.
-     *
-     * @param env The data fetching environment.
-     * @return A list of field names for the read query.
-     */
-    fun rQueryFields(env: DataFetchingEnvironment): List<String> {
-        return env.field.selectionSet.selections.map {
-            val field = it as Field
-            field.name
+        selectionSet.selections.forEach { selection ->
+            when (selection) {
+                is Field -> {
+                    val fieldName = selection.name
+                    val fullPath = if (prefix.isEmpty()) fieldName else "$prefix.$fieldName"
+
+                    if (selection.selectionSet == null || selection.selectionSet.selections.isEmpty()) {
+                        fields.add(fullPath)
+                    } else {
+                        fields.addAll(extractFields(selection.selectionSet, fullPath))
+                    }
+                }
+                is InlineFragment -> {
+                    fields.addAll(extractFields(selection.selectionSet, prefix))
+                }
+            }
         }
+        return fields
     }
 }
