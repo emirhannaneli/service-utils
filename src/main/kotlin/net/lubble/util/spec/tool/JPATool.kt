@@ -91,33 +91,39 @@ interface JPATool<T> {
 
         // Field cache kullan - performans optimizasyonu
         val fields = getCachedFields(root.model.javaType)
-        param.sortBy?.let { sortByValue ->
-            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            val sortOrderValue = param.getSortOrderValue()
-            val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            
-            if (sortFields.isNotEmpty()) {
-                val orderList = sortFields.mapIndexed { index, sortField ->
-                    if (isValidSortField(fields, sortField)) {
-                        val direction = if (index < sortOrders.size) {
-                            try {
-                                sortOrders[index].uppercase()
-                            } catch (e: Exception) {
+        
+        // COUNT query'lerinde ORDER BY ekleme - sadece SELECT query'lerinde ekle
+        val isCountQuery = query?.resultType == Long::class.java
+        
+        if (!isCountQuery) {
+            param.sortBy?.let { sortByValue ->
+                val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                val sortOrderValue = param.getSortOrderValue()
+                val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                
+                if (sortFields.isNotEmpty()) {
+                    val orderList = sortFields.mapIndexed { index, sortField ->
+                        if (isValidSortField(fields, sortField)) {
+                            val direction = if (index < sortOrders.size) {
+                                try {
+                                    sortOrders[index].uppercase()
+                                } catch (e: Exception) {
+                                    sortOrderValue.uppercase()
+                                }
+                            } else {
                                 sortOrderValue.uppercase()
                             }
-                        } else {
-                            sortOrderValue.uppercase()
-                        }
-                        when (direction) {
-                            "ASC" -> builder.asc(root.get<Any>(sortField))
-                            "DESC" -> builder.desc(root.get<Any>(sortField))
-                            else -> builder.asc(root.get<Any>(sortField))
-                        }
-                    } else null
-                }.filterNotNull()
-                
-                if (orderList.isNotEmpty()) {
-                    query?.orderBy(*orderList.toTypedArray())
+                            when (direction) {
+                                "ASC" -> builder.asc(root.get<Any>(sortField))
+                                "DESC" -> builder.desc(root.get<Any>(sortField))
+                                else -> builder.asc(root.get<Any>(sortField))
+                            }
+                        } else null
+                    }.filterNotNull()
+                    
+                    if (orderList.isNotEmpty()) {
+                        query?.orderBy(*orderList.toTypedArray())
+                    }
                 }
             }
         }
