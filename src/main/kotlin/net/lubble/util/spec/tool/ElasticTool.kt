@@ -96,16 +96,32 @@ interface ElasticTool<T : BaseModel> {
         var query = CriteriaQuery(criteria)
 
         val fields = getCachedFields(clazz)
-        when (param.sortOrder) {
-            SortOrder.ASC -> param.sortBy?.let { sortField ->
-                if (isValidSortField(fields, sortField)) {
-                    query = CriteriaQuery(criteria).addSort(Sort.by(Sort.Order.asc(sortField)))
-                }
-            }
-
-            SortOrder.DESC -> param.sortBy?.let { sortField ->
-                if (isValidSortField(fields, sortField)) {
-                    query = CriteriaQuery(criteria).addSort(Sort.by(Sort.Order.desc(sortField)))
+        param.sortBy?.let { sortByValue ->
+            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val sortOrderValue = param.getSortOrderValue()
+            val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            
+            if (sortFields.isNotEmpty()) {
+                val sortOrdersList = sortFields.mapIndexed { index, sortField ->
+                    if (isValidSortField(fields, sortField)) {
+                        val direction = if (index < sortOrders.size) {
+                            try {
+                                Sort.Direction.valueOf(sortOrders[index].uppercase())
+                            } catch (e: IllegalArgumentException) {
+                                Sort.Direction.valueOf(sortOrderValue.uppercase())
+                            }
+                        } else {
+                            Sort.Direction.valueOf(sortOrderValue.uppercase())
+                        }
+                        when (direction) {
+                            Sort.Direction.ASC -> Sort.Order.asc(sortField)
+                            Sort.Direction.DESC -> Sort.Order.desc(sortField)
+                        }
+                    } else null
+                }.filterNotNull()
+                
+                if (sortOrdersList.isNotEmpty()) {
+                    query = CriteriaQuery(criteria).addSort(Sort.by(sortOrdersList))
                 }
             }
         }

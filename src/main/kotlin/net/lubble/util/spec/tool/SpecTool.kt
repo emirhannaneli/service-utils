@@ -29,7 +29,30 @@ open class SpecTool(private val base: ParameterModel) {
     fun ofPageable(sort: Sort) = base.ofPageable(sort)
 
     fun ofSortedPageable(): Pageable {
-        val sort = base.sortBy?.let { Sort.by(Sort.Direction.valueOf(base.sortOrder.value), it) } ?: Sort.unsorted()
+        val sort = if (base.sortBy != null) {
+            val sortFields = base.sortBy!!.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val sortOrders = base.getSortOrderValue().split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            
+            if (sortFields.isEmpty()) {
+                Sort.unsorted()
+            } else {
+                val sortOrdersList = sortFields.mapIndexed { index, field ->
+                    val direction = if (index < sortOrders.size) {
+                        try {
+                            Sort.Direction.valueOf(sortOrders[index].uppercase())
+                        } catch (e: IllegalArgumentException) {
+                            Sort.Direction.valueOf(base.getSortOrderValue().uppercase())
+                        }
+                    } else {
+                        Sort.Direction.valueOf(base.getSortOrderValue().uppercase())
+                    }
+                    Sort.Order(direction, field)
+                }
+                Sort.by(sortOrdersList)
+            }
+        } else {
+            Sort.unsorted()
+        }
         return base.ofPageable(sort)
     }
 

@@ -71,19 +71,33 @@ interface MongoTool<T : BaseModel> {
         }
 
         val fields = clazz.declaredFields
-        when (param.sortOrder) {
-            SortOrder.ASC -> param.sortBy?.let {
-                if (fields.any { field ->
-                        val columnValue = field.getAnnotation(Field::class.java)?.name
-                        field.name == it || columnValue == it
-                    }) query.with(Sort.by(Sort.Direction.ASC, it))
-            }
-
-            SortOrder.DESC -> param.sortBy?.let {
-                if (fields.any { field ->
-                        val columnValue = field.getAnnotation(Field::class.java)?.name
-                        field.name == it || columnValue == it
-                    }) query.with(Sort.by(Sort.Direction.DESC, it))
+        param.sortBy?.let { sortByValue ->
+            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val sortOrderValue = param.getSortOrderValue()
+            val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            
+            if (sortFields.isNotEmpty()) {
+                val sortOrdersList = sortFields.mapIndexed { index, sortField ->
+                    if (fields.any { field ->
+                            val columnValue = field.getAnnotation(Field::class.java)?.name
+                            field.name == sortField || columnValue == sortField
+                        }) {
+                        val direction = if (index < sortOrders.size) {
+                            try {
+                                Sort.Direction.valueOf(sortOrders[index].uppercase())
+                            } catch (e: IllegalArgumentException) {
+                                Sort.Direction.valueOf(sortOrderValue.uppercase())
+                            }
+                        } else {
+                            Sort.Direction.valueOf(sortOrderValue.uppercase())
+                        }
+                        Sort.Order(direction, sortField)
+                    } else null
+                }.filterNotNull()
+                
+                if (sortOrdersList.isNotEmpty()) {
+                    query.with(Sort.by(sortOrdersList))
+                }
             }
         }
         return query

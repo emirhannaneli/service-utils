@@ -25,6 +25,22 @@ open class ParameterModel : PaginationSpec() {
 
     @Transient
     var sortOrder: SortOrder = SortOrder.ASC
+    
+    /**
+     * Returns the sort order as a string, supporting comma-separated values.
+     * If sortOrderString is provided, it will be used; otherwise, the enum value will be used.
+     */
+    @Transient
+    var sortOrderString: String? = null
+        get() = field?.trim()?.uppercase()
+    
+    /**
+     * Gets the sort order value as string, supporting comma-separated values.
+     * This method prioritizes sortOrderString if provided, otherwise uses the enum value.
+     */
+    fun getSortOrderValue(): String {
+        return sortOrderString ?: sortOrder.value
+    }
 
     val isFiltering: Boolean
         @Transient
