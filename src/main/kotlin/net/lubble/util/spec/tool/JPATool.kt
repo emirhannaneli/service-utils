@@ -113,10 +113,17 @@ interface JPATool<T> {
                             } else {
                                 sortOrderValue.uppercase()
                             }
-                            when (direction) {
-                                "ASC" -> builder.asc(root.get<Any>(sortField))
-                                "DESC" -> builder.desc(root.get<Any>(sortField))
-                                else -> builder.asc(root.get<Any>(sortField))
+                            try {
+                                val path = getPath(root, sortField)
+                                when (direction) {
+                                    "ASC" -> builder.asc(path)
+                                    "DESC" -> builder.desc(path)
+                                    else -> builder.asc(path)
+                                }
+                            } catch (e: Exception) {
+                                // Field bulunamazsa (örn: product.olmayanField) buraya düşer.
+                                // Loglama yapılabilir ama null dönerek sessizce yoksayıyoruz.
+                                null
                             }
                         } else null
                     }.filterNotNull()
@@ -128,9 +135,16 @@ interface JPATool<T> {
             }
         }
 
-        // query?.distinct(true) // Distinct performansı düşürebilir, gerektiğinde kullanılmalı
-
         return predicate
+    }
+
+    private fun getPath(root: Root<*>, attributeName: String): Path<*> {
+        var path: Path<*> = root
+        val parts = attributeName.split(".")
+        for (part in parts) {
+            path = path.get<Any>(part)
+        }
+        return path
     }
 
     // Field cache - reflection performansı için
@@ -151,8 +165,9 @@ interface JPATool<T> {
 
     // Sort field validation - optimize edilmiş
     private fun isValidSortField(fields: Array<Field>, sortField: String): Boolean {
+        val rootField = sortField.split(".")[0]
         return fields.any { field ->
-            field.name == sortField || getCachedColumnName(field) == sortField
+            field.name == rootField || getCachedColumnName(field) == rootField
         }
     }
 
