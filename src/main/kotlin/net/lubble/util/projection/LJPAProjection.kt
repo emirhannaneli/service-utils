@@ -78,11 +78,12 @@ interface LJPAProjection<T : BaseModel> {
             
             val selections = mutableListOf<Selection<*>>(root.get<Any>("id").alias("id"))
             
-            // Sort
+            // Sort - nested path desteği ile
             val pageable = spec.ofSortedPageable()
             if (pageable.sort.isSorted) {
+                val joinMapForSort = mutableMapOf<String, Join<*, *>>()
                 val orders = pageable.sort.map { order ->
-                    val path = root.get<Any>(order.property)
+                    val path = getOrCreatePath(root, order.property, joinMapForSort)
                     selections.add(path) // Sort alanını da select'e ekle
                     if (order.isAscending) cb.asc(path) else cb.desc(path)
                 }.toList()
@@ -123,12 +124,12 @@ interface LJPAProjection<T : BaseModel> {
             query.where(predicate)
             query.distinct(true) // Join varsa distinct entity için
 
-            // Sort (Pagination olmadığında da sıralamayı uygula)
+            // Sort (Pagination olmadığında da sıralamayı uygula) - nested path desteği ile
             val pageable = spec.ofSortedPageable()
             if (pageable.sort.isSorted) {
                 val orders = pageable.sort.map { order ->
-                    if (order.isAscending) cb.asc(root.get<Any>(order.property))
-                    else cb.desc(root.get<Any>(order.property))
+                    val path = getOrCreatePath(root, order.property)
+                    if (order.isAscending) cb.asc(path) else cb.desc(path)
                 }.toList()
                 query.orderBy(orders)
             }
@@ -341,6 +342,45 @@ interface LJPAProjection<T : BaseModel> {
                 val join = currentFrom.join<Any, Any>(part, JoinType.LEFT)
                 joinMap[currentPathKey] = join
                 currentFrom = join
+            }
+        }
+
+        // Son parça attribute'un kendisidir
+        return currentFrom.get(parts.last())
+    }
+
+    /**
+     * Verilen field path için gerekli Join'leri yapar (joinMap olmadan).
+     * Mevcut join'leri kontrol ederek mükerrer join'leri engeller.
+     */
+    private fun getOrCreatePath(
+        root: Root<*>,
+        fieldPath: String
+    ): jakarta.persistence.criteria.Path<Any> {
+        if (!fieldPath.contains(".")) {
+            return root.get(fieldPath)
+        }
+
+        val parts = fieldPath.split(".")
+        var currentFrom: From<*, *> = root
+
+        // Son parça hariç (attribute) diğerleri ilişkidir (relation)
+        for (i in 0 until parts.size - 1) {
+            val part = parts[i]
+            
+            // Önce bu ilişki için zaten bir join var mı diye bakıyoruz
+            val existingJoin = currentFrom.joins.firstOrNull { join ->
+                join.attribute.name == part && join.joinType == JoinType.LEFT
+            }
+
+            if (existingJoin != null) {
+                // Varsa onu kullan (Reuse) - mükerrer join'leri engelle
+                @Suppress("UNCHECKED_CAST")
+                currentFrom = existingJoin as From<*, *>
+            } else {
+                // Yoksa yeni LEFT JOIN oluştur
+                // LEFT JOIN önemli: İlişki null ise (örn: product yoksa) ana kayıt gelmeye devam etsin
+                currentFrom = currentFrom.join<Any, Any>(part, JoinType.LEFT)
             }
         }
 

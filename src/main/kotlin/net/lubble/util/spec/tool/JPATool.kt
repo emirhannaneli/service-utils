@@ -1,6 +1,8 @@
 package net.lubble.util.spec.tool
 
 import jakarta.persistence.Column
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.criteria.*
 import net.lubble.util.LK
 import net.lubble.util.model.ParameterModel
@@ -138,13 +140,41 @@ interface JPATool<T> {
         return predicate
     }
 
+    /**
+     * Verilen field path (örn: "product.title") için gerekli Join'leri yapar
+     * ve son path'i döner. Mevcut join'leri yeniden kullanarak mükerrer join'leri engeller.
+     */
     private fun getPath(root: Root<*>, attributeName: String): Path<*> {
-        var path: Path<*> = root
-        val parts = attributeName.split(".")
-        for (part in parts) {
-            path = path.get<Any>(part)
+        // Basit field (nokta yok)
+        if (!attributeName.contains(".")) {
+            return root.get<Any>(attributeName)
         }
-        return path
+
+        val parts = attributeName.split(".")
+        var currentFrom: From<*, *> = root
+
+        // Son parça hariç (attribute) diğerleri ilişkidir (relation)
+        for (i in 0..<parts.size - 1) {
+            val part = parts[i]
+            
+            // Önce bu ilişki için zaten bir join var mı diye bakıyoruz
+            val existingJoin = currentFrom.joins.firstOrNull { join ->
+                join.attribute.name == part && join.joinType == JoinType.LEFT
+            }
+
+            if (existingJoin != null) {
+                // Varsa onu kullan (Reuse) - mükerrer join'leri engelle
+                @Suppress("UNCHECKED_CAST")
+                currentFrom = existingJoin as From<*, *>
+            } else {
+                // Yoksa yeni LEFT JOIN oluştur
+                // LEFT JOIN önemli: İlişki null ise (örn: product yoksa) ana kayıt gelmeye devam etsin
+                currentFrom = currentFrom.join<Any, Any>(part, JoinType.LEFT)
+            }
+        }
+
+        // Son parça attribute'un kendisidir
+        return currentFrom.get<Any>(parts.last())
     }
 
     // Field cache - reflection performansı için
@@ -163,12 +193,25 @@ interface JPATool<T> {
         return cachedName.takeIf { it.isNotEmpty() }
     }
 
-    // Sort field validation - optimize edilmiş
+    // Sort field validation - nested path'ler için optimize edilmiş
     private fun isValidSortField(fields: Array<Field>, sortField: String): Boolean {
-        val rootField = sortField.split(".")[0]
-        return fields.any { field ->
-            field.name == rootField || getCachedColumnName(field) == rootField
+        val parts = sortField.split(".")
+        val rootField = parts[0]
+        
+        // Root field'ı bul
+        val field = fields.firstOrNull { 
+            it.name == rootField || getCachedColumnName(it) == rootField 
+        } ?: return false
+        
+        // Eğer nested path ise (örn: "product.title"), root field bir ilişki olmalı
+        if (parts.size > 1) {
+            // Root field bir JPA ilişkisi olmalı (ManyToOne, OneToOne, vb.)
+            return field.isAnnotationPresent(ManyToOne::class.java) || 
+                   field.isAnnotationPresent(OneToOne::class.java)
         }
+        
+        // Basit field için direkt true döner
+        return true
     }
 
     private fun idKeyAndValue(id: String): Pair<IDType, Any> {
