@@ -91,48 +91,52 @@ interface JPATool<T> {
             predicate = builder.and(predicate, builder.equal(root.get<Any>("archived"), archived))
         }
 
-        // Field cache kullan - performans optimizasyonu
-        val fields = getCachedFields(root.model.javaType)
-        
-        // COUNT query'lerinde ORDER BY ekleme - sadece SELECT query'lerinde ekle
         val isCountQuery = query?.resultType == Long::class.java
-        
+
         if (!isCountQuery) {
-            param.sortBy?.let { sortByValue ->
+            val fields = getCachedFields(root.model.javaType)
+            val orders = mutableListOf<Order>()
+
+            // A. Kullanıcıdan gelen parametreleri işlemeye çalış
+            param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
                 val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 val sortOrderValue = param.getSortOrderValue()
                 val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                
-                if (sortFields.isNotEmpty()) {
-                    val orderList = sortFields.mapIndexed { index, sortField ->
-                        if (isValidSortField(fields, sortField)) {
-                            val direction = if (index < sortOrders.size) {
-                                try {
-                                    sortOrders[index].uppercase()
-                                } catch (e: Exception) {
-                                    sortOrderValue.uppercase()
-                                }
-                            } else {
+
+                sortFields.forEachIndexed { index, sortField ->
+                    if (isValidSortField(fields, sortField)) {
+                        val direction = if (index < sortOrders.size) {
+                            try {
+                                sortOrders[index].uppercase()
+                            } catch (e: Exception) {
                                 sortOrderValue.uppercase()
                             }
-                            try {
-                                val path = getPath(root, sortField)
-                                when (direction) {
-                                    "ASC" -> builder.asc(path)
-                                    "DESC" -> builder.desc(path)
-                                    else -> builder.asc(path)
-                                }
-                            } catch (e: Exception) {
-                                // Field bulunamazsa (örn: product.olmayanField) buraya düşer.
-                                // Loglama yapılabilir ama null dönerek sessizce yoksayıyoruz.
-                                null
+                        } else {
+                            sortOrderValue.uppercase()
+                        }
+
+                        try {
+                            val path = getPath(root, sortField)
+                            val order = when (direction) {
+                                "ASC" -> builder.asc(path)
+                                "DESC" -> builder.desc(path)
+                                else -> builder.asc(path)
                             }
-                        } else null
-                    }.filterNotNull()
-                    
-                    if (orderList.isNotEmpty()) {
-                        query?.orderBy(*orderList.toTypedArray())
+                            orders.add(order)
+                        } catch (e: Exception) {
+                            // Field path oluşturulamazsa yoksay (loglanabilir)
+                        }
                     }
+                }
+            }
+
+            if (orders.isNotEmpty()) {
+                query?.orderBy(orders)
+            } else {
+                try {
+                    val pkPath = root.get<Any>("pk")
+                    query?.orderBy(builder.desc(pkPath))
+                } catch (e: Exception) {
                 }
             }
         }

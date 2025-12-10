@@ -162,18 +162,24 @@ open class BaseModel(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is BaseModel) return false
+        if (javaClass != other?.javaClass) return false
 
-        if (id != other.id) return false
+        other as BaseModel
+
         if (pk != other.pk) return false
+        if (deleted != other.deleted) return false
+        if (archived != other.archived) return false
+        if (id != other.id) return false
         if (sk != other.sk) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + pk.hashCode()
+        var result = pk.hashCode()
+        result = 31 * result + deleted.hashCode()
+        result = 31 * result + archived.hashCode()
+        result = 31 * result + id.hashCode()
         result = 31 * result + sk.hashCode()
         return result
     }

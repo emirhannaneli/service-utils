@@ -28,6 +28,19 @@ abstract class BaseDocumented<T : BaseModel>(
         target.updatedAt = source.updatedAt
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as BaseDocumented<*>
+
+        return ref == other.ref
+    }
+
+    override fun hashCode(): Int {
+        return ref?.hashCode() ?: 0
+    }
+
     companion object {
         
         inline fun <R> mapSession(block: () -> R): R {
@@ -73,6 +86,8 @@ abstract class BaseDocumented<T : BaseModel>(
             }
         }
     }
+
+
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true, value = ["ref"])

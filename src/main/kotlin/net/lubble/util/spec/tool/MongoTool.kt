@@ -3,18 +3,30 @@ package net.lubble.util.spec.tool
 import net.lubble.util.LK
 import net.lubble.util.model.BaseModel
 import net.lubble.util.model.ParameterModel
-import net.lubble.util.model.SortOrder
 import net.lubble.util.spec.tool.SpecTool.IDType
 import net.lubble.util.spec.tool.SpecTool.SearchType
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import java.util.concurrent.ConcurrentHashMap
+// Reflection Field ile Mongo Field karışmaması için alias kullanıyoruz
+import java.lang.reflect.Field as ReflectField
 
 /**
  * MongoTool interface defines the specifications for MongoDB models.
  */
 interface MongoTool<T : BaseModel> {
+
+    companion object {
+        // Reflection cache - Performans optimizasyonu
+        private val fieldCache = ConcurrentHashMap<Class<*>, Array<ReflectField>>()
+
+        private fun getCachedFields(clazz: Class<*>): Array<ReflectField> {
+            return fieldCache.getOrPut(clazz) { clazz.declaredFields }
+        }
+    }
+
     /**
      * The class of the entity.
      * */
@@ -47,7 +59,7 @@ interface MongoTool<T : BaseModel> {
 
     /**
      * Returns the default query for a MongoDB model.
-     *
+     * Updated: Defaults to sorting by 'pk' DESC if no valid sort parameters are provided.
      */
     fun defaultQuery(
         param: ParameterModel
@@ -70,36 +82,43 @@ interface MongoTool<T : BaseModel> {
             query.addCriteria(Criteria.where("archived").`is`(it))
         }
 
-        val fields = clazz.declaredFields
-        param.sortBy?.let { sortByValue ->
+        val fields = getCachedFields(clazz)
+        val orders = mutableListOf<Sort.Order>()
+
+        param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
             val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
             val sortOrderValue = param.getSortOrderValue()
             val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            
+
             if (sortFields.isNotEmpty()) {
-                val sortOrdersList = sortFields.mapIndexed { index, sortField ->
-                    if (fields.any { field ->
-                            val columnValue = field.getAnnotation(Field::class.java)?.name
-                            field.name == sortField || columnValue == sortField
-                        }) {
-                        val direction = if (index < sortOrders.size) {
-                            try {
-                                Sort.Direction.valueOf(sortOrders[index].uppercase())
-                            } catch (e: IllegalArgumentException) {
-                                Sort.Direction.valueOf(sortOrderValue.uppercase())
-                            }
-                        } else {
-                            Sort.Direction.valueOf(sortOrderValue.uppercase())
+                sortFields.forEachIndexed { index, sortField ->
+                    // Field validation: Entity içinde var mı kontrolü (Field name veya @Field annotation name)
+                    val isValid = fields.any { field ->
+                        val columnValue = field.getAnnotation(Field::class.java)?.name
+                        field.name == sortField || columnValue == sortField
+                    }
+
+                    if (isValid) {
+                        val directionStr = if (index < sortOrders.size) sortOrders[index] else sortOrderValue
+
+                        val direction = try {
+                            Sort.Direction.valueOf(directionStr.uppercase())
+                        } catch (e: IllegalArgumentException) {
+                            Sort.Direction.ASC
                         }
-                        Sort.Order(direction, sortField)
-                    } else null
-                }.filterNotNull()
-                
-                if (sortOrdersList.isNotEmpty()) {
-                    query.with(Sort.by(sortOrdersList))
+
+                        orders.add(Sort.Order(direction, sortField))
+                    }
                 }
             }
         }
+
+        if (orders.isNotEmpty()) {
+            query.with(Sort.by(orders))
+        } else {
+            query.with(Sort.by(Sort.Direction.DESC, "pk"))
+        }
+
         return query
     }
 
@@ -136,21 +155,27 @@ interface MongoTool<T : BaseModel> {
         val terms = search.split(" ")
             .map { it.trim().lowercase() }
             .filter { it.isNotEmpty() }
-            .map { term ->
-                Criteria().orOperator(
-                    *fields.map {
-                        when (type) {
-                            SearchType.EQUAL -> Criteria.where(it).`is`(term)
-                            SearchType.STARTS_WITH -> Criteria.where(it).regex("^$term.*", "i")
-                            SearchType.ENDS_WITH -> Criteria.where(it).regex(".*$term$", "i")
-                            SearchType.LIKE -> Criteria.where(it).regex(".*$term.*", "i")
-                        }
-                    }.toTypedArray()
-                )
-            }
-        return Criteria().orOperator(*terms.toTypedArray())
-    }
 
+        if (terms.isEmpty()) return Criteria()
+
+        val termCriterias = terms.map { term ->
+            val fieldCriterias = fields.map { field ->
+                when (type) {
+                    SearchType.EQUAL -> Criteria.where(field).`is`(term)
+                    // Mongo regex aramalarında performans için dikkatli olunmalıdır.
+                    SearchType.STARTS_WITH -> Criteria.where(field).regex("^$term.*", "i")
+                    SearchType.ENDS_WITH -> Criteria.where(field).regex(".*$term$", "i")
+                    SearchType.LIKE -> Criteria.where(field).regex(".*$term.*", "i")
+                }
+            }
+            Criteria().orOperator(*fieldCriterias.toTypedArray())
+        }
+
+        return Criteria().andOperator(*termCriterias.toTypedArray())
+    }
+    // endregion
+
+    // region Public Queries
     /**
      * Returns the id query for a MongoDB model.
      *
@@ -233,6 +258,9 @@ interface MongoTool<T : BaseModel> {
         type: SearchType = SearchType.LIKE
     ): Query {
         val criteria = buildSearchOrCriteria(search, type, *fields)
-        return query.addCriteria(criteria)
+        if (criteria != Criteria()) {
+            query.addCriteria(criteria)
+        }
+        return query
     }
 }
