@@ -154,4 +154,34 @@ data class GraphPageResponse(
             hasPrevious = page.hasPrevious(),
         )
     }
+
+    companion object {
+        /**
+         * Creates a GraphPageResponse from a Page and a collection of data.
+         * @param page The Page object containing pagination information.
+         * @param data The collection of data to be included in the response.
+         * @return A GraphPageResponse object.
+         */
+        fun of(page: Page<*>, data: Collection<*>): GraphPageResponse {
+            return GraphPageResponse(page, data)
+        }
+
+        /**
+         * Creates an empty GraphPageResponse.
+         * @return An empty GraphPageResponse object.
+         */
+        fun empty(): GraphPageResponse {
+            return GraphPageResponse(
+                meta = Meta(
+                    current = 0,
+                    size = 0,
+                    totalItems = 0,
+                    totalPages = 0,
+                    hasNext = false,
+                    hasPrevious = false
+                ),
+                data = emptyList<Any>()
+            )
+        }
+    }
 }

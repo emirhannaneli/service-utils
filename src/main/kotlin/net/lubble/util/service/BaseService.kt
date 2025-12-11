@@ -2,6 +2,8 @@ package net.lubble.util.service
 
 import net.lubble.util.model.BaseModel
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 
 /**
  * This interface defines the basic CRUD operations for a service.
@@ -47,6 +49,16 @@ interface BaseService<T : BaseModel, C, U, S> {
      * @return A page of found entities.
      */
     fun findAll(spec: S): Page<T>
+
+    fun findAll(spec: S, pageable: Pageable, total: Long): Page<T> {
+        val content = findAll(spec)
+        if (content.isEmpty) return Page.empty()
+        return PageImpl(
+            content.content,
+            pageable,
+            total
+        )
+    }
 
     /**
      * Update an entity.

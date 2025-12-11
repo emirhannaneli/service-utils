@@ -1,6 +1,7 @@
 package net.lubble.util.repo
 
 import net.lubble.util.model.BaseModel
+import net.lubble.util.projection.LElasticNativeProjection
 import net.lubble.util.projection.LElasticProjection
 import net.lubble.util.projection.LJPAProjection
 import net.lubble.util.projection.LMongoProjection
@@ -21,5 +22,5 @@ abstract class BaseRepo {
     interface JPA<T : BaseModel> : JpaRepository<T, String>, JpaSpecificationExecutor<T>, LJPAProjection<T>
 
     @NoRepositoryBean
-    interface Elastic<T : BaseModel> : ElasticsearchRepository<T, String>, LElasticProjection<T>
+    interface Elastic<T : BaseModel> : ElasticsearchRepository<T, String>, LElasticProjection<T>, LElasticNativeProjection<T>
 }

@@ -55,6 +55,14 @@ interface BaseDocumentedService<T : BaseModel, D : BaseDocumented<in T>, S> {
     fun search(spec: S): List<D>
 
     /**
+     * Counts the number of DTOs matching the given specification.
+     *
+     * @param spec The specification or criteria to count DTOs.
+     * @return The count of matching DTOs.
+     */
+    fun count(spec: S): Long
+
+    /**
      * Deletes the given DTO.
      *
      * @param doc The DTO to delete.

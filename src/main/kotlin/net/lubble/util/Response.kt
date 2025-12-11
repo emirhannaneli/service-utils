@@ -226,4 +226,36 @@ data class PageResponse(
     private fun mapper(): ObjectMapper {
         return AppContextUtil.bean(ObjectMapper::class.java)
     }
+
+    companion object {
+        /**
+         * Constructs a new PageResponse from a Page and a list of data.
+         * @param page The Page to construct the PageResponse from.
+         * @param data The data to include in the PageResponse.
+         * @return The constructed PageResponse.
+         */
+        fun of(page: Page<*>, data: Collection<*>): ResponseEntity<PageResponse> {
+            return PageResponse(
+                current = page.number + 1,
+                size = page.size,
+                totalItems = page.totalElements,
+                totalPages = page.totalPages,
+                hasNext = page.hasNext(),
+                hasPrevious = page.hasPrevious(),
+                items = data
+            ).build()
+        }
+
+        fun empty(): ResponseEntity<PageResponse> {
+            return PageResponse(
+                current = 1,
+                size = 0,
+                totalItems = 0,
+                totalPages = 0,
+                hasNext = false,
+                hasPrevious = false,
+                items = emptyList<Any>()
+            ).build()
+        }
+    }
 }

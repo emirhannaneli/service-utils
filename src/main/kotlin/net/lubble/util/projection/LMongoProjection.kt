@@ -124,6 +124,4 @@ interface LMongoProjection<T : BaseModel> {
         val query = spec.ofSearch()
         return template.count(query, clazz)
     }
-
-
 }
