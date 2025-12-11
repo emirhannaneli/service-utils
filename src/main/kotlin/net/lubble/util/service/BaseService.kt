@@ -49,6 +49,13 @@ interface BaseService<T : BaseModel, C, U, S> {
     fun findAll(spec: S): Page<T>
 
     /**
+     * Fetch all entities by their specification.
+     * @param spec The specification to use when fetching the entities.
+     * @return A collection of found entities.
+     */
+    fun fetchAll(spec: S): Collection<T>
+
+    /**
      * Update an entity.
      * @param base The entity to update.
      * @param update The updated entity.

@@ -86,6 +86,17 @@ class GraphResponse(
         }
 
         /**
+         * Creates a GraphPageResponse from a collection of data, a Pageable, and the total number of items.
+         * @param data The collection of data to be included in the response.
+         * @param pageable The Pageable object containing pagination information.
+         * @param total The total number of items.
+         * @return A GraphPageResponse object.
+         */
+        fun of(data: Collection<*>, pageable: Pageable, total: Long): GraphPageResponse {
+            return GraphPageResponse(data, pageable, total)
+        }
+
+        /**
          * Retrieves the MessageSource bean from the application context.
          * @return The MessageSource bean.
          */

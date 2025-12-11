@@ -26,11 +26,9 @@ interface LJPAProjection<T : BaseModel> {
         val query = builder.createQuery(clazz)
         val root = query.from(clazz)
 
-        // Apply Predicates (Search)
         val predicate = spec.ofSearch().toPredicate(root, query, builder)
         query.where(predicate)
 
-        // Entity Graph (Fetch Strategy)
         val entityGraph = createDynamicEntityGraph(spec, clazz)
 
         val typedQuery = manager.createQuery(query)
@@ -45,100 +43,120 @@ interface LJPAProjection<T : BaseModel> {
             ?: Optional.empty()
     }
 
-    fun findAll(spec: BaseSpec.JPA<T>, pagination: Boolean = true): Page<T> {
+    /**
+     * Verilen şartnameye göre sayfalandırılmış (paginated) varlıkları döner.
+     * Her zaman sayfalandırma mantığı (önce ID çekme veya doğrudan sayfalama) uygulanır.
+     */
+    fun findAll(spec: BaseSpec.JPA<T>): Page<T> {
         val clazz = spec.clazz
         validateEntity(clazz)
 
         if (!spec.fields.isNullOrEmpty()) {
-            return fetchWithProjection(spec, clazz, pagination)
+            return fetchWithProjection(spec, clazz, true)
         }
 
-        var totalCount: Long = 0
-        if (pagination) {
-            val countQuery = manager.createQuery(count(spec))
-            totalCount = countQuery.singleResult
-            if (totalCount == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
-        }
+        val countQuery = manager.createQuery(count(spec))
+        val totalCount = countQuery.singleResult
+        if (totalCount == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
 
-        val ids = if (pagination) {
-            val cb = manager.criteriaBuilder
-            
-            val idQuery = cb.createTupleQuery()
-            val root = idQuery.from(clazz)
-            
-            val predicate = spec.ofSearch().toPredicate(root, idQuery, cb)
-            
-            idQuery.orderBy(emptyList())
-            
-            val selections = mutableListOf<Selection<*>>(root.get<Any>("id").alias("id"))
-            
-            val pageable = spec.ofSortedPageable()
-            if (pageable.sort.isSorted) {
-                val joinMapForSort = mutableMapOf<String, Join<*, *>>()
-                val orders = pageable.sort.map { order ->
-                    val path = getOrCreatePath(root, order.property, joinMapForSort)
-                    selections.add(path)
-                    if (order.isAscending) cb.asc(path) else cb.desc(path)
-                }.toList()
-                idQuery.orderBy(orders)
-            }
-            
-            idQuery.where(predicate)
-            idQuery.multiselect(selections)
-            idQuery.distinct(true)
+        val ids = fetchIdsForPagination(spec, clazz)
+        if (ids.isEmpty()) return PageImpl(emptyList(), spec.ofSortedPageable(), totalCount)
 
-            val typedIdQuery = manager.createQuery(idQuery)
-            typedIdQuery.firstResult = pageable.pageNumber * pageable.pageSize
-            typedIdQuery.maxResults = pageable.pageSize
-            
-            val fetchedTuples = typedIdQuery.resultList
-            if (fetchedTuples.isEmpty()) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
-            
-            fetchedTuples.map { it.get(0) as String }
-        } else {
-            emptyList()
+        val results = fetchEntitiesByIds(ids, spec, clazz)
+
+        val entityMap = results.associateBy { it.getId() }
+        val sortedResults = ids.mapNotNull { entityMap[it] }
+
+        return PageImpl(sortedResults, spec.ofSortedPageable(), totalCount)
+    }
+
+    /**
+     * Verilen şartnameye uyan TÜM varlıkları (sayfalandırma olmadan) döner.
+     */
+    fun fetchAll(spec: BaseSpec.JPA<T>): Collection<T> {
+        val clazz = spec.clazz
+        validateEntity(clazz)
+
+        if (!spec.fields.isNullOrEmpty()) {
+            return fetchWithProjection(spec, clazz, false).content
         }
 
         val cb = manager.criteriaBuilder
         val query = cb.createQuery(clazz)
         val root = query.from(clazz)
 
-        if (pagination) {
-            query.where(root.get<String>("id").`in`(ids))
-        } else {
-            val predicate = spec.ofSearch().toPredicate(root, query, cb)
-            query.where(predicate)
-            query.distinct(true)
+        val predicate = spec.ofSearch().toPredicate(root, query, cb)
+        query.where(predicate)
+        query.distinct(true)
 
-            val pageable = spec.ofSortedPageable()
-            if (pageable.sort.isSorted) {
-                val orders = pageable.sort.map { order ->
-                    val path = getOrCreatePath(root, order.property)
-                    if (order.isAscending) cb.asc(path) else cb.desc(path)
-                }.toList()
-                query.orderBy(orders)
-            }
+        val pageable = spec.ofSortedPageable()
+        if (pageable.sort.isSorted) {
+            val orders = pageable.sort.map { order ->
+                val path = getOrCreatePath(root, order.property)
+                if (order.isAscending) cb.asc(path) else cb.desc(path)
+            }.toList()
+            query.orderBy(orders)
         }
 
-        val typedQuery = manager.createQuery(query)
-
         val entityGraph = createDynamicEntityGraph(spec, clazz)
+        val typedQuery = manager.createQuery(query)
         if (entityGraph.attributeNodes.isNotEmpty()) {
             typedQuery.setHint("jakarta.persistence.fetchgraph", entityGraph)
         }
 
-        var results = typedQuery.resultList
+        return typedQuery.resultList
+    }
 
-        if (pagination && ids.isNotEmpty()) {
-            val entityMap = results.associateBy { it.getId() }
-            results = ids.mapNotNull { entityMap[it] }
+    private fun fetchIdsForPagination(spec: BaseSpec.JPA<T>, clazz: Class<T>): List<String> {
+        val cb = manager.criteriaBuilder
+        val idQuery = cb.createTupleQuery()
+        val root = idQuery.from(clazz)
+        val pageable = spec.ofSortedPageable()
+
+        val predicate = spec.ofSearch().toPredicate(root, idQuery, cb)
+
+        val selections = mutableListOf<Selection<*>>(root.get<Any>("id").alias("id"))
+        val joinMapForSort = mutableMapOf<String, Join<*, *>>()
+
+        if (pageable.sort.isSorted) {
+            val orders = pageable.sort.map { order ->
+                // Sıralama için JOIN'leri oluştur ve path'i al.
+                val path = getOrCreatePath(root, order.property, joinMapForSort)
+                // Selections'a path'i ekle (Sıralama için gerekli olabilir, tuple'da görünür).
+                selections.add(path)
+                if (order.isAscending) cb.asc(path) else cb.desc(path)
+            }.toList()
+            idQuery.orderBy(orders)
+        } else {
+            idQuery.orderBy(emptyList())
         }
 
-        if (!pagination) {
-            totalCount = results.size.toLong()
+        idQuery.where(predicate)
+        idQuery.multiselect(selections)
+        idQuery.distinct(true)
+
+        val typedIdQuery = manager.createQuery(idQuery)
+        typedIdQuery.firstResult = pageable.pageNumber * pageable.pageSize
+        typedIdQuery.maxResults = pageable.pageSize
+
+        val fetchedTuples = typedIdQuery.resultList
+        return fetchedTuples.map { it.get(0) as String }
+    }
+
+    private fun fetchEntitiesByIds(ids: List<String>, spec: BaseSpec.JPA<T>, clazz: Class<T>): List<T> {
+        val cb = manager.criteriaBuilder
+        val query = cb.createQuery(clazz)
+        val root = query.from(clazz)
+
+        query.where(root.get<String>("id").`in`(ids))
+
+        val entityGraph = createDynamicEntityGraph(spec, clazz)
+        val typedQuery = manager.createQuery(query)
+        if (entityGraph.attributeNodes.isNotEmpty()) {
+            typedQuery.setHint("jakarta.persistence.fetchgraph", entityGraph)
         }
 
-        return PageImpl(results, spec.ofSortedPageable(), totalCount)
+        return typedQuery.resultList
     }
 
     private fun createDynamicEntityGraph(spec: BaseSpec.JPA<T>, clazz: Class<T>): EntityGraph<T> {
@@ -168,12 +186,12 @@ interface LJPAProjection<T : BaseModel> {
         if (clazz == BaseModel::class.java || !isEntity(clazz)) {
             throw IllegalArgumentException(
                 "Not an entity: ${clazz.name}. " +
-                "BaseModel is a @MappedSuperclass and cannot be used directly in queries. " +
-                "Please ensure your specification uses a concrete entity class that extends BaseModel."
+                        "BaseModel is a @MappedSuperclass and cannot be used directly in queries. " +
+                        "Please ensure your specification uses a concrete entity class that extends BaseModel."
             )
         }
     }
-    
+
     fun count(spec: BaseSpec.JPA<T>): CriteriaQuery<Long> {
         val clazz = spec.clazz
         validateEntity(clazz)
@@ -185,12 +203,12 @@ interface LJPAProjection<T : BaseModel> {
             .where(search)
         return query
     }
-    
+
     private fun isEntity(clazz: Class<*>): Boolean {
         if (clazz.isAnnotationPresent(Entity::class.java)) {
             return true
         }
-        
+
         return try {
             manager.metamodel.managedType(clazz)
             true
@@ -235,7 +253,6 @@ interface LJPAProjection<T : BaseModel> {
         val pageable = spec.ofSortedPageable()
         if (pageable.sort.isSorted) {
             val orders = pageable.sort.map { order ->
-                // Sort alanları için de path çözümlemesi gerekebilir
                 val path = getOrCreatePath(root, order.property, joinMap)
                 if (order.isAscending) cb.asc(path) else cb.desc(path)
             }.toList()
@@ -291,11 +308,12 @@ interface LJPAProjection<T : BaseModel> {
         var currentFrom: From<*, *> = root
         var currentPathKey = ""
 
-        for (i in 0 until parts.size - 1) {
+        for (i in 0..<parts.size - 1) {
             val part = parts[i]
             currentPathKey = if (currentPathKey.isEmpty()) part else "$currentPathKey.$part"
 
             if (joinMap.containsKey(currentPathKey)) {
+                @Suppress("UNCHECKED_CAST")
                 currentFrom = joinMap[currentPathKey] as From<*, *>
             } else {
                 val join = currentFrom.join<Any, Any>(part, JoinType.LEFT)
@@ -324,7 +342,7 @@ interface LJPAProjection<T : BaseModel> {
 
         for (i in 0..<parts.size - 1) {
             val part = parts[i]
-            
+
             val existingJoin = currentFrom.joins.firstOrNull { join ->
                 join.attribute.name == part && join.joinType == JoinType.LEFT
             }
@@ -354,7 +372,7 @@ interface LJPAProjection<T : BaseModel> {
         val parts = path.split(".")
         var currentObject = target
 
-        for (i in 0 until parts.size - 1) {
+        for (i in 0..<parts.size - 1) {
             val fieldName = parts[i]
             val field = FieldUtils.getField(currentObject.javaClass, fieldName, true)
 

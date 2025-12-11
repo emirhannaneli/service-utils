@@ -4,6 +4,7 @@ import jakarta.validation.Valid
 import net.lubble.util.PageResponse
 import net.lubble.util.Response
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.net.URI
@@ -171,5 +172,18 @@ interface BaseController<C, U, R, P> {
      * @param page The Page to construct the PageResponse from.
      * @param data The data to include in the PageResponse.
      */
-    fun paged(page: Page<*>, data: Collection<*>): ResponseEntity<PageResponse> = Response.of(page, data)
+    fun paged(page: Page<*>, data: Collection<*>): ResponseEntity<PageResponse> = PageResponse.of(page, data)
+
+    /**
+     * Creates a PageResponse from a list of data, pageable information, and total count.
+     *
+     * @param data The data to include in the PageResponse.
+     * @param pageable The pageable information.
+     * @param total The total count of items.
+     */
+    fun paged(
+        data: Collection<*>,
+        pageable: Pageable,
+        total: Long
+    ): ResponseEntity<PageResponse> = PageResponse.of(data, pageable, total)
 }

@@ -8,6 +8,7 @@ import jakarta.validation.Valid
 import net.lubble.util.GraphPageResponse
 import net.lubble.util.GraphResponse
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.graphql.data.method.annotation.Argument
 
 /**
@@ -148,7 +149,17 @@ interface BaseGraphController<C, U, R, P> {
      * @param data The data to include in the response.
      * @return A paginated response containing the data.
      */
-    fun paged(page: Page<*>, data: Collection<*>): GraphPageResponse = GraphResponse.of(page, data)
+    fun paged(page: Page<*>, data: Collection<*>): GraphPageResponse = GraphPageResponse.of(page, data)
+
+    /**
+     * Creates a paginated response.
+     *
+     * @param data The data to include in the response.
+     * @param pageable The pagination information.
+     * @param total The total number of items.
+     * @return A paginated response containing the data.
+     */
+    fun paged(data: Collection<*>, pageable: Pageable, total: Long): GraphPageResponse = GraphPageResponse.of(data, pageable, total)
 
     /**
      * Extracts the requested fields from the GraphQL query.
