@@ -8,6 +8,7 @@ import net.lubble.util.model.ExceptionModel
 import org.springframework.context.MessageSource
 import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.OK
 import org.springframework.http.ResponseEntity
@@ -147,6 +148,25 @@ class Response() {
         }
 
         /**
+         * Constructs a new Response from a collection of data, a Pageable, and the total number of items.
+         * @param data The data to include in the Response.
+         * @param pageable The Pageable to construct the Response from.
+         * @param total The total number of items.
+         * @return The constructed Response.
+         */
+        fun of(data: Collection<*>, pageable: Pageable, total: Long): ResponseEntity<PageResponse> {
+            return PageResponse(
+                current = pageable.pageNumber + 1,
+                size = pageable.pageSize,
+                totalItems = total,
+                totalPages = if (pageable.pageSize == 0) 0 else ((total + pageable.pageSize - 1) / pageable.pageSize).toInt(),
+                hasNext = (pageable.pageNumber + 1) * pageable.pageSize < total,
+                hasPrevious = pageable.pageNumber > 0,
+                items = data
+            ).build()
+        }
+
+        /**
          * Retrieves the MessageSource bean from the application context.
          * @return The MessageSource bean.
          */
@@ -215,6 +235,16 @@ data class PageResponse(
         items = data
     )
 
+    constructor(data: Collection<*>, pageable: Pageable, total: Long) : this(
+        current = pageable.pageNumber + 1,
+        size = pageable.pageSize,
+        totalItems = total,
+        totalPages = if (pageable.pageSize == 0) 0 else ((total + pageable.pageSize - 1) / pageable.pageSize).toInt(),
+        hasNext = (pageable.pageNumber + 1) * pageable.pageSize < total,
+        hasPrevious = pageable.pageNumber > 0,
+        items = data
+    )
+
     fun build(): ResponseEntity<PageResponse> {
         return ResponseEntity(this, OK)
     }
@@ -246,6 +276,29 @@ data class PageResponse(
             ).build()
         }
 
+        /**
+         * Constructs a new PageResponse from a collection of data, a Pageable, and the total number of items.
+         * @param data The data to include in the PageResponse.
+         * @param pageable The Pageable to construct the PageResponse from.
+         * @param total The total number of items.
+         * @return The constructed PageResponse.
+         */
+        fun of(data: Collection<*>, pageable: Pageable, total: Long): ResponseEntity<PageResponse> {
+            return PageResponse(
+                current = pageable.pageNumber + 1,
+                size = pageable.pageSize,
+                totalItems = total,
+                totalPages = if (pageable.pageSize == 0) 0 else ((total + pageable.pageSize - 1) / pageable.pageSize).toInt(),
+                hasNext = (pageable.pageNumber + 1) * pageable.pageSize < total,
+                hasPrevious = pageable.pageNumber > 0,
+                items = data
+            ).build()
+        }
+
+        /**
+         * Constructs an empty PageResponse.
+         * @return The constructed empty PageResponse.
+         */
         fun empty(): ResponseEntity<PageResponse> {
             return PageResponse(
                 current = 1,

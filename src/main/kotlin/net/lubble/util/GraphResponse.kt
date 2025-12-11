@@ -6,6 +6,7 @@ import net.lubble.util.model.ExceptionModel
 import org.springframework.context.MessageSource
 import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import java.util.*
 
 /**
@@ -124,6 +125,20 @@ data class GraphPageResponse(
     )
 
     /**
+     * Constructs a GraphPageResponse from a collection of data, a Pageable, and the total number of items.
+     * @param data The collection of data to be included in the response.
+     * @param pageable The Pageable object containing pagination information.
+     * @param total The total number of items.
+     */
+    constructor(data: Collection<*>, pageable: Pageable, total: Long) : this(
+        meta = Meta(
+            pageable = pageable,
+            total = total
+        ),
+        data = data
+    )
+
+    /**
      * A class representing metadata about the pagination.
      */
     @JsonPropertyOrder("current", "size", "totalItems", "totalPages", "hasNext", "hasPrevious", "items")
@@ -153,6 +168,15 @@ data class GraphPageResponse(
             hasNext = page.hasNext(),
             hasPrevious = page.hasPrevious(),
         )
+
+        constructor(pageable: Pageable, total: Long) : this(
+            current = pageable.pageNumber + 1,
+            size = pageable.pageSize,
+            totalItems = total,
+            totalPages = if (pageable.pageSize == 0) 0 else ((total + pageable.pageSize - 1) / pageable.pageSize).toInt(),
+            hasNext = (pageable.pageNumber + 1) * pageable.pageSize < total,
+            hasPrevious = pageable.pageNumber > 0
+        )
     }
 
     companion object {
@@ -164,6 +188,17 @@ data class GraphPageResponse(
          */
         fun of(page: Page<*>, data: Collection<*>): GraphPageResponse {
             return GraphPageResponse(page, data)
+        }
+
+        /**
+         * Creates a GraphPageResponse from a collection of data, a Pageable, and the total number of items.
+         * @param data The collection of data to be included in the response.
+         * @param pageable The Pageable object containing pagination information.
+         * @param total The total number of items.
+         * @return A GraphPageResponse object.
+         */
+        fun of(data: Collection<*>, pageable: Pageable, total: Long): GraphPageResponse {
+            return GraphPageResponse(data, pageable, total)
         }
 
         /**
