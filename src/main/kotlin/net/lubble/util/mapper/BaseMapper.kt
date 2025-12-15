@@ -8,6 +8,7 @@ import net.lubble.util.dto.RBase
 import net.lubble.util.model.BaseDocumented
 import net.lubble.util.model.BaseModel
 import org.springframework.data.domain.Page
+import org.springframework.transaction.annotation.Transactional
 
 /**
  * BaseMapper interface is used for mapping between DTOs and Entities.

@@ -10,7 +10,7 @@ import java.time.Instant
 
 @Configuration
 @ConditionalOnClass(ElasticsearchCustomConversions::class)
-open class ElasticConverter() {
+open class ElasticConverter {
     class LKToString : Converter<LK, String> {
         override fun convert(source: LK): String {
             return source.value
@@ -40,8 +40,6 @@ open class ElasticConverter() {
         val converters = listOf(
             LKToString(),
             StringToLK(),
-            LongToInstantConverter(),
-            InstantToLongConverter(),
         )
         return ElasticsearchCustomConversions(converters)
     }

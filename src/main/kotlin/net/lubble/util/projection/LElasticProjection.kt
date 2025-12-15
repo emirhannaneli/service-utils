@@ -3,15 +3,11 @@ package net.lubble.util.projection
 import net.lubble.util.AppContextUtil
 import net.lubble.util.model.BaseModel
 import net.lubble.util.spec.BaseSpec
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.*
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.SearchHitSupport
 import org.springframework.data.elasticsearch.core.query.CriteriaQueryBuilder
 import org.springframework.data.elasticsearch.core.query.FetchSourceFilter
-
-import org.springframework.data.domain.PageRequest
 
 /**
  * Interface for performing Elasticsearch operations on entities of type T.
@@ -20,27 +16,36 @@ import org.springframework.data.domain.PageRequest
  */
 interface LElasticProjection<T : BaseModel> {
 
-    /**
-     * Provides an instance of ElasticsearchOperations.
-     */
+    // ... (Diğer tüm metodlar ve özellikler aynı kalır)
+
     private val operations: ElasticsearchOperations
         get() = AppContextUtil.bean(ElasticsearchOperations::class.java)
 
     /**
      * Searches for entities similar to the given specification.
-     *
-     * @param spec The specification containing search criteria, pageable, and entity class.
-     * @return A Page containing the search results.
+     * Prioritizes relevance (_score) even if a sort is provided.
      */
     fun searchPaged(spec: BaseSpec.Elastic<T>): Page<T> {
         val clazz = spec.clazz
         val criteria = spec.ofSearch()
-        val pageable = spec.ofSortedPageable()
+
+        val originalPageable = spec.ofSortedPageable()
+
+        val scoreSort = Sort.by(Sort.Direction.DESC, "_score")
+
+        val finalSort = scoreSort.and(originalPageable.sort)
+
+        val pageable = PageRequest.of(
+            originalPageable.pageNumber,
+            originalPageable.pageSize,
+            finalSort
+        )
 
         val queryBuilder = CriteriaQueryBuilder(criteria)
             .withPageable(pageable)
+            .withTrackScores(true)
 
-        applySourceFilter(queryBuilder, spec.fields)
+        applySourceFilter(queryBuilder, spec.fields) // Burası değişmedi
 
         val query = queryBuilder.build()
         val hits = operations.search(query, clazz)
@@ -54,14 +59,17 @@ interface LElasticProjection<T : BaseModel> {
         val clazz = spec.clazz
         val criteria = spec.ofSearch()
 
+        val pageable = PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "_score"))
+
         val queryBuilder = CriteriaQueryBuilder(criteria)
-            .withPageable(PageRequest.of(0, 10000))
+            .withPageable(pageable)
+            .withTrackScores(true)
 
-        applySourceFilter(queryBuilder, spec.fields)
-
+        applySourceFilter(queryBuilder, spec.fields) // Burası değişmedi
 
         val query = queryBuilder.build()
         val hits = operations.search(query, clazz)
+
         @Suppress("UNCHECKED_CAST")
         return hits.searchHits.map { it.content }
     }
@@ -70,72 +78,70 @@ interface LElasticProjection<T : BaseModel> {
         val clazz = spec.clazz
         val criteria = spec.ofSearch()
 
-        val queryBuilder = CriteriaQueryBuilder(criteria)
-            .withPageable(pageable)
+        val scoreSort = Sort.by(Sort.Direction.DESC, "_score")
+        val finalSort = scoreSort.and(pageable.sort)
 
-        applySourceFilter(queryBuilder, spec.fields)
+        val finalPageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, finalSort)
+
+        val queryBuilder = CriteriaQueryBuilder(criteria)
+            .withPageable(finalPageable)
+            .withTrackScores(true)
+
+        applySourceFilter(queryBuilder, spec.fields) // Burası değişmedi
 
         val query = queryBuilder.build()
         val hits = operations.search(query, clazz)
+
         @Suppress("UNCHECKED_CAST")
         return hits.searchHits.map { it.content }
     }
 
     /**
      * Finds a single entity matching the given specification.
-     *
-     * @param spec The specification containing search criteria and entity class.
-     * @return The first matching entity, or null if no match is found.
+     * Returns the one with the highest Score (best match).
      */
     fun findOne(spec: BaseSpec.Elastic<T>): T? {
         val clazz = spec.clazz
         val criteria = spec.ofSearch()
 
         val queryBuilder = CriteriaQueryBuilder(criteria)
-            .withPageable(PageRequest.of(0, 1))
+            .withPageable(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "_score")))
+            .withTrackScores(true)
 
-        applySourceFilter(queryBuilder, spec.fields)
+        applySourceFilter(queryBuilder, spec.fields) // Burası değişmedi
 
         val query = queryBuilder.build()
         return operations.search(query, clazz).firstNotNullOfOrNull { it.content }
     }
 
-    /**
-     * Checks if any entity exists matching the given specification.
-     *
-     * @param spec The specification containing search criteria and entity class.
-     * @return True if at least one entity matches the criteria, false otherwise.
-     */
     fun exists(spec: BaseSpec.Elastic<T>): Boolean {
         val clazz = spec.clazz
-        val query = spec.ofSearch().let {
-            CriteriaQueryBuilder(it)
-                .build()
-        }
+        val query = CriteriaQueryBuilder(spec.ofSearch())
+            .build()
 
         return operations.count(query, clazz) > 0
     }
 
-    /**
-     * Counts the number of entities matching the given specification.
-     *
-     * @param spec The specification containing search criteria and entity class.
-     * @return The total count of matching entities.
-     */
     fun count(spec: BaseSpec.Elastic<T>): Long {
         val clazz = spec.clazz
-        val query = spec.ofSearch().let {
-            CriteriaQueryBuilder(it)
-                .build()
-        }
+        val query = CriteriaQueryBuilder(spec.ofSearch())
+            .build()
 
         return operations.count(query, clazz)
     }
 
     private fun applySourceFilter(queryBuilder: CriteriaQueryBuilder, fields: Collection<String>?) {
-        if (!fields.isNullOrEmpty()) {
+        val requiredFields = setOf("id", "pk", "sk", "createdAt", "updatedAt")
+
+        val combinedFields = if (fields.isNullOrEmpty()) {
+            requiredFields
+        } else {
+            fields.toSet().plus(requiredFields)
+        }
+
+        if (combinedFields.isNotEmpty()) {
             queryBuilder.withSourceFilter(
-                FetchSourceFilter(null, fields.toTypedArray(), null)
+                FetchSourceFilter(null, combinedFields.toTypedArray(), null)
             )
         }
     }

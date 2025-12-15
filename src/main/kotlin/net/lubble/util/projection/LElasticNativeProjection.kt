@@ -3,10 +3,7 @@ package net.lubble.util.projection
 import net.lubble.util.AppContextUtil
 import net.lubble.util.model.BaseModel
 import net.lubble.util.spec.BaseSpec
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.*
 import org.springframework.data.elasticsearch.client.elc.NativeQuery
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
@@ -21,26 +18,32 @@ import org.springframework.data.elasticsearch.core.query.FetchSourceFilter
  */
 interface LElasticNativeProjection<T : BaseModel> {
 
-    /**
-     * Provides an instance of ElasticsearchOperations.
-     */
     private val operations: ElasticsearchOperations
         get() = AppContextUtil.bean(ElasticsearchOperations::class.java)
 
     /**
      * Searches for entities using Native Query (supports Boosting, Nested, etc.).
-     *
-     * @param spec The native specification containing the Query object.
-     * @return A Page containing the search results.
      */
     fun searchPaged(spec: BaseSpec.ElasticNative<T>): Page<T> {
         val clazz = spec.clazz
-        val elasticQuery = spec.ofSearch() // Returns co.elastic.clients.elasticsearch._types.query_dsl.Query
-        val pageable = spec.ofSortedPageable()
+        val elasticQuery = spec.ofSearch()
+
+        val originalPageable = spec.ofSortedPageable()
+
+        val scoreSort = Sort.by(Sort.Direction.DESC, "_score")
+
+        val finalSort = scoreSort.and(originalPageable.sort)
+
+        val pageable = PageRequest.of(
+            originalPageable.pageNumber,
+            originalPageable.pageSize,
+            finalSort
+        )
 
         val queryBuilder = NativeQuery.builder()
             .withQuery(elasticQuery)
             .withPageable(pageable)
+            .withTrackScores(true)
 
         applySourceFilter(queryBuilder, spec.fields)
 
@@ -52,29 +55,10 @@ interface LElasticNativeProjection<T : BaseModel> {
         return SearchHitSupport.unwrapSearchHits(page) as Page<T>? ?: PageImpl(emptyList(), pageable, 0)
     }
 
-    /**
-     * Returns a list of all matching entities (Default limit: 10000).
-     */
     fun search(spec: BaseSpec.ElasticNative<T>): List<T> {
-        val clazz = spec.clazz
-        val elasticQuery = spec.ofSearch()
-
-        val queryBuilder = NativeQuery.builder()
-            .withQuery(elasticQuery)
-            .withPageable(PageRequest.of(0, 10000))
-
-        applySourceFilter(queryBuilder, spec.fields)
-
-        val query = queryBuilder.build()
-        val hits = operations.search(query, clazz)
-
-        @Suppress("UNCHECKED_CAST")
-        return hits.searchHits.map { it.content }
+        return search(spec, PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "_score")))
     }
 
-    /**
-     * Returns a list of matching entities with specific pagination.
-     */
     fun search(spec: BaseSpec.ElasticNative<T>, pageable: Pageable): List<T> {
         val clazz = spec.clazz
         val elasticQuery = spec.ofSearch()
@@ -82,26 +66,24 @@ interface LElasticNativeProjection<T : BaseModel> {
         val queryBuilder = NativeQuery.builder()
             .withQuery(elasticQuery)
             .withPageable(pageable)
+            .withTrackScores(true)
 
         applySourceFilter(queryBuilder, spec.fields)
 
         val query = queryBuilder.build()
         val hits = operations.search(query, clazz)
 
-        @Suppress("UNCHECKED_CAST")
         return hits.searchHits.map { it.content }
     }
 
-    /**
-     * Finds a single entity matching the given specification.
-     */
     fun findOne(spec: BaseSpec.ElasticNative<T>): T? {
         val clazz = spec.clazz
         val elasticQuery = spec.ofSearch()
 
         val queryBuilder = NativeQuery.builder()
             .withQuery(elasticQuery)
-            .withPageable(PageRequest.of(0, 1))
+            .withPageable(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "_score")))
+            .withTrackScores(true)
 
         applySourceFilter(queryBuilder, spec.fields)
 
@@ -109,9 +91,6 @@ interface LElasticNativeProjection<T : BaseModel> {
         return operations.search(query, clazz).firstNotNullOfOrNull { it.content }
     }
 
-    /**
-     * Checks if any entity exists matching the given specification.
-     */
     fun exists(spec: BaseSpec.ElasticNative<T>): Boolean {
         val clazz = spec.clazz
         val elasticQuery = spec.ofSearch()
@@ -123,12 +102,6 @@ interface LElasticNativeProjection<T : BaseModel> {
         return operations.count(query, clazz) > 0
     }
 
-    /**
-     * Counts the number of entities matching the given Native Query specification.
-     *
-     * @param spec The native specification containing the Query object.
-     * @return The total count of matching entities.
-     */
     fun count(spec: BaseSpec.ElasticNative<T>): Long {
         val clazz = spec.clazz
         val elasticQuery = spec.ofSearch()
@@ -144,9 +117,17 @@ interface LElasticNativeProjection<T : BaseModel> {
      * Helper to apply source filtering (Include specific fields only).
      */
     private fun applySourceFilter(queryBuilder: NativeQueryBuilder, fields: Collection<String>?) {
-        if (!fields.isNullOrEmpty()) {
+        val requiredFields = setOf("id", "pk", "sk", "createdAt", "updatedAt")
+
+        val combinedFields = if (fields.isNullOrEmpty()) {
+            requiredFields
+        } else {
+            fields.toSet().plus(requiredFields)
+        }
+
+        if (combinedFields.isNotEmpty()) {
             queryBuilder.withSourceFilter(
-                FetchSourceFilter(null, fields.toTypedArray(), null)
+                FetchSourceFilter(null, combinedFields.toTypedArray(), null)
             )
         }
     }
