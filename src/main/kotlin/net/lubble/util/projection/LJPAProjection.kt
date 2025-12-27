@@ -8,6 +8,7 @@ import net.lubble.util.spec.BaseSpec
 import org.apache.commons.lang3.reflect.FieldUtils
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
+import java.lang.reflect.Field
 import java.util.*
 import java.util.stream.Collectors
 
@@ -169,18 +170,39 @@ interface LJPAProjection<T : BaseModel> {
         requestedFields.forEach { fieldName ->
             val field = FieldUtils.getField(clazz, fieldName, true) ?: return@forEach
 
-            if (field.isAnnotationPresent(ManyToOne::class.java) ||
+            if (isAssociation(field) && !entityGraph.attributeNodes.any { it.attributeName == fieldName }) {
+                entityGraph.addAttributeNodes(fieldName)
+            }
+        }
+
+        spec.joins?.forEach { joinPath ->
+            addFetchPath(entityGraph, joinPath)
+        }
+
+        return entityGraph
+    }
+
+    private fun addFetchPath(graph: EntityGraph<T>, path: String) {
+        if (!path.contains(".")) {
+            graph.addAttributeNodes(path)
+            return
+        }
+
+        val parts = path.split(".")
+        var currentSubgraph: Subgraph<*> = graph.addSubgraph<Any>(parts[0])
+
+        for (i in 1..<parts.size - 1) {
+            currentSubgraph = currentSubgraph.addSubgraph<Any>(parts[i])
+        }
+
+        currentSubgraph.addAttributeNodes(parts.last())
+    }
+
+    private fun isAssociation(field: Field): Boolean {
+        return field.isAnnotationPresent(ManyToOne::class.java) ||
                 field.isAnnotationPresent(OneToOne::class.java) ||
                 field.isAnnotationPresent(OneToMany::class.java) ||
                 field.isAnnotationPresent(ManyToMany::class.java)
-            ) {
-
-                if (!entityGraph.attributeNodes.any { it.attributeName == fieldName }) {
-                    entityGraph.addAttributeNodes(fieldName)
-                }
-            }
-        }
-        return entityGraph
     }
 
     private fun validateEntity(clazz: Class<*>): Unit {

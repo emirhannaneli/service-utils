@@ -21,6 +21,7 @@ open class BaseSpec {
     abstract class JPA<T : BaseModel>(
         open val param: ParameterModel,
         var fields: Collection<String>? = null,
+        var joins: Collection<String>? = null,
     ) : SpecTool(param), JPATool<T> {
         @Suppress("UNCHECKED_CAST")
         override val clazz: Class<T>

@@ -140,6 +140,8 @@ interface JPATool<T> {
             }
         }
 
+
+
         return predicate
     }
 
@@ -148,7 +150,6 @@ interface JPATool<T> {
      * ve son path'i döner. Mevcut join'leri yeniden kullanarak mükerrer join'leri engeller.
      */
     private fun getPath(root: Root<*>, attributeName: String): Path<*> {
-        // Basit field (nokta yok)
         if (!attributeName.contains(".")) {
             return root.get<Any>(attributeName)
         }
@@ -156,7 +157,6 @@ interface JPATool<T> {
         val parts = attributeName.split(".")
         var currentFrom: From<*, *> = root
 
-        // Son parça hariç (attribute) diğerleri ilişkidir (relation)
         for (i in 0..<parts.size - 1) {
             val part = parts[i]
 
@@ -170,24 +170,19 @@ interface JPATool<T> {
                 @Suppress("UNCHECKED_CAST")
                 currentFrom = existingJoin as From<*, *>
             } else {
-                // Yoksa yeni LEFT JOIN oluştur
-                // LEFT JOIN önemli: İlişki null ise (örn: product yoksa) ana kayıt gelmeye devam etsin
                 currentFrom = currentFrom.join<Any, Any>(part, JoinType.LEFT)
             }
         }
 
-        // Son parça attribute'un kendisidir
         return currentFrom.get<Any>(parts.last())
     }
 
-    // Field cache - reflection performansı için
     private fun getCachedFields(clazz: Class<*>): Array<Field> {
-        return Companion.fieldCache.getOrPut(clazz) {
+        return fieldCache.getOrPut(clazz) {
             clazz.declaredFields
         }
     }
 
-    // Column name cache - annotation performansı için
     private fun getCachedColumnName(field: Field): String? {
         val cachedName = columnNameCache.getOrPut(field) {
             field.getAnnotation(Column::class.java)?.name ?: ""
@@ -196,24 +191,19 @@ interface JPATool<T> {
         return cachedName.takeIf { it.isNotEmpty() }
     }
 
-    // Sort field validation - nested path'ler için optimize edilmiş
     private fun isValidSortField(fields: Array<Field>, sortField: String): Boolean {
         val parts = sortField.split(".")
         val rootField = parts[0]
 
-        // Root field'ı bul
         val field = fields.firstOrNull {
             it.name == rootField || getCachedColumnName(it) == rootField
         } ?: return false
 
-        // Eğer nested path ise (örn: "product.title"), root field bir ilişki olmalı
         if (parts.size > 1) {
-            // Root field bir JPA ilişkisi olmalı (ManyToOne, OneToOne, vb.)
             return field.isAnnotationPresent(ManyToOne::class.java) ||
                     field.isAnnotationPresent(OneToOne::class.java)
         }
 
-        // Basit field için direkt true döner
         return true
     }
 
