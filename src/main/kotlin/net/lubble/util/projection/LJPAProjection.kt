@@ -1,12 +1,7 @@
 package net.lubble.util.projection
 
 import jakarta.persistence.*
-import jakarta.persistence.criteria.CriteriaQuery
-import jakarta.persistence.criteria.From
-import jakarta.persistence.criteria.Join
-import jakarta.persistence.criteria.JoinType
-import jakarta.persistence.criteria.Root
-import jakarta.persistence.criteria.Selection
+import jakarta.persistence.criteria.*
 import net.lubble.util.AppContextUtil
 import net.lubble.util.model.BaseModel
 import net.lubble.util.spec.BaseSpec
@@ -14,6 +9,7 @@ import org.apache.commons.lang3.reflect.FieldUtils
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import java.util.*
+import java.util.stream.Collectors
 
 interface LJPAProjection<T : BaseModel> {
     private val manager: EntityManager
@@ -43,10 +39,6 @@ interface LJPAProjection<T : BaseModel> {
             ?: Optional.empty()
     }
 
-    /**
-     * Verilen şartnameye göre sayfalandırılmış (paginated) varlıkları döner.
-     * Her zaman sayfalandırma mantığı (önce ID çekme veya doğrudan sayfalama) uygulanır.
-     */
     fun findAll(spec: BaseSpec.JPA<T>): Page<T> {
         val clazz = spec.clazz
         validateEntity(clazz)
@@ -70,9 +62,6 @@ interface LJPAProjection<T : BaseModel> {
         return PageImpl(sortedResults, spec.ofSortedPageable(), totalCount)
     }
 
-    /**
-     * Verilen şartnameye uyan TÜM varlıkları (sayfalandırma olmadan) döner.
-     */
     fun fetchAll(spec: BaseSpec.JPA<T>): Collection<T> {
         val clazz = spec.clazz
         validateEntity(clazz)
@@ -87,15 +76,21 @@ interface LJPAProjection<T : BaseModel> {
 
         val predicate = spec.ofSearch().toPredicate(root, query, cb)
         query.where(predicate)
-        query.distinct(true)
 
         val pageable = spec.ofSortedPageable()
         if (pageable.sort.isSorted) {
-            val orders = pageable.sort.map { order ->
-                val path = getOrCreatePath(root, order.property)
-                if (order.isAscending) cb.asc(path) else cb.desc(path)
-            }.toList()
-            query.orderBy(orders)
+            val orders = pageable.sort.stream().map { order ->
+                try {
+                    val path = getOrCreatePath(root, order.property)
+                    if (order.isAscending) cb.asc(path) else cb.desc(path)
+                } catch (_: Exception) {
+                    null
+                }
+            }.filter { it != null }.collect(Collectors.toList())
+
+            if (orders.isNotEmpty()) {
+                query.orderBy(orders)
+            }
         }
 
         val entityGraph = createDynamicEntityGraph(spec, clazz)
@@ -119,21 +114,27 @@ interface LJPAProjection<T : BaseModel> {
         val joinMapForSort = mutableMapOf<String, Join<*, *>>()
 
         if (pageable.sort.isSorted) {
-            val orders = pageable.sort.map { order ->
-                // Sıralama için JOIN'leri oluştur ve path'i al.
-                val path = getOrCreatePath(root, order.property, joinMapForSort)
-                // Selections'a path'i ekle (Sıralama için gerekli olabilir, tuple'da görünür).
-                selections.add(path)
-                if (order.isAscending) cb.asc(path) else cb.desc(path)
-            }.toList()
-            idQuery.orderBy(orders)
+            val orders = pageable.sort.stream().map { order ->
+                try {
+                    val path = getOrCreatePath(root, order.property, joinMapForSort)
+
+                    selections.add(path)
+
+                    if (order.isAscending) cb.asc(path) else cb.desc(path)
+                } catch (_: Exception) {
+                    null
+                }
+            }.filter { it != null }.collect(Collectors.toList())
+
+            if (orders.isNotEmpty()) {
+                idQuery.orderBy(orders)
+            }
         } else {
             idQuery.orderBy(emptyList())
         }
 
         idQuery.where(predicate)
         idQuery.multiselect(selections)
-        idQuery.distinct(true)
 
         val typedIdQuery = manager.createQuery(idQuery)
         typedIdQuery.firstResult = pageable.pageNumber * pageable.pageSize
@@ -212,7 +213,7 @@ interface LJPAProjection<T : BaseModel> {
         return try {
             manager.metamodel.managedType(clazz)
             true
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             false
         }
     }
@@ -252,11 +253,18 @@ interface LJPAProjection<T : BaseModel> {
 
         val pageable = spec.ofSortedPageable()
         if (pageable.sort.isSorted) {
-            val orders = pageable.sort.map { order ->
-                val path = getOrCreatePath(root, order.property, joinMap)
-                if (order.isAscending) cb.asc(path) else cb.desc(path)
-            }.toList()
-            tupleQuery.orderBy(orders)
+            val orders = pageable.sort.stream().map { order ->
+                try {
+                    val path = getOrCreatePath(root, order.property, joinMap)
+                    if (order.isAscending) cb.asc(path) else cb.desc(path)
+                } catch (e: Exception) {
+                    null
+                }
+            }.filter { it != null }.collect(Collectors.toList())
+
+            if (orders.isNotEmpty()) {
+                tupleQuery.orderBy(orders)
+            }
         }
 
         val typedQuery = manager.createQuery(tupleQuery)
@@ -291,15 +299,11 @@ interface LJPAProjection<T : BaseModel> {
         return PageImpl(results, pageable, totalCount)
     }
 
-    /**
-     * Verilen field path (örn: "category.subCategory.name") için gerekli Join'leri yapar
-     * ve son path'i döner. JoinMap kullanarak mükerrer join'leri engeller.
-     */
     private fun getOrCreatePath(
         root: Root<*>,
         fieldPath: String,
         joinMap: MutableMap<String, Join<*, *>>
-    ): jakarta.persistence.criteria.Path<Any> {
+    ): Path<Any> {
         if (!fieldPath.contains(".")) {
             return root.get(fieldPath)
         }
@@ -325,14 +329,10 @@ interface LJPAProjection<T : BaseModel> {
         return currentFrom.get(parts.last())
     }
 
-    /**
-     * Verilen field path için gerekli Join'leri yapar (joinMap olmadan).
-     * Mevcut join'leri kontrol ederek mükerrer join'leri engeller.
-     */
     private fun getOrCreatePath(
         root: Root<*>,
         fieldPath: String
-    ): jakarta.persistence.criteria.Path<Any> {
+    ): Path<Any> {
         if (!fieldPath.contains(".")) {
             return root.get(fieldPath)
         }
@@ -358,11 +358,7 @@ interface LJPAProjection<T : BaseModel> {
         return currentFrom.get(parts.last())
     }
 
-    /**
-     * Reflection ile iç içe objeleri oluşturur ve değeri set eder.
-     * Örn: target=Product, path="category.name", value="Electronics"
-     * Bu metod Product içinde Category instance'ı yoksa oluşturur, sonra name'i set eder.
-     */
+
     private fun writeNestedField(target: Any, path: String, value: Any) {
         if (!path.contains(".")) {
             FieldUtils.writeField(target, path, value, true)

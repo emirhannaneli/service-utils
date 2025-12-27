@@ -7,6 +7,7 @@ import net.lubble.util.MapperRegistryHolder
 import net.lubble.util.dto.RBase
 import net.lubble.util.model.BaseDocumented
 import net.lubble.util.model.BaseModel
+import net.lubble.util.model.LID
 import org.springframework.data.domain.Page
 import org.springframework.transaction.annotation.Transactional
 
@@ -42,26 +43,34 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
                     val destinationValue = destinationField.get(destination)
 
                     if (sourceValue != null && destinationValue != null) {
-                        if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(List::class.java)) {
-                            // If the field is a list
-                            val sourceList = sourceValue as List<*>
-                            val destinationList = destinationValue as MutableList<Any>
-                            destinationList.clear()
-                            destinationList.addAll(sourceList.filterNotNull().map { it })
-                        } else if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(Map::class.java)) {
-                            // If the field is a map
-                            val sourceMap = sourceValue as Map<Any, Any>
-                            val destinationMap = destinationValue as MutableMap<Any, Any>
-                            destinationMap.clear()
-                            destinationMap.putAll(sourceMap)
-                        } else if (sourceField.type == destinationField.type && sourceField.type.isAssignableFrom(
+                        when (sourceField.type) {
+                            destinationField.type if sourceField.type.isAssignableFrom(List::class.java) -> {
+                                // If the field is a list
+                                val sourceList = sourceValue as List<*>
+                                val destinationList = destinationValue as MutableList<Any>
+                                destinationList.clear()
+                                destinationList.addAll(sourceList.filterNotNull().map { it })
+                            }
+
+                            destinationField.type if sourceField.type.isAssignableFrom(Map::class.java) -> {
+                                // If the field is a map
+                                val sourceMap = sourceValue as Map<Any, Any>
+                                val destinationMap = destinationValue as MutableMap<Any, Any>
+                                destinationMap.clear()
+                                destinationMap.putAll(sourceMap)
+                            }
+
+                            destinationField.type if sourceField.type.isAssignableFrom(
                                 sourceValue::class.java
                             )
-                        ) {
-                            // If the field is another class
-                            objectMap(sourceValue, destinationValue)
-                        } else {
-                            destinationField.set(destination, sourceValue)
+                                -> {
+                                // If the field is another class
+                                objectMap(sourceValue, destinationValue)
+                            }
+
+                            else -> {
+                                destinationField.set(destination, sourceValue)
+                            }
                         }
                     }
                 }
@@ -96,14 +105,14 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source collection
      * @return List of DTO objects
      */
-     fun map(source: Collection<T>): List<R> = runBlocking { source.map { async { map(it) } }.awaitAll() }
+    fun map(source: Collection<T>): List<R> = runBlocking { source.map { async { map(it) } }.awaitAll() }
 
     /**
      * Maps each object in the Entity page (type T) to a DTO (type R).
      * @param source Source page
      * @return List of DTO objects
      */
-     fun map(source: Page<T>): List<R> = runBlocking { source.content.map { async { map(it) } }.awaitAll() }
+    fun map(source: Page<T>): List<R> = runBlocking { source.content.map { async { map(it) } }.awaitAll() }
 
     /**
      * Maps the properties of the Documented Entity (type T) to a new Documented DTO (type R).

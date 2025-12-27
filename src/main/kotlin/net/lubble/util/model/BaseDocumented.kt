@@ -42,7 +42,7 @@ abstract class BaseDocumented<T : BaseModel>(
     }
 
     companion object {
-        
+
         inline fun <R> mapSession(block: () -> R): R {
             try {
                 DocumentRegistryHolder.createContext()
@@ -75,19 +75,17 @@ abstract class BaseDocumented<T : BaseModel>(
                 val documented = mapper(source)
                 documented.apply(source, documented)
                 documented.mapping(source)
-                
+
                 documented.ref = null
-                
+
                 context.registry[id] = documented
-                
+
                 return documented
             } finally {
                 context.visiting.remove(id)
             }
         }
     }
-
-
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true, value = ["ref"])

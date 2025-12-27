@@ -6,7 +6,6 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.criteria.*
 import net.lubble.util.LK
 import net.lubble.util.model.ParameterModel
-import net.lubble.util.model.SortOrder
 import net.lubble.util.spec.tool.SpecTool.IDType
 import net.lubble.util.spec.tool.SpecTool.SearchType
 import org.springframework.data.jpa.domain.Specification
@@ -160,7 +159,7 @@ interface JPATool<T> {
         // Son parça hariç (attribute) diğerleri ilişkidir (relation)
         for (i in 0..<parts.size - 1) {
             val part = parts[i]
-            
+
             // Önce bu ilişki için zaten bir join var mı diye bakıyoruz
             val existingJoin = currentFrom.joins.firstOrNull { join ->
                 join.attribute.name == part && join.joinType == JoinType.LEFT
@@ -201,19 +200,19 @@ interface JPATool<T> {
     private fun isValidSortField(fields: Array<Field>, sortField: String): Boolean {
         val parts = sortField.split(".")
         val rootField = parts[0]
-        
+
         // Root field'ı bul
-        val field = fields.firstOrNull { 
-            it.name == rootField || getCachedColumnName(it) == rootField 
+        val field = fields.firstOrNull {
+            it.name == rootField || getCachedColumnName(it) == rootField
         } ?: return false
-        
+
         // Eğer nested path ise (örn: "product.title"), root field bir ilişki olmalı
         if (parts.size > 1) {
             // Root field bir JPA ilişkisi olmalı (ManyToOne, OneToOne, vb.)
-            return field.isAnnotationPresent(ManyToOne::class.java) || 
-                   field.isAnnotationPresent(OneToOne::class.java)
+            return field.isAnnotationPresent(ManyToOne::class.java) ||
+                    field.isAnnotationPresent(OneToOne::class.java)
         }
-        
+
         // Basit field için direkt true döner
         return true
     }
@@ -386,6 +385,22 @@ interface JPATool<T> {
     /**
      * Returns the ids predicate for a JPA model.
      *
+     * @param builder Used to construct criteria queries.
+     * @param join The join type.
+     * @param ids The list of ids of the entity.
+     */
+    fun <Z, X> idsPredicate(
+        builder: CriteriaBuilder,
+        join: Join<Z, X>,
+        ids: List<String>
+    ): Predicate {
+        val orPredicate = buildIdsOrPredicate(builder, join, ids) ?: return builder.conjunction()
+        return orPredicate
+    }
+
+    /**
+     * Returns the ids predicate for a JPA model.
+     *
      * @param predicate The predicate to be combined.
      * @param builder Used to construct criteria queries.
      * @param root The root type in the from clause.
@@ -398,6 +413,22 @@ interface JPATool<T> {
         ids: List<String>
     ): Predicate {
         return applyIdsPredicate(predicate, builder, root, ids)
+    }
+
+    /**
+     * Returns the ids predicate for a JPA model.
+     *
+     * @param builder Used to construct criteria queries.
+     * @param root The root type in the from clause.
+     * @param ids The list of ids of the entity.
+     */
+    fun idsPredicate(
+        builder: CriteriaBuilder,
+        root: Root<T>,
+        ids: List<String>
+    ): Predicate {
+        val orPredicate = buildIdsOrPredicate(builder, root, ids) ?: return builder.conjunction()
+        return orPredicate
     }
 
     /**

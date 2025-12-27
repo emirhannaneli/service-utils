@@ -19,7 +19,7 @@ open class BaseSpec {
      * Abstract base class for JPA specifications.
      */
     abstract class JPA<T : BaseModel>(
-        param: ParameterModel,
+        open val param: ParameterModel,
         var fields: Collection<String>? = null,
     ) : SpecTool(param), JPATool<T> {
         @Suppress("UNCHECKED_CAST")
@@ -125,7 +125,7 @@ open class BaseSpec {
      * Abstract base class for Mongo specifications.
      */
     abstract class Mongo<T : BaseModel>(
-        param: ParameterModel,
+        open val param: ParameterModel,
         var fields: Collection<String>? = null,
     ) : SpecTool(param), MongoTool<T> {
         @Suppress("UNCHECKED_CAST")
@@ -139,7 +139,7 @@ open class BaseSpec {
      * Abstract base class for Legacy Elastic specifications (Criteria API).
      */
     abstract class Elastic<T : BaseModel>(
-        param: ParameterModel,
+        open val param: ParameterModel,
         var fields: Collection<String>? = null
     ) : SpecTool(param), ElasticTool<T> {
         @Suppress("UNCHECKED_CAST")
@@ -154,7 +154,7 @@ open class BaseSpec {
      * Use this for 'co.elastic.clients' based queries.
      */
     abstract class ElasticNative<T : BaseModel>(
-        param: ParameterModel,
+        open val param: ParameterModel,
         var fields: Collection<String>? = null
     ) : SpecTool(param), ElasticNativeTool<T> {
         @Suppress("UNCHECKED_CAST")

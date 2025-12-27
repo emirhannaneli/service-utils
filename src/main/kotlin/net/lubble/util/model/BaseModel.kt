@@ -2,17 +2,13 @@ package net.lubble.util.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import de.huxhorn.sulky.ulid.ULID
 import jakarta.persistence.*
 import net.lubble.util.LK
-import net.lubble.util.converter.LKToStringConverter
 import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.elasticsearch.annotations.DateFormat
-import org.springframework.data.elasticsearch.annotations.ValueConverter
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import org.springframework.data.mongodb.core.index.Indexed
 import java.time.Instant
@@ -26,38 +22,6 @@ import org.springframework.data.mongodb.core.mapping.FieldType as MongoFieldType
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener::class)
 open class BaseModel(
-    @Id
-    @field:JsonIgnore
-    @Column(name = "id", unique = true, updatable = false, nullable = false, length = 26)
-    private var id: String,
-
-    @Indexed(unique = true)
-    @MongoField("pk")
-    @Basic(fetch = FetchType.EAGER)
-    @ElasticField("pk", type = ElasticFieldType.Keyword, index = true)
-    @field:JsonProperty(index = Int.MIN_VALUE)
-    @Column(name = "pk", unique = true, nullable = false, updatable = false, length = 12)
-    open var pk: Long,
-
-    @Indexed(unique = true)
-    @Basic(fetch = FetchType.EAGER)
-    @MongoField("sk", targetType = MongoFieldType.STRING)
-    @ElasticField("sk", type = ElasticFieldType.Keyword, index = true)
-    @ValueConverter(LKToStringConverter::class)
-    @Convert(converter = LKToStringConverter::class)
-    @Column(
-        name = "sk",
-        unique = true,
-        updatable = false,
-        nullable = false,
-        length = 11,
-        columnDefinition = "varchar(11)"
-    )
-    @field:JsonProperty(index = Int.MIN_VALUE + 1)
-    @field:JsonSerialize(using = LKToStringConverter.Serializer::class)
-    @field:JsonDeserialize(using = LKToStringConverter.Deserializer::class)
-    open var sk: LK,
-
     @Indexed
     @JsonIgnore
     @Basic(fetch = FetchType.EAGER)
@@ -104,7 +68,8 @@ open class BaseModel(
     @Column(name = "updated_by", nullable = false, updatable = true, length = 50)
     @field:JsonProperty(index = Int.MAX_VALUE)
     open var updatedBy: String = "",
-) {
+    id: String, pk: Long, sk: LK,
+) : LID(id, pk, sk) {
 
     /**
      * Generates a new BaseModel with a unique id and the given pk and sk.
@@ -129,37 +94,6 @@ open class BaseModel(
         sk = LK()
     )
 
-    /**
-     * Returns the id of the model.
-     * @return The id.
-     */
-    open fun getId(): String {
-        return id
-    }
-
-    /**
-     * Sets the id of the model.
-     * @param id The id to set.
-     */
-    open fun setId(id: String) {
-        this.id = id
-    }
-
-
-    /**
-     * Checks if the model matches the given id.
-     * @param id The id to check.
-     * @return True if the model's pk or sk matches the given id, false otherwise.
-     */
-    fun matchesId(id: String): Boolean {
-        val value = id.toLongOrNull() ?: LK(id)
-        return if (value is Long) {
-            value == this.pk
-        } else {
-            value == this.sk
-        }
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -167,20 +101,26 @@ open class BaseModel(
         other as BaseModel
 
         if (pk != other.pk) return false
+        if (sk != other.sk) return false
         if (deleted != other.deleted) return false
         if (archived != other.archived) return false
-        if (id != other.id) return false
-        if (sk != other.sk) return false
-
         return true
     }
 
     override fun hashCode(): Int {
         var result = pk.hashCode()
+        result = 31 * result + sk.hashCode()
         result = 31 * result + deleted.hashCode()
         result = 31 * result + archived.hashCode()
-        result = 31 * result + id.hashCode()
-        result = 31 * result + sk.hashCode()
         return result
+    }
+
+    companion object {
+
+
+        fun from(source: BaseModel?): LID? {
+            source ?: return null
+            return LID(source)
+        }
     }
 }
