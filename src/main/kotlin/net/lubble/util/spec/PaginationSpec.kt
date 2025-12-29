@@ -25,7 +25,7 @@ open class PaginationSpec {
      */
     fun ofPageable(): Pageable {
         val page = this.page.minus(1).coerceAtLeast(0)
-        val size = this.size.coerceAtLeast(1)
+        val size = this.size.coerceAtLeast(0)
         return PageRequest.of(page, size)
     }
 
@@ -35,7 +35,7 @@ open class PaginationSpec {
      */
     fun ofPageable(sort: Sort): Pageable {
         val page = this.page.minus(1).coerceAtLeast(0)
-        val size = this.size.coerceAtLeast(1)
+        val size = this.size.coerceAtLeast(0)
         return PageRequest.of(page, size, sort)
     }
 }

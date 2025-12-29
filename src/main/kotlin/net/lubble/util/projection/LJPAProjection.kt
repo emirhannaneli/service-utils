@@ -163,39 +163,75 @@ interface LJPAProjection<T : BaseModel> {
 
     private fun createDynamicEntityGraph(spec: BaseSpec.JPA<T>, clazz: Class<T>): EntityGraph<T> {
         val entityGraph = manager.createEntityGraph(clazz)
-        val requestedFields =
-            spec.fields?.toSet() ?: return entityGraph
 
+        val joins = spec.joins ?: emptyList()
+        val fields = spec.fields ?: emptyList()
 
-        requestedFields.forEach { fieldName ->
-            val field = FieldUtils.getField(clazz, fieldName, true) ?: return@forEach
-
-            if (isAssociation(field) && !entityGraph.attributeNodes.any { it.attributeName == fieldName }) {
-                entityGraph.addAttributeNodes(fieldName)
+        fields.forEach { fieldName ->
+            val field = FieldUtils.getField(clazz, fieldName, true)
+            if (field != null && isAssociation(field)) {
+                if (entityGraph.attributeNodes.none { it.attributeName == fieldName }) {
+                    entityGraph.addAttributeNodes(fieldName)
+                }
             }
         }
 
-        spec.joins?.forEach { joinPath ->
-            addFetchPath(entityGraph, joinPath)
+        val sortedJoins = joins.sortedBy { it.length }
+
+        val subgraphMap = mutableMapOf<String, Subgraph<*>>()
+
+        sortedJoins.forEach { path ->
+            addFetchPath(entityGraph, path, subgraphMap)
         }
 
         return entityGraph
     }
 
-    private fun addFetchPath(graph: EntityGraph<T>, path: String) {
+
+
+    private fun addFetchPath(
+        graph: EntityGraph<T>,
+        path: String,
+        subgraphMap: MutableMap<String, Subgraph<*>>
+    ) {
         if (!path.contains(".")) {
-            graph.addAttributeNodes(path)
+            if (graph.attributeNodes.none { it.attributeName == path }) {
+                graph.addAttributeNodes(path)
+            }
             return
         }
 
         val parts = path.split(".")
-        var currentSubgraph: Subgraph<*> = graph.addSubgraph<Any>(parts[0])
+        var currentParentKey = ""
 
-        for (i in 1..<parts.size - 1) {
-            currentSubgraph = currentSubgraph.addSubgraph<Any>(parts[i])
+
+        for (i in 0..<parts.size - 1) {
+            val part = parts[i]
+            val nextPart = parts[i+1]
+
+            val currentKey = if (currentParentKey.isEmpty()) part else "$currentParentKey.$part"
+
+            var currentSubgraph = subgraphMap[currentKey]
+
+            if (currentSubgraph == null) {
+                if (i == 0) {
+                    currentSubgraph = graph.addSubgraph<Any>(part)
+                } else {
+                    val parentSubgraph = subgraphMap[currentParentKey]
+                        ?: throw IllegalStateException("Parent path '$currentParentKey' not found for '$path'. Ensure joins are sorted.")
+                    currentSubgraph = parentSubgraph.addSubgraph<Any>(part)
+                }
+                subgraphMap[currentKey] = currentSubgraph
+            }
+
+            if (i == parts.size - 2) {
+                if (currentSubgraph.attributeNodes.none { it.attributeName == nextPart }) {
+                    currentSubgraph.addAttributeNodes(nextPart)
+                }
+            }
+
+            currentParentKey = currentKey
         }
-
-        currentSubgraph.addAttributeNodes(parts.last())
     }
 
     private fun isAssociation(field: Field): Boolean {

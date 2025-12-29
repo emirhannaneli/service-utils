@@ -105,14 +105,14 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param source Source collection
      * @return List of DTO objects
      */
-    fun map(source: Collection<T>): List<R> = runBlocking { source.map { async { map(it) } }.awaitAll() }
+    fun map(source: Collection<T>): List<R> = source.map(this::map)
 
     /**
      * Maps each object in the Entity page (type T) to a DTO (type R).
      * @param source Source page
      * @return List of DTO objects
      */
-    fun map(source: Page<T>): List<R> = runBlocking { source.content.map { async { map(it) } }.awaitAll() }
+    fun map(source: Page<T>): List<R> = source.content.map(this::map)
 
     /**
      * Maps the properties of the Documented Entity (type T) to a new Documented DTO (type R).

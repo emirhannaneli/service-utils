@@ -219,7 +219,7 @@ interface JPATool<T> {
         id: String,
     ): Predicate {
         val (key, value) = idKeyAndValue(id)
-        val fieldName = Companion.normalizeString(key.name)
+        val fieldName = normalizeString(key.name)
         return if (key == IDType.PK) {
             builder.equal(path.get<Long>(fieldName), value as Long)
         } else {
@@ -237,7 +237,6 @@ interface JPATool<T> {
     }
 
     private fun partitionIds(ids: List<String>): Pair<List<Long>, List<LK>> {
-        // Optimize edilmiş - her id için sadece bir kez toLongOrNull çağrılıyor
         val pkValues = mutableListOf<Long>()
         val skValues = mutableListOf<LK>()
 
@@ -261,10 +260,10 @@ interface JPATool<T> {
         val (pkValues, skValues) = partitionIds(ids)
         val predicates = mutableListOf<Predicate>()
         if (pkValues.isNotEmpty()) {
-            predicates.add(path.get<Long>(Companion.normalizeString(IDType.PK.name)).`in`(pkValues))
+            predicates.add(path.get<Long>(normalizeString(IDType.PK.name)).`in`(pkValues))
         }
         if (skValues.isNotEmpty()) {
-            predicates.add(path.get<String>(Companion.normalizeString(IDType.SK.name)).`in`(skValues))
+            predicates.add(path.get<String>(normalizeString(IDType.SK.name)).`in`(skValues))
         }
         return if (predicates.isNotEmpty()) builder.or(*predicates.toTypedArray()) else null
     }
