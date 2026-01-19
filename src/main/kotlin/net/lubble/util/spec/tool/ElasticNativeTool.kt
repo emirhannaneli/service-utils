@@ -20,7 +20,6 @@ import java.lang.reflect.Field as ReflectField
 
 interface ElasticNativeTool<T : BaseModel> {
     companion object {
-        // Cache yapısını List olarak değiştirdik (tüm miras hiyerarşisi için)
         private val fieldCache = ConcurrentHashMap<Class<*>, List<ReflectField>>()
         private val columnNameCache = ConcurrentHashMap<ReflectField, String>()
 
@@ -72,7 +71,6 @@ interface ElasticNativeTool<T : BaseModel> {
         val sortOptions = mutableListOf<SortOptions>()
 
         param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
-            // ARTIK declaredFields YERİNE getAllFields KULLANIYORUZ
             val fields = getAllFields(clazz)
             val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
@@ -187,7 +185,6 @@ interface ElasticNativeTool<T : BaseModel> {
 
     private fun isTextField(field: ReflectField): Boolean {
         val annotation = field.getAnnotation(Field::class.java)
-        // Eğer anotasyon yoksa ama tip String ise Text kabul et (Güvenlik önlemi)
         if (annotation == null) {
             return field.type == String::class.java
         }
