@@ -99,7 +99,7 @@ interface JPATool<T> {
             // A. Kullanıcıdan gelen parametreleri işlemeye çalış
             param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
                 val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                val sortOrderValue = param.getSortOrderValue()
+                val sortOrderValue = param.getSortOrderValue().uppercase()
                 val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
                 sortFields.forEachIndexed { index, sortField ->
@@ -288,7 +288,7 @@ interface JPATool<T> {
         // Optimize edilmiş - string işlemleri önceden yapılıyor
         val terms = search.split(" ")
             .mapNotNull { it.trim().takeIf { it.isNotEmpty() } }
-            .map { Companion.normalizeString(it) }
+            .map { normalizeString(it) }
             .takeIf { it.isNotEmpty() }
             ?: return builder.conjunction() // Boş search için
 

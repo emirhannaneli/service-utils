@@ -28,7 +28,7 @@ interface LElasticNativeProjection<T : BaseModel> {
         val clazz = spec.clazz
         val elasticQuery = spec.ofSearch()
 
-        val originalPageable = spec.ofSortedPageable()
+        val originalPageable = spec.ofPageable()
 
         val scoreSort = Sort.by(Sort.Direction.DESC, "_score")
 
@@ -40,7 +40,7 @@ interface LElasticNativeProjection<T : BaseModel> {
             finalSort
         )
 
-        val queryBuilder = NativeQuery.builder()
+        val queryBuilder = spec.nativeQueryBuilder(spec.param)
             .withQuery(elasticQuery)
             .withPageable(pageable)
             .withTrackScores(true)
@@ -63,7 +63,7 @@ interface LElasticNativeProjection<T : BaseModel> {
         val clazz = spec.clazz
         val elasticQuery = spec.ofSearch()
 
-        val queryBuilder = NativeQuery.builder()
+        val queryBuilder = spec.nativeQueryBuilder(spec.param)
             .withQuery(elasticQuery)
             .withPageable(pageable)
             .withTrackScores(true)

@@ -10,18 +10,18 @@ import net.lubble.util.model.BaseModel
 import net.lubble.util.model.ParameterModel
 import net.lubble.util.spec.tool.SpecTool.IDType
 import org.springframework.data.elasticsearch.annotations.Field
+import org.springframework.data.elasticsearch.annotations.FieldType
 import org.springframework.data.elasticsearch.client.elc.NativeQuery
+import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder
+import java.lang.reflect.ParameterizedType
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.lang.reflect.Field as ReflectField
 
-/**
- * ElasticNativeTool defines the specifications for ElasticSearch models using the Native Query Client.
- * Optimized for the new Elasticsearch Java Client (co.elastic.clients).
- */
 interface ElasticNativeTool<T : BaseModel> {
     companion object {
-        private val fieldCache = ConcurrentHashMap<Class<*>, Array<ReflectField>>()
+        // Cache yapısını List olarak değiştirdik (tüm miras hiyerarşisi için)
+        private val fieldCache = ConcurrentHashMap<Class<*>, List<ReflectField>>()
         private val columnNameCache = ConcurrentHashMap<ReflectField, String>()
 
         private fun normalizeString(str: String): String {
@@ -35,16 +35,8 @@ interface ElasticNativeTool<T : BaseModel> {
     var deleted: Boolean?
     var archived: Boolean?
 
-    /**
-     * Implementing classes must provide the specific search logic returning a Query object.
-     * Usually a BoolQuery.
-     */
     fun ofSearch(): Query
 
-    /**
-     * Returns the default query (filters) as a BoolQuery Builder.
-     * Uses 'filter' context for exact matches (faster, no scoring).
-     */
     fun defaultQuery(param: ParameterModel): BoolQuery.Builder {
         val boolQuery = BoolQuery.Builder()
 
@@ -74,34 +66,52 @@ interface ElasticNativeTool<T : BaseModel> {
         return boolQuery
     }
 
-    /**
-     * Builds the final NativeQuery with sorting and pagination applied.
-     */
-    fun buildNativeQuery(param: ParameterModel, baseQuery: Query): NativeQuery {
+    fun nativeQueryBuilder(param: ParameterModel): NativeQueryBuilder {
         val builder = NativeQuery.builder()
-            .withQuery(baseQuery)
 
         val sortOptions = mutableListOf<SortOptions>()
 
         param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
-            val fields = getCachedFields(clazz)
+            // ARTIK declaredFields YERİNE getAllFields KULLANIYORUZ
+            val fields = getAllFields(clazz)
             val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
             val sortOrderParam = param.getSortOrderValue().uppercase()
             val sortOrders = sortOrderParam.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
             sortFields.forEachIndexed { index, sortField ->
-                if (isValidSortField(fields, sortField)) {
+                val parts = sortField.split(".")
+                val rootFieldName = parts[0]
+
+                val rootField = findField(fields, rootFieldName)
+
+                if (rootField != null) {
                     val directionStr = if (index < sortOrders.size) sortOrders[index] else sortOrderParam
-                    val order = try {
-                        SortOrder.valueOf(directionStr) // "ASC" or "DESC"
-                    } catch (e: IllegalArgumentException) {
-                        SortOrder.Asc
+                    val order = if (directionStr.equals("DESC", true)) SortOrder.Desc else SortOrder.Asc
+
+                    val isNested = isNestedField(rootField)
+                    var finalSortField = sortField
+
+                    if (!isNested) {
+                        // Derinlemesine alan bulma (Nested olmayanlar için)
+                        val leafField = findDeepField(clazz, sortField)
+                        val isText = leafField != null && isTextField(leafField)
+
+                        // Eğer alan Text ise ve .keyword yoksa ekle
+                        if (isText && !sortField.endsWith(".keyword")) {
+                            finalSortField = "$sortField.keyword"
+                        }
                     }
 
                     sortOptions.add(
                         SortOptions.of { s ->
-                            s.field { f -> f.field(sortField).order(order) }
+                            s.field { f ->
+                                f.field(finalSortField).order(order)
+                                if (isNested) {
+                                    f.nested { n -> n.path(rootFieldName) }
+                                }
+                                f
+                            }
                         }
                     )
                 }
@@ -116,11 +126,23 @@ interface ElasticNativeTool<T : BaseModel> {
             )
         }
 
-        return builder.build()
+        return builder
     }
 
-    private fun getCachedFields(clazz: Class<*>): Array<ReflectField> {
-        return fieldCache.getOrPut(clazz) { clazz.declaredFields }
+    /**
+     * YENİ METOD: Sadece o sınıfın değil, tüm üst sınıfların alanlarını getirir.
+     * Bu sayede "title" gibi miras alınan alanlar artık bulunabilir.
+     */
+    private fun getAllFields(type: Class<*>): List<ReflectField> {
+        return fieldCache.getOrPut(type) {
+            val fields = mutableListOf<ReflectField>()
+            var currentClass: Class<*>? = type
+            while (currentClass != null && currentClass != Any::class.java) {
+                fields.addAll(currentClass.declaredFields)
+                currentClass = currentClass.superclass
+            }
+            fields
+        }
     }
 
     private fun getCachedFieldName(field: ReflectField): String? {
@@ -129,10 +151,47 @@ interface ElasticNativeTool<T : BaseModel> {
         }.takeIf { it.isNotEmpty() }
     }
 
-    private fun isValidSortField(fields: Array<ReflectField>, sortField: String): Boolean {
-        return fields.any { field ->
-            field.name == sortField || getCachedFieldName(field) == sortField
+    private fun findField(fields: List<ReflectField>, fieldName: String): ReflectField? {
+        return fields.firstOrNull { field ->
+            field.name == fieldName || getCachedFieldName(field) == fieldName
         }
+    }
+
+    private fun findDeepField(rootClass: Class<*>, path: String): ReflectField? {
+        val parts = path.split(".")
+        var currentClass = rootClass
+        var currentField: ReflectField? = null
+
+        for (part in parts) {
+            if (part == "keyword") continue
+
+            // YENİ: Burada da getAllFields kullanıyoruz
+            val fields = getAllFields(currentClass)
+            currentField = findField(fields, part) ?: return null
+
+            val type = currentField.genericType
+            currentClass = if (type is ParameterizedType) {
+                val actualType = type.actualTypeArguments[0]
+                if (actualType is Class<*>) actualType else currentField.type
+            } else {
+                currentField.type
+            }
+        }
+        return currentField
+    }
+
+    private fun isNestedField(field: ReflectField): Boolean {
+        val annotation = field.getAnnotation(Field::class.java)
+        return annotation?.type == FieldType.Nested
+    }
+
+    private fun isTextField(field: ReflectField): Boolean {
+        val annotation = field.getAnnotation(Field::class.java)
+        // Eğer anotasyon yoksa ama tip String ise Text kabul et (Güvenlik önlemi)
+        if (annotation == null) {
+            return field.type == String::class.java
+        }
+        return annotation.type == FieldType.Text || annotation.type == FieldType.Auto
     }
 
     private fun idKeyAndValue(id: String): Pair<IDType, Any> {
@@ -166,12 +225,19 @@ interface ElasticNativeTool<T : BaseModel> {
         if (!hasPk && !hasSk) return null
 
         return if (hasPk && hasSk) {
-            // Bool Query: Should (OR) context
             Query.of { q ->
                 q.bool { b ->
                     b.minimumShouldMatch("1")
-                    b.should { s -> s.terms { t -> t.field(pkField).terms { v -> v.value(pkValues.map { FieldValue.of(it) }) } } }
-                    b.should { s -> s.terms { t -> t.field(skField).terms { v -> v.value(skValues.map { toFieldValue(it) }) } } }
+                    b.should { s ->
+                        s.terms { t ->
+                            t.field(pkField).terms { v -> v.value(pkValues.map { FieldValue.of(it) }) }
+                        }
+                    }
+                    b.should { s ->
+                        s.terms { t ->
+                            t.field(skField).terms { v -> v.value(skValues.map { toFieldValue(it) }) }
+                        }
+                    }
                 }
             }
         } else if (hasPk) {
@@ -205,9 +271,6 @@ interface ElasticNativeTool<T : BaseModel> {
         }
     }
 
-    /**
-     * Creates a standalone ID query.
-     */
     fun idQuery(id: String): Query {
         return createIdQueryInternal(null, id)
     }
@@ -216,9 +279,6 @@ interface ElasticNativeTool<T : BaseModel> {
         return createIdQueryInternal(field, id)
     }
 
-    /**
-     * Appends ID query to an existing BoolQuery Builder (as Filter/Must).
-     */
     fun idQuery(builder: BoolQuery.Builder, id: String): BoolQuery.Builder {
         return builder.filter(createIdQueryInternal(null, id))
     }
