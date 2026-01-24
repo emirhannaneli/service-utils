@@ -47,8 +47,8 @@ open class LID(
         columnDefinition = "varchar(11)"
     )
     @field:JsonProperty(index = Int.MIN_VALUE + 1)
-    @field:JsonSerialize(using = LKToStringConverter.Serializer::class)
-    @field:JsonDeserialize(using = LKToStringConverter.Deserializer::class)
+    @field:JsonSerialize(using = LKToStringConverter.Serializer.Json::class)
+    @field:JsonDeserialize(using = LKToStringConverter.Deserializer.Json::class)
     open var sk: LK,
 ) {
 

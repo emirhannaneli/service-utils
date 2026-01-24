@@ -48,7 +48,7 @@ class SecuredParamProcessor {
                 val value = field.get(arg) ?: return@forEach
                 context.setVariable(field.name, value)
 
-                if (auth !is AnonymousAuthenticationToken && auth.isAuthenticated)
+                if (auth !is AnonymousAuthenticationToken && auth?.isAuthenticated == true)
                     parser.parseExpression(securedParam.value).getValue(context, Boolean::class.java)
                         ?.let { hasPermission ->
                             if (!hasPermission) throw AccessDenied()

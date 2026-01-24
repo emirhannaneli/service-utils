@@ -3,6 +3,8 @@ package net.lubble.util.controller
 import jakarta.validation.Valid
 import net.lubble.util.PageResponse
 import net.lubble.util.Response
+import net.lubble.util.dto.RBase
+import net.lubble.util.model.ParameterModel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
@@ -13,7 +15,7 @@ import java.net.URI
  * This interface defines the basic CRUD operations for a controller.
  * It uses generic types for create (C), update (U), response (R), and parameters (P).
  */
-interface BaseController<C, U, R, P> {
+interface BaseController<C : Any, U : Any, R : RBase, P : ParameterModel> {
 
     /**
      * Creates a new entity.

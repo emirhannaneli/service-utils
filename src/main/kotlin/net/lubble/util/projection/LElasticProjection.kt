@@ -117,7 +117,7 @@ interface LElasticProjection<T : BaseModel> {
 
         if (!fields.isNullOrEmpty()) {
             val combinedFields = fields.toSet().plus(requiredFields).toTypedArray()
-            query.addSourceFilter(FetchSourceFilter(null, combinedFields, null))
+            query.addSourceFilter(FetchSourceFilter(null, combinedFields, arrayOf()))
         }
     }
 }

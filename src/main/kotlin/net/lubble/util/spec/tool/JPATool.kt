@@ -5,6 +5,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.criteria.*
 import net.lubble.util.LK
+import net.lubble.util.model.BaseModel
 import net.lubble.util.model.ParameterModel
 import net.lubble.util.spec.tool.SpecTool.IDType
 import net.lubble.util.spec.tool.SpecTool.SearchType
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * JPATool interface defines the specifications for JPA models.
  */
-interface JPATool<T> {
+interface JPATool<T : BaseModel> {
     companion object {
         // Reflection cache'leri - performans için
         private val fieldCache = ConcurrentHashMap<Class<*>, Array<Field>>()

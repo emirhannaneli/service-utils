@@ -1,5 +1,6 @@
 package net.lubble.util
 
+import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
@@ -20,7 +21,7 @@ class AuthTool {
         fun <T> principal(): T? {
             if (isAnonymous()) return null
             return try {
-                SecurityContextHolder.getContext().authentication.principal as T
+                SecurityContextHolder.getContext().authentication?.principal as T
             } catch (_: Exception) {
                 null
             }
@@ -33,7 +34,7 @@ class AuthTool {
          */
         fun credentials(): String? {
             if (isAnonymous()) return null
-            return SecurityContextHolder.getContext().authentication.credentials as String
+            return SecurityContextHolder.getContext().authentication?.credentials as String
         }
 
         /**
@@ -43,8 +44,8 @@ class AuthTool {
          */
         fun isAuthenticated(): Boolean {
             return SecurityContextHolder.getContext().authentication != null
-                    && SecurityContextHolder.getContext().authentication.principal != null
-                    && SecurityContextHolder.getContext().authentication.principal is UserDetails
+                    && SecurityContextHolder.getContext().authentication?.principal != null
+                    && SecurityContextHolder.getContext().authentication?.principal is UserDetails
         }
 
         /**
@@ -54,7 +55,7 @@ class AuthTool {
          */
         fun isAnonymous(): Boolean {
             return SecurityContextHolder.getContext().authentication == null
-                    || SecurityContextHolder.getContext().authentication.principal == null
+                    || SecurityContextHolder.getContext().authentication?.principal == null
         }
 
         /**
@@ -65,9 +66,9 @@ class AuthTool {
         fun authorize(vararg givenAuthorities: String) {
             val authorities = givenAuthorities.map { GrantedAuthority { it } }
             val authentication = if (isAuthenticated()) {
-                UsernamePasswordAuthenticationToken(principal<UserDetails>(), credentials(), authorities)
+                UsernamePasswordAuthenticationToken(principal<UserDetails>()!!, credentials(), authorities)
             } else {
-                UsernamePasswordAuthenticationToken(null, null, authorities)
+                AnonymousAuthenticationToken("anonymous", "anon", authorities)
             }
             SecurityContextHolder.getContext().authentication = authentication
         }

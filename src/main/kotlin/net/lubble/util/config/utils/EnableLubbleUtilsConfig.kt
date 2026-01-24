@@ -1,29 +1,24 @@
 package net.lubble.util.config.utils
 
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import jakarta.annotation.PostConstruct
 import net.lubble.util.AppContextUtil
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.BeansException
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.ApplicationContext
+import org.springframework.context.ApplicationContextAware
 import org.springframework.context.annotation.*
 import org.springframework.context.event.EventListener
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing
 import org.springframework.data.mongodb.config.EnableMongoAuditing
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.SerializationFeature
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.module.SimpleModule
+import tools.jackson.module.blackbird.BlackbirdModule
+import tools.jackson.module.kotlin.KotlinModule
 import java.net.http.HttpClient
 
 @Configuration
@@ -34,55 +29,46 @@ import java.net.http.HttpClient
 @EnableMongoAuditing
 @EnableAspectJAutoProxy
 @ConfigurationPropertiesScan(CONFIGURATION_PROPERTIES_SCAN)
-open class EnableLubbleUtilsConfig {
-
-    @Autowired
-    private lateinit var context: ApplicationContext
+open class EnableLubbleUtilsConfig : ApplicationContextAware {
 
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
-    @PostConstruct
-    fun init() {
-        AppContextUtil.initialize(context)
-    }
-
     @EventListener(ApplicationReadyEvent::class)
     fun onApplicationReady() {
-        log.info("Lubble Utils initialized with <3")
+        log.info("Lubble Utils initializing with <3")
     }
 
     @Bean
-    open fun mapper(builder: Jackson2ObjectMapperBuilder): ObjectMapper {
-        return builder.createXmlMapper(false).build<ObjectMapper>().apply {
+    open fun mapper(): ObjectMapper {
+        return JsonMapper.builderWithJackson2Defaults().apply {
             configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-            configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false)
             configure(SerializationFeature.WRITE_SELF_REFERENCES_AS_NULL, true)
-            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
 
-            registerModule(KotlinModule.Builder()
-                .withReflectionCacheSize(512)
-                .build())
+            addModule(
+                KotlinModule.Builder()
+                    .withReflectionCacheSize(512)
+                    .build()
+            )
 
-            registerModule(JavaTimeModule())
+            addModule(BlackbirdModule())
 
             val lkModule = SimpleModule()
             lkModule.addSerializer(LK::class.java, LKToStringConverter.Serializer())
             lkModule.addDeserializer(LK::class.java, LKToStringConverter.Deserializer())
+            addModule(lkModule)
 
-            val hibernate6 = Hibernate6Module()
-            hibernate6.disable(Hibernate6Module.Feature.USE_TRANSIENT_ANNOTATION)
-            hibernate6.enable(Hibernate6Module.Feature.SERIALIZE_IDENTIFIER_FOR_LAZY_NOT_LOADED_OBJECTS)
-            registerModule(hibernate6)
-
-            registerModule(lkModule)
-        }
+        }.build()
     }
 
     @Bean
     open fun http(): HttpClient {
         return HttpClient.newHttpClient()
+    }
+
+    @Throws(BeansException::class)
+    override fun setApplicationContext(applicationContext: ApplicationContext) {
+        AppContextUtil.initialize(applicationContext)
     }
 
 }

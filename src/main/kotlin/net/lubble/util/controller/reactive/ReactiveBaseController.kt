@@ -3,6 +3,8 @@ package net.lubble.util.controller.reactive
 import jakarta.validation.Valid
 import net.lubble.util.PageResponse
 import net.lubble.util.Response
+import net.lubble.util.dto.RBase
+import net.lubble.util.model.ParameterModel
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -18,7 +20,7 @@ import java.net.URI
  * @param R The type of the object returned in the response.
  * @param P The type of the object used as parameters in the find operations.
  */
-interface ReactiveBaseController<C, U, R, P> {
+interface ReactiveBaseController<C : Any, U : Any, R : RBase, P : ParameterModel> {
     /**
      * Create a new entity.
      *

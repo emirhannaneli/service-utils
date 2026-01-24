@@ -127,7 +127,7 @@ interface LElasticNativeProjection<T : BaseModel> {
 
         if (combinedFields.isNotEmpty()) {
             queryBuilder.withSourceFilter(
-                FetchSourceFilter(null, combinedFields.toTypedArray(), null)
+                FetchSourceFilter(null, combinedFields.toTypedArray(), arrayOf())
             )
         }
     }

@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintViolationException
 import net.lubble.util.Response
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.data.mapping.PropertyReferenceException
+import org.springframework.data.core.PropertyReferenceException
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice

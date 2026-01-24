@@ -1,5 +1,7 @@
 package net.lubble.util.service.reactive
 
+import net.lubble.util.model.BaseModel
+import net.lubble.util.spec.BaseSpec
 import org.springframework.data.domain.Page
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
@@ -13,7 +15,7 @@ import reactor.core.publisher.Mono
  * @param S The specification type.
  * @see Transactional
  */
-interface BaseReactiveService<T, C, U, S> {
+interface BaseReactiveService<T : BaseModel, C : Any, U : Any, S : BaseSpec> {
 
     /**
      * Create a new entity.
@@ -34,7 +36,7 @@ interface BaseReactiveService<T, C, U, S> {
      * @param spec The specification to use when finding the entity.
      * @return The found entity wrapped in a Mono.
      */
-    fun find(spec: S): Mono<T?>
+    fun find(spec: S): Mono<T>
 
     /**
      * Check if an entity exists by its specification.

@@ -11,8 +11,7 @@ import org.springframework.context.ApplicationContext
  * @property context The ApplicationContext instance this utility class operates on.
  * @property log The logger instance used for logging.
  */
-class AppContextUtil(context: ApplicationContext) {
-    private var context: ApplicationContext? = context
+class AppContextUtil(private val context: ApplicationContext) {
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
     /**
@@ -23,6 +22,7 @@ class AppContextUtil(context: ApplicationContext) {
     }
 
     companion object {
+        @Volatile
         var instance: AppContextUtil? = null
 
         /**
@@ -34,6 +34,9 @@ class AppContextUtil(context: ApplicationContext) {
             instance = AppContextUtil(context)
         }
 
+        private val safeContext: ApplicationContext
+            get() = instance?.context ?: throw RuntimeException("AppContextUtil instance or context is not initialized")
+
         /**
          * Retrieves a bean from the application context by its class.
          *
@@ -41,8 +44,8 @@ class AppContextUtil(context: ApplicationContext) {
          * @return The bean instance.
          * @throws RuntimeException if the bean could not be retrieved.
          */
-        fun <T> bean(clazz: Class<T>): T {
-            return instance?.context?.getBean(clazz) ?: throw RuntimeException("Could not get bean (${clazz.name})")
+        fun <T : Any> bean(clazz: Class<T>): T {
+            return safeContext.getBean(clazz) as T
         }
 
         /**
@@ -53,8 +56,8 @@ class AppContextUtil(context: ApplicationContext) {
          * @return The bean instance.
          * @throws RuntimeException if the bean could not be retrieved.
          */
-        fun <T> bean(name: String, clazz: Class<T>): T {
-            return instance?.context?.getBean(name, clazz) ?: throw RuntimeException("Could not get bean (${clazz.name})")
+        fun <T : Any> bean(name: String, clazz: Class<T>): T {
+            return safeContext.getBean(name, clazz) as T
         }
 
         /**
@@ -66,7 +69,7 @@ class AppContextUtil(context: ApplicationContext) {
          */
         @Suppress("UNCHECKED_CAST")
         fun <T> bean(name: String): T {
-            return instance?.context?.getBean(name) as T ?: throw RuntimeException("Could not get bean ($name)")
+            return safeContext.getBean(name) as T
         }
 
         /**
@@ -75,8 +78,8 @@ class AppContextUtil(context: ApplicationContext) {
          * @param clazz The class of the beans to retrieve.
          * @return A map of bean names to bean instances.
          */
-        fun <T> beans(clazz: Class<T>): Map<String, T> {
-            return instance?.context?.getBeansOfType(clazz) ?: emptyMap()
+        fun <T : Any> beans(clazz: Class<T>): Map<String, T> {
+            return safeContext.getBeansOfType(clazz)
         }
     }
 }
