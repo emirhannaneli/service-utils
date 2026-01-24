@@ -2,6 +2,7 @@ package net.lubble.util.config.utils
 
 import net.lubble.util.AppContextUtil
 import net.lubble.util.LK
+import net.lubble.util.SpringDetectionUtil
 import net.lubble.util.converter.LKToStringConverter
 import org.slf4j.LoggerFactory
 import org.springframework.beans.BeansException
@@ -33,9 +34,22 @@ open class EnableLubbleUtilsConfig : ApplicationContextAware {
 
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
+    init {
+        if (!SpringDetectionUtil.isSpringAvailable()) {
+            log.warn(
+                "@EnableLubbleUtils annotation is used but Spring Framework is not available in classpath. " +
+                "Spring features will not be available. Please ensure Spring Boot is in your dependencies."
+            )
+        }
+    }
+
     @EventListener(ApplicationReadyEvent::class)
     fun onApplicationReady() {
-        log.info("Lubble Utils initializing with <3")
+        if (SpringDetectionUtil.isSpringAvailable()) {
+            log.info("Lubble Utils initialized with <3")
+        } else {
+            log.warn("Lubble Utils attempted to initialize but Spring Framework is not available.")
+        }
     }
 
     @Bean

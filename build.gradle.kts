@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "net.lubble"
-version = "1.23.0-SNAPSHOT"
+version = "1.24.0"
 description = "Lubble Utility Library"
 
 val snakeYamlVersion = "2.5"
@@ -24,7 +24,6 @@ val bounceCastleVersion = "1.82"
 val ulidVersion = "8.3.0"
 val kotlinVersion = "2.3.0"
 val kotlinXVersion = "1.10.2"
-val hibernateVersion = "7.2.1.Final"
 
 repositories {
     mavenCentral()

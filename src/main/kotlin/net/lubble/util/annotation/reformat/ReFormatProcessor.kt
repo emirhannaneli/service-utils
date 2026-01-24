@@ -1,16 +1,18 @@
 package net.lubble.util.annotation.reformat
 
+import net.lubble.util.SpringDetectionUtil
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.reflect.FieldSignature
-import org.springframework.context.i18n.LocaleContextHolder
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.stereotype.Component
 import java.lang.reflect.Field
 import java.util.*
 
 @Aspect
 @Component
+@ConditionalOnClass(name = ["org.springframework.context.i18n.LocaleContextHolder"])
 class ReFormatProcessor {
 
     @Around("@annotation(net.lubble.util.annotation.reformat.ReFormat)")
@@ -34,9 +36,9 @@ class ReFormatProcessor {
         val useContextLocale = reFormat.useContextLocale
 
         if (upper) {
-            formatted = if (useContextLocale) {
+            formatted = if (useContextLocale && SpringDetectionUtil.isSpringLocaleContextHolderAvailable()) {
                 try {
-                    val contextLocale = LocaleContextHolder.getLocale()
+                    val contextLocale = getContextLocale()
                     value.uppercase(contextLocale)
                 } catch (e: Exception) {
                     value.uppercase(Locale.forLanguageTag(locale))
@@ -47,9 +49,9 @@ class ReFormatProcessor {
         }
 
         if (lower) {
-            formatted = if (useContextLocale) {
+            formatted = if (useContextLocale && SpringDetectionUtil.isSpringLocaleContextHolderAvailable()) {
                 try {
-                    val contextLocale = LocaleContextHolder.getLocale()
+                    val contextLocale = getContextLocale()
                     value.lowercase(contextLocale)
                 } catch (e: Exception) {
                     value.lowercase(Locale.forLanguageTag(locale))
@@ -64,9 +66,9 @@ class ReFormatProcessor {
         }
 
         if (capitalize) {
-            formatted = if (useContextLocale) {
+            formatted = if (useContextLocale && SpringDetectionUtil.isSpringLocaleContextHolderAvailable()) {
                 try {
-                    val contextLocale = LocaleContextHolder.getLocale()
+                    val contextLocale = getContextLocale()
                     value.replaceFirstChar { it.titlecase(contextLocale) }
                 } catch (e: Exception) {
                     value.replaceFirstChar { it.titlecase(Locale.forLanguageTag(locale)) }
@@ -77,9 +79,9 @@ class ReFormatProcessor {
         }
 
         if (decapitate) {
-            formatted = if (useContextLocale) {
+            formatted = if (useContextLocale && SpringDetectionUtil.isSpringLocaleContextHolderAvailable()) {
                 try {
-                    val contextLocale = LocaleContextHolder.getLocale()
+                    val contextLocale = getContextLocale()
                     value.replaceFirstChar { it.lowercase(contextLocale) }
                 } catch (e: Exception) {
                     value.replaceFirstChar { it.lowercase(Locale.forLanguageTag(locale)) }
@@ -97,5 +99,24 @@ class ReFormatProcessor {
         return if (signature is FieldSignature)
             signature.declaringType.getDeclaredField(signature.name)
         else null
+    }
+
+    /**
+     * Gets the locale from Spring LocaleContextHolder if available, otherwise returns default locale.
+     * @return The current locale or default locale.
+     */
+    private fun getContextLocale(): Locale {
+        return if (SpringDetectionUtil.isSpringLocaleContextHolderAvailable()) {
+            try {
+                val localeHolderClass = Class.forName("org.springframework.context.i18n.LocaleContextHolder")
+                val getLocaleMethod = localeHolderClass.getMethod("getLocale")
+                @Suppress("UNCHECKED_CAST")
+                getLocaleMethod.invoke(null) as Locale
+            } catch (e: Exception) {
+                Locale.getDefault()
+            }
+        } else {
+            Locale.getDefault()
+        }
     }
 }

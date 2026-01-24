@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletResponse
 import net.lubble.util.model.ExceptionModel
 import org.springframework.context.MessageSource
-import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
@@ -44,7 +43,7 @@ class Response() {
      * @param details Any additional details that should be included in the response.
      */
     constructor(message: String, status: HttpStatus, code: String?, details: Any?) : this() {
-        this.message = source().getMessage(message, null, locale())
+        this.message = getLocalizedMessage(message)
         this.status = status
         this.code = code
         this.details = details
@@ -56,7 +55,7 @@ class Response() {
      * @param status The status to include in the Response.
      */
     constructor(message: String, status: HttpStatus) : this() {
-        this.message = source().getMessage(message, null, locale())
+        this.message = getLocalizedMessage(message)
         this.status = status
     }
 
@@ -65,7 +64,7 @@ class Response() {
      * @param message The message to include in the Response.
      */
     constructor(message: String) : this() {
-        this.message = source().getMessage(message, null, locale())
+        this.message = getLocalizedMessage(message)
     }
 
     /**
@@ -74,7 +73,7 @@ class Response() {
      * @param details The additional details to include in the Response.
      */
     constructor(message: String, details: Any) : this() {
-        this.message = source().getMessage(message, null, locale())
+        this.message = getLocalizedMessage(message)
         this.details = details
     }
 
@@ -85,7 +84,7 @@ class Response() {
      * @param details The additional details to include in the Response.
      */
     constructor(message: String, status: HttpStatus, details: Any) : this() {
-        this.message = source().getMessage(message, null, locale())
+        this.message = getLocalizedMessage(message)
         this.status = status
         this.details = details
     }
@@ -167,8 +166,28 @@ class Response() {
         }
 
         /**
+         * Gets localized message if Spring is available, otherwise returns the message as-is.
+         * @param message The message key or text.
+         * @return The localized message or the original message.
+         */
+        private fun getLocalizedMessage(message: String): String {
+            if (SpringDetectionUtil.isSpringAvailable() && SpringDetectionUtil.isSpringMessageSourceAvailable()) {
+                return try {
+                    val source = source()
+                    val locale = locale()
+                    source.getMessage(message, null, locale)
+                } catch (e: Exception) {
+                    // If Spring is available but MessageSource is not configured, return message as-is
+                    message
+                }
+            }
+            return message
+        }
+
+        /**
          * Retrieves the MessageSource bean from the application context.
          * @return The MessageSource bean.
+         * @throws IllegalStateException if Spring is not available.
          */
         private fun source(): MessageSource {
             return AppContextUtil.bean(MessageSource::class.java)
@@ -179,12 +198,24 @@ class Response() {
          * @return The current locale.
          */
         private fun locale(): Locale {
-            return LocaleContextHolder.getLocale()
+            return if (SpringDetectionUtil.isSpringLocaleContextHolderAvailable()) {
+                try {
+                    val localeHolderClass = Class.forName("org.springframework.context.i18n.LocaleContextHolder")
+                    val getLocaleMethod = localeHolderClass.getMethod("getLocale")
+                    @Suppress("UNCHECKED_CAST")
+                    getLocaleMethod.invoke(null) as Locale
+                } catch (e: Exception) {
+                    Locale.getDefault()
+                }
+            } else {
+                Locale.getDefault()
+            }
         }
 
         /**
          * Retrieves the ObjectMapper bean from the application context.
          * @return The ObjectMapper bean.
+         * @throws IllegalStateException if Spring is not available.
          */
         private fun mapper(): ObjectMapper {
             return AppContextUtil.bean(ObjectMapper::class.java)
