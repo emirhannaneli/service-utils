@@ -6,13 +6,19 @@ import net.lubble.util.AppContextUtil
 import net.lubble.util.model.BaseModel
 import net.lubble.util.spec.BaseSpec
 import org.apache.commons.lang3.reflect.FieldUtils
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import java.util.*
 import java.util.stream.Collectors
 
+private val logger: Logger = LoggerFactory.getLogger(LJPAProjection::class.java)
+
 interface LJPAProjection<T : BaseModel> {
+
     private val manager: EntityManager
         get() = AppContextUtil.bean(EntityManager::class.java)
 
@@ -40,6 +46,70 @@ interface LJPAProjection<T : BaseModel> {
             ?: Optional.empty()
     }
 
+    fun <P : BaseModel> findOne(spec: BaseSpec.JPA<T>, projectionClass: Class<P>): Optional<P> {
+        val entityClass = spec.clazz
+        validateEntity(entityClass)
+        validateProjectionClass(projectionClass)
+        
+        val projectionFields = extractProjectionFields(projectionClass, entityClass)
+        if (projectionFields.isEmpty()) {
+            throw IllegalArgumentException("Projection class ${projectionClass.name} must have at least one field matching the entity class ${entityClass.name}")
+        }
+
+        val cb = manager.criteriaBuilder
+        val tupleQuery = cb.createTupleQuery()
+        val root = tupleQuery.from(entityClass)
+
+        val joinMap = mutableMapOf<String, Join<*, *>>()
+        val selections = mutableListOf<Selection<*>>()
+        val mappedFieldNames = mutableListOf<String>()
+
+        projectionFields.forEach { fieldPath ->
+            try {
+                val path = getOrCreatePath(root, fieldPath, joinMap)
+                selections.add(path.alias(fieldPath))
+                mappedFieldNames.add(fieldPath)
+            } catch (_: Exception) {
+               logger.warn("Field '$fieldPath' not found in entity '${entityClass.name}', skipping projection for this field.")
+            }
+        }
+
+        if (selections.isEmpty()) {
+            throw IllegalArgumentException("No valid fields found in projection class ${projectionClass.name}")
+        }
+
+        tupleQuery.select(cb.tuple(*selections.toTypedArray()))
+
+        val predicate = spec.ofSearch().toPredicate(root, tupleQuery, cb)
+        tupleQuery.where(predicate)
+
+        val typedQuery = manager.createQuery(tupleQuery)
+        typedQuery.maxResults = 1
+
+        val tuples = typedQuery.resultList
+        if (tuples.isEmpty()) {
+            return Optional.empty()
+        }
+
+        val tuple = tuples.first()
+        val projectionInstance = projectionClass.getDeclaredConstructor().newInstance()
+
+        for (i in mappedFieldNames.indices) {
+            val fieldPath = mappedFieldNames[i]
+            val value = tuple.get(i)
+
+            if (value != null) {
+                try {
+                    writeNestedField(projectionInstance, fieldPath, value)
+                } catch (e: Exception) {
+                    logger.warn("Failed to set field '$fieldPath': ${e.message}")
+                }
+            }
+        }
+
+        return Optional.of(projectionInstance)
+    }
+
     fun findAll(spec: BaseSpec.JPA<T>): Page<T> {
         val clazz = spec.clazz
         validateEntity(clazz)
@@ -61,6 +131,14 @@ interface LJPAProjection<T : BaseModel> {
         val sortedResults = ids.mapNotNull { entityMap[it] }
 
         return PageImpl(sortedResults, spec.ofSortedPageable(), totalCount)
+    }
+
+    fun <P : BaseModel> findAll(spec: BaseSpec.JPA<T>, projectionClass: Class<P>): Page<P> {
+        val entityClass = spec.clazz
+        validateEntity(entityClass)
+        validateProjectionClass(projectionClass)
+        
+        return fetchWithProjectionClass(spec, entityClass, projectionClass, true)
     }
 
     fun fetchAll(spec: BaseSpec.JPA<T>): Collection<T> {
@@ -103,6 +181,14 @@ interface LJPAProjection<T : BaseModel> {
         return typedQuery.resultList
     }
 
+    fun <P : BaseModel> fetchAll(spec: BaseSpec.JPA<T>, projectionClass: Class<P>): Collection<P> {
+        val entityClass = spec.clazz
+        validateEntity(entityClass)
+        validateProjectionClass(projectionClass)
+        
+        return fetchWithProjectionClass(spec, entityClass, projectionClass, false).content
+    }
+
     private fun fetchIdsForPagination(spec: BaseSpec.JPA<T>, clazz: Class<T>): List<String> {
         val cb = manager.criteriaBuilder
         val idQuery = cb.createTupleQuery()
@@ -135,7 +221,7 @@ interface LJPAProjection<T : BaseModel> {
         }
 
         idQuery.where(predicate)
-        idQuery.multiselect(selections)
+        idQuery.select(cb.tuple(*selections.toTypedArray()))
 
         val typedIdQuery = manager.createQuery(idQuery)
         typedIdQuery.firstResult = pageable.pageNumber * pageable.pageSize
@@ -211,17 +297,16 @@ interface LJPAProjection<T : BaseModel> {
 
             val currentKey = if (currentParentKey.isEmpty()) part else "$currentParentKey.$part"
 
-            var currentSubgraph = subgraphMap[currentKey]
-
-            if (currentSubgraph == null) {
-                if (i == 0) {
-                    currentSubgraph = graph.addSubgraph<Any>(part)
+            val currentSubgraph = subgraphMap[currentKey] ?: run {
+                val newSubgraph = if (i == 0) {
+                    graph.addSubgraph<Any>(part)
                 } else {
                     val parentSubgraph = subgraphMap[currentParentKey]
                         ?: throw IllegalStateException("Parent path '$currentParentKey' not found for '$path'. Ensure joins are sorted.")
-                    currentSubgraph = parentSubgraph.addSubgraph<Any>(part)
+                    parentSubgraph.addSubgraph(part)
                 }
-                subgraphMap[currentKey] = currentSubgraph
+                subgraphMap[currentKey] = newSubgraph
+                newSubgraph
             }
 
             if (i == parts.size - 2) {
@@ -249,6 +334,56 @@ interface LJPAProjection<T : BaseModel> {
                         "Please ensure your specification uses a concrete entity class that extends BaseModel."
             )
         }
+    }
+
+    private fun validateProjectionClass(projectionClass: Class<*>): Unit {
+        if (!BaseModel::class.java.isAssignableFrom(projectionClass)) {
+            throw IllegalArgumentException(
+                "Projection class ${projectionClass.name} must extend BaseModel"
+            )
+        }
+
+        try {
+            projectionClass.getDeclaredConstructor()
+        } catch (_: NoSuchMethodException) {
+            throw IllegalArgumentException(
+                "Projection class ${projectionClass.name} must have a no-args constructor"
+            )
+        }
+    }
+
+    private fun extractProjectionFields(projectionClass: Class<*>, entityClass: Class<T>): List<String> {
+        val projectionFields = mutableListOf<String>()
+        
+        val baseModelFields = listOf("id", "deleted", "archived", "createdAt", "updatedAt", "createdBy", "updatedBy")
+        baseModelFields.forEach { fieldName ->
+            val entityField = FieldUtils.getField(entityClass, fieldName, true)
+            val projectionField = FieldUtils.getField(projectionClass, fieldName, true)
+            if (entityField != null && projectionField != null) {
+                projectionFields.add(fieldName)
+            }
+        }
+
+        val allProjectionFields = FieldUtils.getAllFieldsList(projectionClass)
+        allProjectionFields.forEach { projectionField ->
+            if (Modifier.isStatic(projectionField.modifiers)) {
+                return@forEach
+            }
+
+            val fieldName = projectionField.name
+            if (fieldName in baseModelFields) {
+                return@forEach
+            }
+
+            val entityField = FieldUtils.getField(entityClass, fieldName, true)
+            if (entityField != null) {
+                projectionFields.add(fieldName)
+            } else if (fieldName.contains(".")) {
+                projectionFields.add(fieldName)
+            }
+        }
+
+        return projectionFields.distinct()
     }
 
     fun count(spec: BaseSpec.JPA<T>): CriteriaQuery<Long> {
@@ -301,10 +436,11 @@ interface LJPAProjection<T : BaseModel> {
                 val path = getOrCreatePath(root, fieldPath, joinMap)
                 selections.add(path.alias(fieldPath))
             } catch (_: Exception) {
+
             }
         }
 
-        tupleQuery.multiselect(selections)
+        tupleQuery.select(cb.tuple(*selections.toTypedArray()))
 
         val predicate = spec.ofSearch().toPredicate(root, tupleQuery, cb)
         tupleQuery.where(predicate)
@@ -406,8 +542,7 @@ interface LJPAProjection<T : BaseModel> {
             }
 
             if (existingJoin != null) {
-                @Suppress("UNCHECKED_CAST")
-                currentFrom = existingJoin as From<*, *>
+                currentFrom = existingJoin
             } else {
                 currentFrom = currentFrom.join<Any, Any>(part, JoinType.LEFT)
             }
@@ -441,5 +576,100 @@ interface LJPAProjection<T : BaseModel> {
         }
 
         FieldUtils.writeField(currentObject, parts.last(), value, true)
+    }
+
+    private fun <P : BaseModel> fetchWithProjectionClass(
+        spec: BaseSpec.JPA<T>,
+        entityClass: Class<T>,
+        projectionClass: Class<P>,
+        pagination: Boolean
+    ): Page<P> {
+        val cb = manager.criteriaBuilder
+
+        var totalCount: Long = 0
+        if (pagination) {
+            val countQuery = manager.createQuery(count(spec))
+            totalCount = countQuery.singleResult
+            if (totalCount == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
+        }
+
+        val projectionFields = extractProjectionFields(projectionClass, entityClass)
+        if (projectionFields.isEmpty()) {
+            throw IllegalArgumentException("Projection class ${projectionClass.name} must have at least one field matching the entity class ${entityClass.name}")
+        }
+
+        val tupleQuery = cb.createTupleQuery()
+        val root = tupleQuery.from(entityClass)
+
+        val joinMap = mutableMapOf<String, Join<*, *>>()
+        val selections = mutableListOf<Selection<*>>()
+
+        val mappedFieldNames = mutableListOf<String>()
+
+        projectionFields.forEach { fieldPath ->
+            try {
+                val path = getOrCreatePath(root, fieldPath, joinMap)
+                selections.add(path.alias(fieldPath))
+                mappedFieldNames.add(fieldPath)
+            } catch (_: Exception) {
+                logger.warn("Field '$fieldPath' not found in entity '${entityClass.name}', skipping projection for this field.")
+            }
+        }
+
+        if (selections.isEmpty()) {
+            throw IllegalArgumentException("No valid fields found in projection class ${projectionClass.name}")
+        }
+
+        tupleQuery.select(cb.tuple(*selections.toTypedArray()))
+
+        val predicate = spec.ofSearch().toPredicate(root, tupleQuery, cb)
+        tupleQuery.where(predicate)
+
+        val pageable = spec.ofSortedPageable()
+        if (pageable.sort.isSorted) {
+            val orders = pageable.sort.stream().map { order ->
+                try {
+                    val path = getOrCreatePath(root, order.property, joinMap)
+                    if (order.isAscending) cb.asc(path) else cb.desc(path)
+                } catch (_: Exception) {
+                    null
+                }
+            }.filter { it != null }.collect(Collectors.toList())
+
+            if (orders.isNotEmpty()) {
+                tupleQuery.orderBy(orders)
+            }
+        }
+
+        val typedQuery = manager.createQuery(tupleQuery)
+
+        if (pagination) {
+            typedQuery.firstResult = pageable.pageNumber * pageable.pageSize
+            typedQuery.maxResults = pageable.pageSize
+        }
+
+        val tuples = typedQuery.resultList
+
+        val results = tuples.map { tuple ->
+            val projectionInstance = projectionClass.getDeclaredConstructor().newInstance()
+
+            for (i in mappedFieldNames.indices) {
+                val fieldPath = mappedFieldNames[i]
+                val value = tuple.get(i)
+
+                if (value != null) {
+                    try {
+                        writeNestedField(projectionInstance, fieldPath, value)
+                    } catch (e: Exception) {
+                        logger.warn("Failed to set field '$fieldPath': ${e.message}")
+                    }
+                }
+            }
+            projectionInstance
+        }
+
+        if (!pagination) totalCount = results.size.toLong()
+
+        return PageImpl(results, pageable, totalCount)
     }
 }

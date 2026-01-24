@@ -1,15 +1,40 @@
 package net.lubble.util.mapper
 
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import net.lubble.util.AppContextUtil
 import net.lubble.util.MapperRegistryHolder
 import net.lubble.util.dto.RBase
 import net.lubble.util.model.BaseDocumented
 import net.lubble.util.model.BaseModel
-import net.lubble.util.model.LID
 import org.springframework.data.domain.Page
-import org.springframework.transaction.annotation.Transactional
+import tools.jackson.core.type.TypeReference
+import tools.jackson.databind.ObjectMapper
+
+abstract class BaseProjectionMapper<T : BaseModel, V : BaseModel, R : RBase, U : Any> : BaseMapper<T, R, U> {
+    private val objectMapper: ObjectMapper by lazy { AppContextUtil.bean(ObjectMapper::class.java) }
+
+    @JvmName("projectionMappingFunction")
+    fun mapping(source: V): R {
+        return objectMapper.convertValue(source, object : TypeReference<R>() {})
+    }
+
+    @JvmName("projectionMapping")
+    fun map(source: V): R {
+        MapperRegistryHolder.get<R>(source)?.let {
+            return it
+        }
+        val dto = mapping(source)
+        apply(source, dto)
+        return dto.also {
+            MapperRegistryHolder.put(source, it)
+        }
+    }
+
+    @JvmName("projectionMappingCollection")
+    fun map(source: Collection<V>): List<R> = source.map(this::map)
+
+    @JvmName("projectionMappingPage")
+    fun map(source: Page<V>): List<R> = source.content.map(this::map)
+}
 
 /**
  * BaseMapper interface is used for mapping between DTOs and Entities.
