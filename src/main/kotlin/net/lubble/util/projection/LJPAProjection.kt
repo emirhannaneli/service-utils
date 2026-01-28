@@ -586,6 +586,7 @@ interface LJPAProjection<T : BaseModel> {
     ): Page<P> {
         val cb = manager.criteriaBuilder
 
+        // 1. Pagination için Count Query (Değişmedi)
         var totalCount: Long = 0
         if (pagination) {
             val countQuery = manager.createQuery(count(spec))
@@ -593,9 +594,38 @@ interface LJPAProjection<T : BaseModel> {
             if (totalCount == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
         }
 
-        val projectionFields = extractProjectionFields(projectionClass, entityClass)
-        if (projectionFields.isEmpty()) {
+        // 2. Projection Sınıfındaki Tüm Olası Alanları Çıkar
+        val availableFields = extractProjectionFields(projectionClass, entityClass)
+
+        if (availableFields.isEmpty()) {
             throw IllegalArgumentException("Projection class ${projectionClass.name} must have at least one field matching the entity class ${entityClass.name}")
+        }
+
+        // 3. FİLTRELEME MANTIĞI (GÜNCELLENMİŞ)
+        val targetFields = if (!spec.fields.isNullOrEmpty()) {
+            availableFields.filter { fieldName ->
+                // 1. Durum: Tam eşleşme (örn: "pk" == "pk")
+                val explicitlyRequested = spec.fields!!.contains(fieldName)
+
+                // 2. Durum: Nested istek (örn: fieldName="product", spec.fields=["product.code"])
+                // Projection sınıfındaki alan "product" ama istenen "product.code" ise, "product"ı dahil etmeliyiz.
+                val nestedRequested = spec.fields!!.any { it.startsWith("$fieldName.") }
+
+                // 3. Durum: Joins listesinde var mı? (örn: spec.joins=["product"])
+                // Kullanıcı fields'ta istemese bile joins'e eklediyse çekilmesini istiyordur.
+                val inJoins = spec.joins?.any { it == fieldName || it.startsWith("$fieldName.") } == true
+
+                explicitlyRequested || nestedRequested || inJoins
+            }
+        } else {
+            availableFields
+        }
+
+        // Eğer filtreleme sonucunda hiçbir alan kalmadıysa (örn: istenen alan sınıfta yoksa) hata fırlat veya availableFields'e dön.
+        // Güvenlik için en azından ID'nin çekildiğinden emin olmak iyi bir pratiktir.
+        val finalFields = targetFields.ifEmpty {
+            logger.warn("Requested fields ${spec.fields} overlap with projection class ${projectionClass.simpleName} is empty. Fetching all available fields.")
+            availableFields
         }
 
         val tupleQuery = cb.createTupleQuery()
@@ -603,21 +633,23 @@ interface LJPAProjection<T : BaseModel> {
 
         val joinMap = mutableMapOf<String, Join<*, *>>()
         val selections = mutableListOf<Selection<*>>()
-
         val mappedFieldNames = mutableListOf<String>()
 
-        projectionFields.forEach { fieldPath ->
+        // 4. Sadece Filtrelenmiş Alanlar İçin Path ve Join Oluştur
+        finalFields.forEach { fieldPath ->
             try {
+                // getOrCreatePath sadece listedeki alanlar için çalışacak.
+                // Product listede olmadığı için join oluşmayacak.
                 val path = getOrCreatePath(root, fieldPath, joinMap)
                 selections.add(path.alias(fieldPath))
                 mappedFieldNames.add(fieldPath)
             } catch (_: Exception) {
-                logger.warn("Field '$fieldPath' not found in entity '${entityClass.name}', skipping projection for this field.")
+                logger.warn("Field '$fieldPath' not found or failed in entity '${entityClass.name}', skipping.")
             }
         }
 
         if (selections.isEmpty()) {
-            throw IllegalArgumentException("No valid fields found in projection class ${projectionClass.name}")
+            throw IllegalArgumentException("No valid fields generated for projection class ${projectionClass.name}")
         }
 
         tupleQuery.select(cb.tuple(*selections.toTypedArray()))

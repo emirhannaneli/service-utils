@@ -1,39 +1,32 @@
 package net.lubble.util.mapper
 
-import net.lubble.util.AppContextUtil
 import net.lubble.util.MapperRegistryHolder
 import net.lubble.util.dto.RBase
 import net.lubble.util.model.BaseDocumented
 import net.lubble.util.model.BaseModel
 import org.springframework.data.domain.Page
-import tools.jackson.core.type.TypeReference
 import tools.jackson.databind.ObjectMapper
 
 abstract class BaseProjectionMapper<T : BaseModel, V : BaseModel, R : RBase, U : Any> : BaseMapper<T, R, U> {
-    private val objectMapper: ObjectMapper by lazy { AppContextUtil.bean(ObjectMapper::class.java) }
 
-    @JvmName("projectionMappingFunction")
-    fun mapping(source: V): R {
-        return objectMapper.convertValue(source, object : TypeReference<R>() {})
-    }
+    abstract val mapper: ObjectMapper
 
-    @JvmName("projectionMapping")
-    fun map(source: V): R {
+    abstract fun pmapping(source: V): R
+
+    fun pmap(source: V): R {
         MapperRegistryHolder.get<R>(source)?.let {
             return it
         }
-        val dto = mapping(source)
+        val dto = pmapping(source)
         apply(source, dto)
         return dto.also {
             MapperRegistryHolder.put(source, it)
         }
     }
 
-    @JvmName("projectionMappingCollection")
-    fun map(source: Collection<V>): List<R> = source.map(this::map)
+    fun pmap(source: Collection<V>): List<R> = source.map(this::pmap)
 
-    @JvmName("projectionMappingPage")
-    fun map(source: Page<V>): List<R> = source.content.map(this::map)
+    fun pmap(source: Page<V>): List<R> = source.content.map(this::pmap)
 }
 
 /**
