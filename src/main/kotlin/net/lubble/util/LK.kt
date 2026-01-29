@@ -7,54 +7,57 @@ import java.io.Serializable
 import java.security.SecureRandom
 import java.security.Security
 
-class LK() : Comparable<LK>, Serializable {
+class LK : Comparable<LK>, Serializable {
     var value: String
 
     @Transient
     private var key: StringBuilder = StringBuilder()
 
-    constructor(key: String) : this() {
-        this.key.clear()
-        this.key.append(key)
-
-        value = key
-    }
-
-    init {
-        Security.addProvider(BouncyCastleProvider())
-
+    constructor() {
         val characters = "abcdefghijklmnopqrstuvwxyz0123456789"
         val random = SecureRandom.getInstance("DEFAULT", "BC")
 
-        repeat(2) {
+        key.clear()
+        repeat(2) { i ->
             repeat(5) {
                 key.append(characters[random.nextInt(characters.length)])
             }
-            if (it < 1) key.append("-")
+            if (i < 1) key.append("-")
         }
-
         value = key.toString()
+    }
+
+    constructor(key: String) {
+        this.key.clear()
+        this.key.append(key)
+        this.value = key
+    }
+
+    companion object {
+        init {
+            if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                Security.addProvider(BouncyCastleProvider())
+            }
+        }
     }
 
     @JsonValue
     override fun toString(): String {
-        return key.toString()
+        return value
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || javaClass != other.javaClass) return false
-
         other as LK
-
-        return key.toString() == other.key.toString()
+        return value == other.value
     }
 
     override fun hashCode(): Int {
-        return key.toString().hashCode()
+        return value.hashCode()
     }
 
     override fun compareTo(other: LK): Int {
-        return key.toString().compareTo(other.key.toString())
+        return value.compareTo(other.value)
     }
 }
