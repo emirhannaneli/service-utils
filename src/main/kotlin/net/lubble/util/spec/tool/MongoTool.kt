@@ -19,7 +19,6 @@ import java.lang.reflect.Field as ReflectField
 interface MongoTool<T : BaseModel> {
 
     companion object {
-        // Reflection cache - Performans optimizasyonu
         private val fieldCache = ConcurrentHashMap<Class<*>, Array<ReflectField>>()
 
         private fun getCachedFields(clazz: Class<*>): Array<ReflectField> {
@@ -92,7 +91,6 @@ interface MongoTool<T : BaseModel> {
 
             if (sortFields.isNotEmpty()) {
                 sortFields.forEachIndexed { index, sortField ->
-                    // Field validation: Entity içinde var mı kontrolü (Field name veya @Field annotation name)
                     val isValid = fields.any { field ->
                         val columnValue = field.getAnnotation(Field::class.java)?.name
                         field.name == sortField || columnValue == sortField

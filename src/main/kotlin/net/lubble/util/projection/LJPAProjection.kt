@@ -119,18 +119,18 @@ interface LJPAProjection<T : BaseModel> {
         }
 
         val countQuery = manager.createQuery(count(spec))
-        val totalCount = countQuery.singleResult
-        if (totalCount == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
+        val total = countQuery.singleResult
+        if (total == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
 
         val ids = fetchIdsForPagination(spec, clazz)
-        if (ids.isEmpty()) return PageImpl(emptyList(), spec.ofSortedPageable(), totalCount)
+        if (ids.isEmpty()) return PageImpl(emptyList(), spec.ofSortedPageable(), total)
 
         val results = fetchEntitiesByIds(ids, spec, clazz)
 
         val entityMap = results.associateBy { it.getId() }
         val sortedResults = ids.mapNotNull { entityMap[it] }
 
-        return PageImpl(sortedResults, spec.ofSortedPageable(), totalCount)
+        return PageImpl(sortedResults, spec.ofSortedPageable(), total)
     }
 
     fun <P : BaseModel> findAll(spec: BaseSpec.JPA<T>, projectionClass: Class<P>): Page<P> {

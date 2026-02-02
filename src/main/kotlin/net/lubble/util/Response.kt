@@ -236,19 +236,19 @@ class Response() {
  */
 @JsonPropertyOrder("current", "size", "totalItems", "totalPages", "hasNext", "hasPrevious", "items")
 data class PageResponse(
-    @JsonProperty("current")
+    @field:JsonProperty("current")
     val current: Int,
-    @JsonProperty("size")
+    @field:JsonProperty("size")
     val size: Int,
-    @JsonProperty("totalItems")
+    @field:JsonProperty("totalItems")
     val totalItems: Long,
-    @JsonProperty("totalPages")
+    @field:JsonProperty("totalPages")
     val totalPages: Int,
-    @JsonProperty("hasNext")
+    @field:JsonProperty("hasNext")
     val hasNext: Boolean,
-    @JsonProperty("hasPrevious")
+    @field:JsonProperty("hasPrevious")
     val hasPrevious: Boolean,
-    @JsonProperty("items")
+    @field:JsonProperty("items")
     val items: Collection<*>
 ) {
     /**

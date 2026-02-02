@@ -34,11 +34,7 @@ interface LElasticNativeProjection<T : BaseModel> {
 
         val finalSort = scoreSort.and(originalPageable.sort)
 
-        val pageable = PageRequest.of(
-            originalPageable.pageNumber,
-            originalPageable.pageSize,
-            finalSort
-        )
+        val pageable = spec.ofPageable(finalSort)
 
         val queryBuilder = spec.nativeQueryBuilder(spec.param)
             .withQuery(elasticQuery)

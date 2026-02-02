@@ -53,7 +53,7 @@ open class SpecTool(private val base: ParameterModel) {
         } else {
             Sort.unsorted()
         }
-        return base.ofPageable(sort)
+        return ofPageable(sort)
     }
 
     /**

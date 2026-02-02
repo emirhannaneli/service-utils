@@ -59,6 +59,7 @@ interface LMongoProjection<T : BaseModel> {
         val clazz = spec.clazz
         val query = projection(spec)
         val total = template.count(query, clazz)
+        if (total == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
         query.with(spec.ofSortedPageable())
         val content = template.find(query, clazz)
         return PageImpl(content, spec.ofSortedPageable(), total)
