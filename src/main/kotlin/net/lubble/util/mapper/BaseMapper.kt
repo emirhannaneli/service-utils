@@ -163,7 +163,6 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @param target Target DTO
      */
     fun apply(source: BaseModel, target: R) {
-        target.setId(source.getId())
         target.pk = source.pk
         target.sk = source.sk
         target.archived = source.archived
