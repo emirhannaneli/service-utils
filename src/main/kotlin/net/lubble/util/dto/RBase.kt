@@ -20,21 +20,18 @@ import java.time.Instant
  * - createdAt: The date and time when the DTO was created.
  */
 open class RBase {
-    @JsonProperty(index = Int.MIN_VALUE)
     open var pk: Long? = null
 
-    @JsonProperty(index = Int.MIN_VALUE + 1)
     @JsonSerialize(using = LKToStringConverter.Serializer.Json::class)
     @JsonDeserialize(using = LKToStringConverter.Deserializer.Json::class)
     open var sk: LK? = null
 
-    @JsonProperty(index = Int.MAX_VALUE - 3)
     open var updatedAt: Instant? = null
-    @JsonProperty(index = Int.MAX_VALUE - 2)
+
     open var createdAt: Instant? = null
-    @JsonProperty(index = Int.MAX_VALUE - 1)
+
     open var createdBy: Any? = null
-    @JsonProperty(index = Int.MAX_VALUE - 1)
+
     open var updatedBy: Any? = null
 
     @JsonIgnore
