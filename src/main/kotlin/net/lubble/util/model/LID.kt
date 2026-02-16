@@ -158,4 +158,15 @@ open class LID(
         result = 31 * result + sk.hashCode()
         return result
     }
+
+    companion object{
+        @JvmStatic
+        fun lid(model: BaseModel): LID {
+            return LID(
+                id = model.getId(),
+                pk = model.pk,
+                sk = model.sk
+            )
+        }
+    }
 }
