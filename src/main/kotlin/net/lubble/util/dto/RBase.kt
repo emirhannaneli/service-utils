@@ -1,11 +1,10 @@
 package net.lubble.util.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
+import tools.jackson.databind.annotation.JsonDeserialize
+import tools.jackson.databind.annotation.JsonSerialize
 import java.time.Instant
 
 
@@ -22,8 +21,8 @@ import java.time.Instant
 open class RBase {
     open var pk: Long? = null
 
-    @JsonSerialize(using = LKToStringConverter.Serializer.Json::class)
-    @JsonDeserialize(using = LKToStringConverter.Deserializer.Json::class)
+    @JsonSerialize(using = LKToStringConverter.Serializer::class)
+    @JsonDeserialize(using = LKToStringConverter.Deserializer::class)
     open var sk: LK? = null
 
     open var updatedAt: Instant? = null

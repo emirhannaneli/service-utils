@@ -4,6 +4,7 @@ import net.lubble.util.MapperRegistryHolder
 import net.lubble.util.dto.RBase
 import net.lubble.util.model.BaseDocumented
 import net.lubble.util.model.BaseModel
+import net.lubble.util.model.LID
 import org.springframework.data.domain.Page
 import tools.jackson.databind.ObjectMapper
 
@@ -131,6 +132,18 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      * @return List of DTO objects
      */
     fun map(source: Page<T>): List<R> = source.content.map(this::map)
+
+    /**
+     * Maps the properties of the Documented Entity (type T) to a new LID (type LID).
+     * @param source Source object
+     * @return Newly created LID
+     */
+    fun lid(source: T): LID{
+        return LID(
+            pk = source.pk,
+            sk = source.sk
+        )
+    }
 
     /**
      * Maps the properties of the Documented Entity (type T) to a new Documented DTO (type R).

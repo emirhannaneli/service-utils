@@ -1,15 +1,14 @@
 package net.lubble.util.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import de.huxhorn.sulky.ulid.ULID
 import jakarta.persistence.*
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
 import org.springframework.data.elasticsearch.annotations.ValueConverter
 import org.springframework.data.mongodb.core.index.Indexed
+import tools.jackson.databind.annotation.JsonDeserialize
+import tools.jackson.databind.annotation.JsonSerialize
 import java.util.*
 import kotlin.math.abs
 import org.springframework.data.elasticsearch.annotations.Field as ElasticField
@@ -28,7 +27,6 @@ open class LID(
     @MongoField("pk")
     @Basic(fetch = FetchType.EAGER)
     @ElasticField("pk", type = ElasticFieldType.Keyword, index = true)
-    @field:JsonProperty(index = Int.MIN_VALUE)
     @Column(name = "pk", unique = true, nullable = false, updatable = false, length = 12)
     open var pk: Long,
 
@@ -46,9 +44,8 @@ open class LID(
         length = 11,
         columnDefinition = "varchar(11)"
     )
-    @field:JsonProperty(index = Int.MIN_VALUE + 1)
-    @field:JsonSerialize(using = LKToStringConverter.Serializer.Json::class)
-    @field:JsonDeserialize(using = LKToStringConverter.Deserializer.Json::class)
+    @field:JsonSerialize(using = LKToStringConverter.Serializer::class)
+    @field:JsonDeserialize(using = LKToStringConverter.Deserializer::class)
     open var sk: LK,
 ) {
 

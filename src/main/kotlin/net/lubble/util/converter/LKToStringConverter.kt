@@ -1,7 +1,5 @@
 package net.lubble.util.converter
 
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.SerializerProvider
 import jakarta.persistence.AttributeConverter
 import net.lubble.util.LK
 import org.springframework.core.convert.converter.Converter
@@ -46,17 +44,6 @@ class LKToStringConverter : AttributeConverter<LK, String>, PropertyValueConvert
         ) {
             gen.writeString(value.toString())
         }
-
-        class Json : JsonSerializer<LK>() {
-
-            override fun serialize(
-                value: LK,
-                gen: com.fasterxml.jackson.core.JsonGenerator,
-                serializers: SerializerProvider
-            ) {
-                gen.writeString(value.toString())
-            }
-        }
     }
 
     class Deserializer : ValueDeserializer<LK>(), Converter<String, LK> {
@@ -70,16 +57,6 @@ class LKToStringConverter : AttributeConverter<LK, String>, PropertyValueConvert
 
         override fun convert(source: String): LK {
             return LK(source)
-        }
-
-        class Json : com.fasterxml.jackson.databind.JsonDeserializer<LK>() {
-            override fun deserialize(
-                p: com.fasterxml.jackson.core.JsonParser,
-                ctxt: com.fasterxml.jackson.databind.DeserializationContext
-            ): LK {
-                val value = p.valueAsString
-                return LK(value)
-            }
         }
     }
 }
