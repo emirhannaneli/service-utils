@@ -1,18 +1,9 @@
 package net.lubble.util.spec.tool
 
-import jakarta.persistence.Column
-import jakarta.persistence.criteria.*
-import net.lubble.util.LK
 import net.lubble.util.model.ParameterModel
-import net.lubble.util.model.SortOrder
+import net.lubble.util.model.SpecOptions
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import org.springframework.data.elasticsearch.core.query.Query
-import org.springframework.data.jpa.domain.Specification
-import org.springframework.data.elasticsearch.core.query.Criteria as ElasticCriteria
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery as ElasticQuery
-import org.springframework.data.mongodb.core.query.Criteria as MongoCriteria
-import org.springframework.data.mongodb.core.query.Query as MongoQuery
 
 
 /**
@@ -21,6 +12,8 @@ import org.springframework.data.mongodb.core.query.Query as MongoQuery
  * @property base The base parameter model.
  */
 open class SpecTool(private val base: ParameterModel) {
+    open val options: SpecOptions? = null
+
     /**
      * Returns the pageable object from the base parameter model.
      */
@@ -30,13 +23,14 @@ open class SpecTool(private val base: ParameterModel) {
 
     fun ofSortedPageable(): Pageable {
         val sort = if (base.sortBy != null) {
-            val sortFields = base.sortBy!!.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val sortFields = base.sortBy!!.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
+            val filteredFields = options?.sort?.filterAllowedFields(sortFields) ?: sortFields
             val sortOrders = base.getSortOrderValue().split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            
-            if (sortFields.isEmpty()) {
+
+            if (filteredFields.isEmpty()) {
                 Sort.unsorted()
             } else {
-                val sortOrdersList = sortFields.mapIndexed { index, field ->
+                val sortOrdersList = filteredFields.mapIndexed { index, field ->
                     val direction = if (index < sortOrders.size) {
                         try {
                             Sort.Direction.valueOf(sortOrders[index].uppercase())

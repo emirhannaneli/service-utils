@@ -3,6 +3,7 @@ package net.lubble.util.spec.tool
 import net.lubble.util.LK
 import net.lubble.util.model.BaseModel
 import net.lubble.util.model.ParameterModel
+import net.lubble.util.model.SpecOptions
 import net.lubble.util.spec.tool.SpecTool.IDType
 import net.lubble.util.spec.tool.SpecTool.SearchType
 import org.springframework.data.domain.Sort
@@ -52,6 +53,12 @@ interface MongoTool<T : BaseModel> {
     var archived: Boolean?
 
     /**
+     * Optional spec options (e.g. options.sort for allowed/disallowed fields). When null, no filtering is applied.
+     */
+    val options: SpecOptions?
+        get() = null
+
+    /**
      * Returns the query for search.
      */
     fun ofSearch(): Query
@@ -85,12 +92,13 @@ interface MongoTool<T : BaseModel> {
         val orders = mutableListOf<Sort.Order>()
 
         param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
-            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
+            val filteredFields = options?.sort?.filterAllowedFields(sortFields) ?: sortFields
             val sortOrderValue = param.getSortOrderValue()
             val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
-            if (sortFields.isNotEmpty()) {
-                sortFields.forEachIndexed { index, sortField ->
+            if (filteredFields.isNotEmpty()) {
+                filteredFields.forEachIndexed { index, sortField ->
                     val isValid = fields.any { field ->
                         val columnValue = field.getAnnotation(Field::class.java)?.name
                         field.name == sortField || columnValue == sortField

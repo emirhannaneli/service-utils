@@ -9,6 +9,7 @@ import jakarta.persistence.Entity
 import net.lubble.util.AppContextUtil
 import net.lubble.util.model.BaseModel
 import net.lubble.util.model.ParameterModel
+import net.lubble.util.model.SpecOptions
 import net.lubble.util.spec.tool.*
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.TypeVariable
@@ -20,6 +21,7 @@ open class BaseSpec {
      */
     abstract class JPA<T : BaseModel>(
         open val param: ParameterModel,
+        override var options: SpecOptions = SpecOptions(),
         var fields: Collection<String>? = null,
         var joins: Collection<String>? = null,
     ) : SpecTool(param), JPATool<T> {
@@ -127,6 +129,7 @@ open class BaseSpec {
      */
     abstract class Mongo<T : BaseModel>(
         open val param: ParameterModel,
+        override var options: SpecOptions = SpecOptions(),
         var fields: Collection<String>? = null,
     ) : SpecTool(param), MongoTool<T> {
         @Suppress("UNCHECKED_CAST")
@@ -141,6 +144,7 @@ open class BaseSpec {
      */
     abstract class Elastic<T : BaseModel>(
         open val param: ParameterModel,
+        override var options: SpecOptions = SpecOptions(),
         var fields: Collection<String>? = null
     ) : SpecTool(param), ElasticTool<T> {
         @Suppress("UNCHECKED_CAST")
@@ -156,6 +160,7 @@ open class BaseSpec {
      */
     abstract class ElasticNative<T : BaseModel>(
         open val param: ParameterModel,
+        override var options: SpecOptions = SpecOptions(),
         var fields: Collection<String>? = null
     ) : SpecTool(param), ElasticNativeTool<T> {
         @Suppress("UNCHECKED_CAST")

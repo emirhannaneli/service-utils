@@ -3,6 +3,7 @@ package net.lubble.util.spec.tool
 import net.lubble.util.LK
 import net.lubble.util.model.BaseModel
 import net.lubble.util.model.ParameterModel
+import net.lubble.util.model.SpecOptions
 import org.springframework.data.domain.Sort
 import org.springframework.data.elasticsearch.annotations.Field
 import org.springframework.data.elasticsearch.annotations.FieldType
@@ -30,6 +31,12 @@ interface ElasticTool<T : BaseModel> {
     var deleted: Boolean?
     var archived: Boolean?
 
+    /**
+     * Optional spec options (e.g. options.sort for allowed/disallowed fields). When null, no filtering is applied.
+     */
+    val options: SpecOptions?
+        get() = null
+
     fun ofSearch(): Criteria
 
     fun defaultCriteria(): Criteria {
@@ -55,11 +62,12 @@ interface ElasticTool<T : BaseModel> {
         val orders = mutableListOf<Sort.Order>()
 
         param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
-            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
+            val filteredFields = options?.sort?.filterAllowedFields(sortFields) ?: sortFields
             val sortOrderParam = param.getSortOrderValue().uppercase()
             val sortOrders = sortOrderParam.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
-            sortFields.forEachIndexed { index, sortField ->
+            filteredFields.forEachIndexed { index, sortField ->
                 val resolvedField = resolveSortField(clazz, sortField)
 
                 if (resolvedField != null) {
