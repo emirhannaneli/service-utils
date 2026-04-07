@@ -40,6 +40,7 @@ class SecuredParamProcessor {
         context.setVariable("authentication", auth)
 
         point.args.forEach { arg ->
+            if (arg == null) return@forEach
             arg::class.java.declaredFields.forEach { field ->
                 val securedParam = field.getAnnotation(PreAuthorizeParam::class.java) ?: return@forEach
 
@@ -48,12 +49,14 @@ class SecuredParamProcessor {
                 val value = field.get(arg) ?: return@forEach
                 context.setVariable(field.name, value)
 
-                if (auth !is AnonymousAuthenticationToken && auth?.isAuthenticated == true)
+                if (auth !is AnonymousAuthenticationToken && auth?.isAuthenticated == true) {
                     parser.parseExpression(securedParam.value).getValue(context, Boolean::class.java)
                         ?.let { hasPermission ->
                             if (!hasPermission) throw AccessDenied()
                         }
-                else throw AccessDenied()
+                } else {
+                    throw AccessDenied()
+                }
             }
         }
     }
@@ -75,11 +78,13 @@ class SecuredParamProcessor {
 
         if (result is ResponseEntity<*>) {
             result.body?.let { body ->
-                if (body is PageResponse)
+                if (body is PageResponse) {
                     body.items.forEach { item ->
                         item?.let { sanitizeFields(it, context, parser, visited) }
                     }
-                else sanitizeFields(body, context, parser, visited)
+                } else {
+                    sanitizeFields(body, context, parser, visited)
+                }
             }
         } else {
             sanitizeFields(result, context, parser, visited)
@@ -93,7 +98,12 @@ class SecuredParamProcessor {
      * @param context the evaluation context
      * @param parser the Spring-EL expression parser
      */
-    private fun sanitizeFields(obj: Any, context: StandardEvaluationContext, parser: SpelExpressionParser, visited: MutableSet<Any> = Collections.newSetFromMap(IdentityHashMap<Any, Boolean>())) {
+    private fun sanitizeFields(
+        obj: Any,
+        context: StandardEvaluationContext,
+        parser: SpelExpressionParser,
+        visited: MutableSet<Any> = Collections.newSetFromMap(IdentityHashMap()),
+    ) {
         if (!visited.add(obj)) return
 
         val fields = obj::class.java.declaredFields
@@ -103,8 +113,9 @@ class SecuredParamProcessor {
 
             val value = field.get(obj) ?: return@forEach
 
-            if (!field.type.isPrimitive && !field.type.isEnum && field.type != String::class.java)
-                sanitizeFields(value, context, parser,visited)
+            if (!field.type.isPrimitive && !field.type.isEnum && field.type != String::class.java) {
+                sanitizeFields(value, context, parser, visited)
+            }
 
             val securedParam = field.getAnnotation(PostAuthorizeParam::class.java) ?: return@forEach
             val expression = securedParam.value
@@ -115,7 +126,9 @@ class SecuredParamProcessor {
                 val hasPermission = parser.parseExpression(expression).getValue(context, Boolean::class.java) == true
 
                 if (!hasPermission) censorField(field, obj)
-            } else censorField(field, obj)
+            } else {
+                censorField(field, obj)
+            }
         }
     }
 
