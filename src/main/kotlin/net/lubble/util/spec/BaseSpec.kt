@@ -192,7 +192,11 @@ open class BaseSpec {
             return when (type) {
                 is Class<*> -> type as Class<T>
                 is ParameterizedType -> type.rawType as Class<T>
-                is TypeVariable<*> -> BaseModel::class.java as Class<T>
+                is TypeVariable<*> -> when (val bound = type.bounds.firstOrNull()) {
+                    is Class<*> -> bound as Class<T>
+                    is ParameterizedType -> bound.rawType as Class<T>
+                    else -> BaseModel::class.java as Class<T>
+                }
                 else -> throw IllegalStateException("Cannot resolve generic type for $clazz")
             }
         }

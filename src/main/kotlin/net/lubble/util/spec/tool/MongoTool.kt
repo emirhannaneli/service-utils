@@ -6,26 +6,14 @@ import net.lubble.util.model.ParameterModel
 import net.lubble.util.model.SpecOptions
 import net.lubble.util.spec.tool.SpecTool.IDType
 import net.lubble.util.spec.tool.SpecTool.SearchType
-import org.springframework.data.domain.Sort
-import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
-import java.util.concurrent.ConcurrentHashMap
-// Reflection Field ile Mongo Field karışmaması için alias kullanıyoruz
-import java.lang.reflect.Field as ReflectField
 
 /**
  * MongoTool interface defines the specifications for MongoDB models.
  */
 interface MongoTool<T : BaseModel> {
 
-    companion object {
-        private val fieldCache = ConcurrentHashMap<Class<*>, Array<ReflectField>>()
-
-        private fun getCachedFields(clazz: Class<*>): Array<ReflectField> {
-            return fieldCache.getOrPut(clazz) { clazz.declaredFields }
-        }
-    }
 
     /**
      * The class of the entity.
@@ -86,43 +74,6 @@ interface MongoTool<T : BaseModel> {
 
         archived?.let {
             query.addCriteria(Criteria.where("archived").`is`(it))
-        }
-
-        val fields = getCachedFields(clazz)
-        val orders = mutableListOf<Sort.Order>()
-
-        param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
-            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
-            val filteredFields = options?.sort?.filterAllowedFields(sortFields) ?: sortFields
-            val sortOrderValue = param.getSortOrderValue()
-            val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-
-            if (filteredFields.isNotEmpty()) {
-                filteredFields.forEachIndexed { index, sortField ->
-                    val isValid = fields.any { field ->
-                        val columnValue = field.getAnnotation(Field::class.java)?.name
-                        field.name == sortField || columnValue == sortField
-                    }
-
-                    if (isValid) {
-                        val directionStr = if (index < sortOrders.size) sortOrders[index] else sortOrderValue
-
-                        val direction = try {
-                            Sort.Direction.valueOf(directionStr.uppercase())
-                        } catch (e: IllegalArgumentException) {
-                            Sort.Direction.ASC
-                        }
-
-                        orders.add(Sort.Order(direction, sortField))
-                    }
-                }
-            }
-        }
-
-        if (orders.isNotEmpty()) {
-            query.with(Sort.by(orders))
-        } else {
-            query.with(Sort.by(Sort.Direction.DESC, "pk"))
         }
 
         return query

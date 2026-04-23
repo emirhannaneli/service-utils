@@ -45,7 +45,8 @@ interface LMongoProjection<T : BaseModel> {
     fun fetchAll(spec: BaseSpec.Mongo<T>): Collection<T> {
         val clazz = spec.clazz
         val query = projection(spec)
-
+        val sort = spec.ofSortedPageable().sort
+        if (sort.isSorted) query.with(sort)
         return template.find(query, clazz)
     }
 
@@ -58,11 +59,12 @@ interface LMongoProjection<T : BaseModel> {
     fun findAll(spec: BaseSpec.Mongo<T>): Page<T> {
         val clazz = spec.clazz
         val query = projection(spec)
-        val total = template.count(query, clazz)
-        if (total == 0L) return PageImpl(emptyList(), spec.ofSortedPageable(), 0L)
-        query.with(spec.ofSortedPageable())
+        val total = template.count(Query.of(query).limit(0).skip(0), clazz)
+        val pageable = spec.ofSortedPageable()
+        if (total == 0L) return PageImpl(emptyList(), pageable, 0L)
+        query.with(pageable)
         val content = template.find(query, clazz)
-        return PageImpl(content, spec.ofSortedPageable(), total)
+        return PageImpl(content, pageable, total)
     }
 
     /**
