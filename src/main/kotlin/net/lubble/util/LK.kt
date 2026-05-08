@@ -18,11 +18,11 @@ class LK : Comparable<LK>, Serializable {
         val random = SecureRandom.getInstance("DEFAULT", "BC")
 
         key.clear()
-        repeat(2) { i ->
+        repeat(3) { i ->
             repeat(5) {
                 key.append(characters[random.nextInt(characters.length)])
             }
-            if (i < 1) key.append("-")
+            if (i < 2) key.append("-")
         }
         value = key.toString()
     }
