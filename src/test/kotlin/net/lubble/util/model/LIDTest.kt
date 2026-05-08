@@ -40,8 +40,6 @@ class LIDTest {
 
     @Test
     fun `default LID constructor uses newPk masked range`() {
-        val pkMax: Long = (1L shl 53) - 1
-
         repeat(1_000) {
             val lid = LID()
 
