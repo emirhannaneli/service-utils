@@ -1,0 +1,33 @@
+package net.lubble.util.model
+
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+
+class LIDTest {
+
+    private val pkMax: Long = (1L shl 53) - 1   // 9_007_199_254_740_991
+
+    @Test
+    fun `newPk returns values within zero to two pow fifty three minus one inclusive`() {
+        repeat(10_000) {
+            val pk = LID.newPk()
+
+            assertThat(pk).isBetween(0L, pkMax)
+        }
+    }
+
+    @Test
+    fun `newPk produces no collisions across one hundred thousand invocations`() {
+        val pks = (1..100_000).map { LID.newPk() }.toSet()
+
+        assertThat(pks).hasSize(100_000)
+    }
+
+    @Test
+    fun `newPk never returns negative even at extreme distribution edges`() {
+        // SecureRandom.nextLong() can produce Long.MIN_VALUE; mask must still keep result non-negative.
+        repeat(100_000) {
+            assertThat(LID.newPk()).isNotNegative()
+        }
+    }
+}
