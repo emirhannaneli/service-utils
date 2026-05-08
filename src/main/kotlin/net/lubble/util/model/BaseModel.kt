@@ -12,8 +12,6 @@ import org.springframework.data.elasticsearch.annotations.DateFormat
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import org.springframework.data.mongodb.core.index.Indexed
 import java.time.Instant
-import java.util.*
-import kotlin.math.abs
 import org.springframework.data.elasticsearch.annotations.Field as ElasticField
 import org.springframework.data.elasticsearch.annotations.FieldType as ElasticFieldType
 import org.springframework.data.mongodb.core.mapping.Field as MongoField
@@ -87,10 +85,7 @@ open class BaseModel(
      * */
     constructor() : this(
         id = ULID().nextULID(),
-        pk = String.format(
-            "%012d",
-            abs(UUID.randomUUID().mostSignificantBits - (UUID.randomUUID().leastSignificantBits + System.currentTimeMillis())) % 1000000000000
-        ).toLong(),
+        pk = LID.newPk(),
         sk = LK()
     )
 

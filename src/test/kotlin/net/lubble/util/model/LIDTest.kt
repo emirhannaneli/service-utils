@@ -48,4 +48,14 @@ class LIDTest {
             assertThat(lid.getId()).hasSize(26)
         }
     }
+
+    @Test
+    fun `default BaseModel constructor delegates pk to LID newPk`() {
+        repeat(1_000) {
+            val model = BaseModel()
+
+            assertThat(model.pk).isBetween(0L, pkMax)
+            assertThat(model.sk.value).matches(Regex("^[a-z0-9]{5}-[a-z0-9]{5}-[a-z0-9]{5}$").toPattern())
+        }
+    }
 }
