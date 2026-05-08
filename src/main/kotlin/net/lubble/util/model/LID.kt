@@ -5,13 +5,11 @@ import de.huxhorn.sulky.ulid.ULID
 import jakarta.persistence.*
 import net.lubble.util.LK
 import net.lubble.util.converter.LKToStringConverter
-import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.springframework.data.elasticsearch.annotations.ValueConverter
 import org.springframework.data.mongodb.core.index.Indexed
 import tools.jackson.databind.annotation.JsonDeserialize
 import tools.jackson.databind.annotation.JsonSerialize
 import java.security.SecureRandom
-import java.security.Security
 import java.util.*
 import kotlin.math.abs
 import org.springframework.data.elasticsearch.annotations.Field as ElasticField
@@ -163,12 +161,7 @@ open class LID(
     }
 
     companion object {
-        private val SECURE_RANDOM by lazy {
-            if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-                Security.addProvider(BouncyCastleProvider())
-            }
-            SecureRandom.getInstance("DEFAULT", "BC")
-        }
+        private val SECURE_RANDOM by lazy { SecureRandom.getInstance("DEFAULT", "BC") }
         private const val PK_MASK: Long = (1L shl 53) - 1
 
         @JvmStatic

@@ -5,6 +5,13 @@ import org.junit.jupiter.api.Test
 
 class LIDTest {
 
+    companion object {
+        init {
+            // Force LK class load to register BouncyCastle provider
+            Class.forName("net.lubble.util.LK")
+        }
+    }
+
     private val pkMax: Long = (1L shl 53) - 1   // 9_007_199_254_740_991
 
     @Test
