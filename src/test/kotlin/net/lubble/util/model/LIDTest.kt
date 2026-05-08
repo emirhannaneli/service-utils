@@ -37,4 +37,17 @@ class LIDTest {
             assertThat(LID.newPk()).isNotNegative()
         }
     }
+
+    @Test
+    fun `default LID constructor uses newPk masked range`() {
+        val pkMax: Long = (1L shl 53) - 1
+
+        repeat(1_000) {
+            val lid = LID()
+
+            assertThat(lid.pk).isBetween(0L, pkMax)
+            assertThat(lid.sk.value).matches(Regex("^[a-z0-9]{5}-[a-z0-9]{5}-[a-z0-9]{5}$").toPattern())
+            assertThat(lid.getId()).hasSize(26)
+        }
+    }
 }

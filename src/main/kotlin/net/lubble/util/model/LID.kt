@@ -10,8 +10,6 @@ import org.springframework.data.mongodb.core.index.Indexed
 import tools.jackson.databind.annotation.JsonDeserialize
 import tools.jackson.databind.annotation.JsonSerialize
 import java.security.SecureRandom
-import java.util.*
-import kotlin.math.abs
 import org.springframework.data.elasticsearch.annotations.Field as ElasticField
 import org.springframework.data.elasticsearch.annotations.FieldType as ElasticFieldType
 import org.springframework.data.mongodb.core.mapping.Field as MongoField
@@ -28,7 +26,7 @@ open class LID(
     @MongoField("pk")
     @Basic(fetch = FetchType.EAGER)
     @ElasticField("pk", type = ElasticFieldType.Keyword, index = true)
-    @Column(name = "pk", unique = true, nullable = false, updatable = false, length = 12)
+    @Column(name = "pk", unique = true, nullable = false, updatable = false, length = 16)
     open var pk: Long,
 
     @Indexed(unique = true)
@@ -42,8 +40,8 @@ open class LID(
         unique = true,
         updatable = false,
         nullable = false,
-        length = 11,
-        columnDefinition = "varchar(11)"
+        length = 17,
+        columnDefinition = "varchar(17)"
     )
     @field:JsonSerialize(using = LKToStringConverter.Serializer::class)
     @field:JsonDeserialize(using = LKToStringConverter.Deserializer::class)
@@ -55,10 +53,7 @@ open class LID(
      */
     constructor() : this(
         id = ULID().nextULID(),
-        pk = String.format(
-            "%012d",
-            abs(UUID.randomUUID().mostSignificantBits - (UUID.randomUUID().leastSignificantBits + System.currentTimeMillis())) % 1000000000000
-        ).toLong(),
+        pk = newPk(),
         sk = LK()
     )
 
