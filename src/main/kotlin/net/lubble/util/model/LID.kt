@@ -22,14 +22,14 @@ open class LID(
     @Column(name = "id", unique = true, updatable = false, nullable = false, length = 26)
     private var id: String,
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, sparse = true)
     @MongoField("pk")
     @Basic(fetch = FetchType.EAGER)
     @ElasticField("pk", type = ElasticFieldType.Keyword, index = true)
     @Column(name = "pk", unique = true, nullable = false, updatable = false, length = 16)
     open var pk: Long,
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, sparse = true)
     @Basic(fetch = FetchType.EAGER)
     @MongoField("sk", targetType = MongoFieldType.STRING)
     @ElasticField("sk", type = ElasticFieldType.Keyword, index = true)
