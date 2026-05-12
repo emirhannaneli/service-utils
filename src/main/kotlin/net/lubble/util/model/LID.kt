@@ -10,6 +10,8 @@ import org.springframework.data.mongodb.core.index.Indexed
 import tools.jackson.databind.annotation.JsonDeserialize
 import tools.jackson.databind.annotation.JsonSerialize
 import java.security.SecureRandom
+import java.security.Security
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.springframework.data.elasticsearch.annotations.Field as ElasticField
 import org.springframework.data.elasticsearch.annotations.FieldType as ElasticFieldType
 import org.springframework.data.mongodb.core.mapping.Field as MongoField
@@ -156,7 +158,16 @@ open class LID(
     }
 
     companion object {
-        private val SECURE_RANDOM by lazy { SecureRandom.getInstance("DEFAULT", "BC") }
+        // Lazy + cached: BC provider is registered (idempotent) and the
+        // SecureRandom is built once per JVM, not per LID. Allocating a new
+        // BC-backed SecureRandom in a hot path is expensive (8-10s tail
+        // latencies have been observed under load).
+        private val SECURE_RANDOM: SecureRandom by lazy {
+            if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                Security.addProvider(BouncyCastleProvider())
+            }
+            SecureRandom.getInstance("DEFAULT", "BC")
+        }
         private const val PK_MASK: Long = (1L shl 53) - 1
 
         @JvmStatic

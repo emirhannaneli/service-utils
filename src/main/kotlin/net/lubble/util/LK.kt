@@ -14,13 +14,11 @@ class LK : Comparable<LK>, Serializable {
     private var key: StringBuilder = StringBuilder()
 
     constructor() {
-        val characters = "abcdefghijklmnopqrstuvwxyz0123456789"
-        val random = SecureRandom.getInstance("DEFAULT", "BC")
-
+        val random = RANDOM
         key.clear()
         repeat(3) { i ->
             repeat(5) {
-                key.append(characters[random.nextInt(characters.length)])
+                key.append(CHARS[random.nextInt(CHARS.length)])
             }
             if (i < 2) key.append("-")
         }
@@ -34,10 +32,16 @@ class LK : Comparable<LK>, Serializable {
     }
 
     companion object {
-        init {
+        private const val CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
+
+        // BC's "DEFAULT" SecureRandom is expensive to build (provider lookup +
+        // service instantiation + entropy seeding); cache one instance per JVM
+        // instead of allocating a new one in every LK() constructor.
+        private val RANDOM: SecureRandom by lazy {
             if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
                 Security.addProvider(BouncyCastleProvider())
             }
+            SecureRandom.getInstance("DEFAULT", "BC")
         }
     }
 

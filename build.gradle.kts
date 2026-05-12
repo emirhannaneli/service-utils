@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "net.lubble"
-version = "2.0.2"
+version = "2.0.5"
 description = "Lubble Utility Library"
 
 val snakeYamlVersion = "2.5"
