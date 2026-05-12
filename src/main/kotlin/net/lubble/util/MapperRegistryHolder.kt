@@ -16,6 +16,12 @@ import java.util.IdentityHashMap
  * be cleared between requests via [clear]. Lubble installs a `OncePerRequestFilter`
  * that does this automatically; async event handlers that invoke mappers must call
  * [clear] when their work completes.
+ *
+ * When an entity is mutated in-memory between two mapping calls (e.g. an update
+ * mutation followed by re-mapping the same managed instance), the cache would
+ * otherwise return the stale pre-mutation DTO. Callers that mutate an entity
+ * must invoke [invalidate] for that entity before re-mapping it.
+ * [net.lubble.util.mapper.BaseMapper.map] (U, T) does this automatically.
  */
 class MapperRegistryHolder private constructor() {
     private val registry = ThreadLocal.withInitial { IdentityHashMap<Any, RBase>() }
@@ -30,6 +36,16 @@ class MapperRegistryHolder private constructor() {
 
         fun <R : RBase> put(key: Any, value: R) {
             instance.registry.get()[key] = value
+        }
+
+        /**
+         * Drops the cached DTO for [key] so the next [get] returns null and the
+         * next [net.lubble.util.mapper.BaseMapper.map] re-runs `mapping` against
+         * the current entity state. Use this whenever you mutate an entity in
+         * memory and intend to re-map it.
+         */
+        fun invalidate(key: Any) {
+            instance.registry.get().remove(key)
         }
 
         fun clear() {

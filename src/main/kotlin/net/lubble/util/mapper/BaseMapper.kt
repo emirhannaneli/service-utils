@@ -39,10 +39,20 @@ abstract class BaseProjectionMapper<T : BaseModel, V : BaseModel, R : RBase, U :
 interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
     /**
      * Maps the properties of the update DTO (type U) to the Entity (type T).
+     *
+     * The destination entry is invalidated from [MapperRegistryHolder] before the
+     * mapping runs — the entity is about to be mutated, so any cached DTO for it
+     * is now stale and a subsequent [map] (T) call must re-run [mapping].
+     * Overrides that don't delegate to this default must call
+     * [MapperRegistryHolder.invalidate] on `destination` themselves.
+     *
      * @param source Source object
      * @param destination Destination object
      */
-    fun map(source: U, destination: T) = objectMap(source, destination)
+    fun map(source: U, destination: T) {
+        MapperRegistryHolder.invalidate(destination)
+        objectMap(source, destination)
+    }
 
     /**
      * Custom function that maps the properties of the source object to the destination object.
