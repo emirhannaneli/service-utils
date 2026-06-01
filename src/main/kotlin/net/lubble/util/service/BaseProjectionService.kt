@@ -13,7 +13,27 @@ import org.springframework.data.domain.Page
  * @param U The update type.
  * @param S The specification type.
  */
-interface BaseService<T : BaseModel, C, U, S> : BaseProjectionService<T, T, C, U, S>
+interface BaseService<T : BaseModel, C, U, S> : BaseProjectionService<T, T, C, U, S> {
+
+    /**
+     * Archives all entities matching [spec] (sets archived = true) and saves them.
+     * IMPORTANT: [spec] must NOT set `fields` (projection mode returns detached
+     * copies that cannot be persisted). Returns the processed entities.
+     */
+    fun archiveAll(spec: S): Collection<T> = fetchAll(spec).onEach { it.archived = true; save(it) }
+
+    /** Unarchives all entities matching [spec] (sets archived = false) and saves them. */
+    fun unarchiveAll(spec: S): Collection<T> = fetchAll(spec).onEach { it.archived = false; save(it) }
+
+    /** Soft-deletes all entities matching [spec] (sets deleted = true) and saves them. */
+    fun softDeleteAll(spec: S): Collection<T> = fetchAll(spec).onEach { it.deleted = true; save(it) }
+
+    /** Restores all entities matching [spec] (sets deleted = false) and saves them. */
+    fun restoreAll(spec: S): Collection<T> = fetchAll(spec).onEach { it.deleted = false; save(it) }
+
+    /** Permanently (hard) deletes all entities matching [spec]. Returns the deleted entities. */
+    fun deletePermanentlyAll(spec: S): Collection<T> = fetchAll(spec).onEach { delete(it) }
+}
 
 /**
  * This interface defines the basic CRUD operations for a service with projections.
