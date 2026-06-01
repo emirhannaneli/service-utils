@@ -4,6 +4,10 @@ import jakarta.validation.Valid
 import net.lubble.util.PageResponse
 import net.lubble.util.Response
 import net.lubble.util.dto.RBase
+import net.lubble.util.dto.BulkIdRequest
+import net.lubble.util.dto.BulkResponse
+import net.lubble.util.dto.BulkFailure
+import net.lubble.util.model.BaseModel
 import net.lubble.util.model.ParameterModel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -137,6 +141,52 @@ interface BaseController<C : Any, U : Any, R : RBase, P : ParameterModel> {
     @DeleteMapping("{id}/permanently")
     fun deletePermanently(@PathVariable id: String): ResponseEntity<Response> {
         throw UnsupportedOperationException()
+    }
+
+    /**
+     * Bulk soft-delete. Each id may be a pk or sk string.
+     * @return per-id success/failure report.
+     */
+    @PostMapping("bulk/delete")
+    fun bulkDelete(@RequestBody req: BulkIdRequest): ResponseEntity<BulkResponse> {
+        throw UnsupportedOperationException()
+    }
+
+    /** Bulk archive. */
+    @PostMapping("bulk/archive")
+    fun bulkArchive(@RequestBody req: BulkIdRequest): ResponseEntity<BulkResponse> {
+        throw UnsupportedOperationException()
+    }
+
+    /** Bulk unarchive. */
+    @PostMapping("bulk/unarchive")
+    fun bulkUnarchive(@RequestBody req: BulkIdRequest): ResponseEntity<BulkResponse> {
+        throw UnsupportedOperationException()
+    }
+
+    /** Bulk restore from recycle bin. */
+    @PostMapping("bulk/restore")
+    fun bulkRestore(@RequestBody req: BulkIdRequest): ResponseEntity<BulkResponse> {
+        throw UnsupportedOperationException()
+    }
+
+    /** Bulk permanent (hard) delete. */
+    @PostMapping("bulk/permanently")
+    fun bulkDeletePermanently(@RequestBody req: BulkIdRequest): ResponseEntity<BulkResponse> {
+        throw UnsupportedOperationException()
+    }
+
+    /**
+     * Builds a [BulkResponse] from the requested ids and the entities actually
+     * processed. A requested id is a "success" if any processed entity matches it
+     * (by pk or sk via LID.matches); otherwise it is reported as failed/not_found.
+     */
+    fun bulkResponseOf(requested: List<String>, processed: Collection<BaseModel>): ResponseEntity<BulkResponse> {
+        val success = requested.filter { req -> processed.any { it.matches(req) } }
+        val failed = requested
+            .filterNot { req -> processed.any { it.matches(req) } }
+            .map { BulkFailure(it, "not_found") }
+        return ResponseEntity.ok(BulkResponse(success, failed))
     }
 
     /**
