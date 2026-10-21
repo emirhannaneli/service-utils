@@ -87,12 +87,11 @@ tasks.test {
 publishing {
     repositories {
         maven {
-            val releasesRepoUrl = "https://repo.emirman.dev/releases/"
-            val snapshotsRepoUrl = "https://repo.emirman.dev/snapshots/"
-            url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/emirhannaneli/service-utils")
             credentials {
-                username = System.getenv("REPO_USER") ?: ""
-                password = System.getenv("REPO_KEY") ?: ""
+                username = System.getenv("GITHUB_ACTOR") ?: System.getenv("REPO_USER") ?: ""
+                password = System.getenv("GITHUB_TOKEN") ?: System.getenv("REPO_KEY") ?: ""
             }
         }
     }
