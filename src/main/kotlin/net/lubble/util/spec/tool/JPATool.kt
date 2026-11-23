@@ -29,6 +29,14 @@ interface JPATool<T : BaseModel> {
         private fun normalizeString(str: String): String {
             return str.lowercase(Locale.ENGLISH)
         }
+
+        // '!' instead of the customary backslash: a backslash inside a SQL string literal is itself
+        // treated as an escape by some databases (MySQL), which would corrupt the ESCAPE clause.
+        private const val LIKE_ESCAPE = '!'
+        private val LIKE_SPECIALS = Regex("[!%_]")
+
+        /** Makes a user supplied term literal inside a LIKE pattern (`%` and `_` are wildcards). */
+        private fun escapeLike(term: String): String = term.replace(LIKE_SPECIALS) { "$LIKE_ESCAPE${it.value}" }
     }
 
     /**
@@ -105,36 +113,13 @@ interface JPATool<T : BaseModel> {
             val orders = mutableListOf<Order>()
 
             // A. Kullanıcıdan gelen parametreleri işlemeye çalış
-            param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
-                val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
-                val filteredFields = options?.sort?.filterAllowedFields(sortFields) ?: sortFields
-                val sortOrderValue = param.getSortOrderValue().uppercase()
-                val sortOrders = sortOrderValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-
-                filteredFields.forEachIndexed { index, sortField ->
-                    if (isValidSortField(fields, sortField)) {
-                        val direction = if (index < sortOrders.size) {
-                            try {
-                                sortOrders[index].uppercase()
-                            } catch (e: Exception) {
-                                sortOrderValue.uppercase()
-                            }
-                        } else {
-                            sortOrderValue.uppercase()
-                        }
-
-                        try {
-                            val path = getPath(root, sortField)
-                            val order = when (direction) {
-                                "ASC" -> builder.asc(path)
-                                "DESC" -> builder.desc(path)
-                                else -> builder.asc(path)
-                            }
-                            orders.add(order)
-                        } catch (e: Exception) {
-                            // Field path oluşturulamazsa yoksay (loglanabilir)
-                        }
-                    }
+            param.sortEntries(options).forEach { (sortField, descending) ->
+                if (!isValidSortField(fields, sortField)) return@forEach
+                try {
+                    val path = getPath(root, sortField)
+                    orders.add(if (descending) builder.desc(path) else builder.asc(path))
+                } catch (_: Exception) {
+                    // Field path oluşturulamazsa yoksay
                 }
             }
 
@@ -188,7 +173,12 @@ interface JPATool<T : BaseModel> {
 
     private fun getCachedFields(clazz: Class<*>): Array<Field> {
         return fieldCache.getOrPut(clazz) {
-            clazz.declaredFields
+            // Inherited fields (pk, sk, createdAt, ... from BaseModel) are sortable too.
+            generateSequence(clazz) { it.superclass }
+                .takeWhile { it != Any::class.java }
+                .flatMap { it.declaredFields.asSequence() }
+                .toList()
+                .toTypedArray()
         }
     }
 
@@ -306,9 +296,9 @@ interface JPATool<T : BaseModel> {
                 val expr = getter(field)
                 when (type) {
                     SearchType.EQUAL -> builder.equal(builder.lower(expr), term)
-                    SearchType.STARTS_WITH -> builder.like(builder.lower(expr), "$term%")
-                    SearchType.ENDS_WITH -> builder.like(builder.lower(expr), "%$term")
-                    SearchType.LIKE -> builder.like(builder.lower(expr), "%$term%")
+                    SearchType.STARTS_WITH -> builder.like(builder.lower(expr), "${escapeLike(term)}%", LIKE_ESCAPE)
+                    SearchType.ENDS_WITH -> builder.like(builder.lower(expr), "%${escapeLike(term)}", LIKE_ESCAPE)
+                    SearchType.LIKE -> builder.like(builder.lower(expr), "%${escapeLike(term)}%", LIKE_ESCAPE)
                 }
             }
             builder.or(*fieldPredicates.toTypedArray())

@@ -182,11 +182,8 @@ interface BaseController<C : Any, U : Any, R : RBase, P : ParameterModel> {
      * (by pk or sk via LID.matches); otherwise it is reported as failed/not_found.
      */
     fun bulkResponseOf(requested: List<String>, processed: Collection<BaseModel>): ResponseEntity<BulkResponse> {
-        val success = requested.filter { req -> processed.any { it.matches(req) } }
-        val failed = requested
-            .filterNot { req -> processed.any { it.matches(req) } }
-            .map { BulkFailure(it, "not_found") }
-        return ResponseEntity.ok(BulkResponse(success, failed))
+        val (success, missing) = requested.partition { id -> processed.any { it.matches(id) } }
+        return ResponseEntity.ok(BulkResponse(success, missing.map { BulkFailure(it, "not_found") }))
     }
 
     /**

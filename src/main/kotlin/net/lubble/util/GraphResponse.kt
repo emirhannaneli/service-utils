@@ -3,10 +3,8 @@ package net.lubble.util
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import net.lubble.util.model.ExceptionModel
-import org.springframework.context.MessageSource
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import java.util.*
 
 /**
  * A class representing a response for a graph-related request.
@@ -58,7 +56,7 @@ class GraphResponse(
      * @param ex The ExceptionModel to be used for constructing the response.
      */
     constructor(ex: ExceptionModel) : this(
-        message = getLocalizedMessage(ex.message()),
+        message = ex.message(),
         code = ex.code(),
     )
 
@@ -68,7 +66,7 @@ class GraphResponse(
      * @param details Additional details to be included in the response.
      */
     constructor(ex: ExceptionModel, details: Any) : this(
-        message = getLocalizedMessage(ex.message()),
+        message = ex.message(),
         code = ex.code(),
         details = details,
     )
@@ -95,52 +93,7 @@ class GraphResponse(
             return GraphPageResponse(data, pageable, total)
         }
 
-        /**
-         * Gets localized message if Spring is available, otherwise returns the message as-is.
-         * @param message The message key or text.
-         * @return The localized message or the original message.
-         */
-        private fun getLocalizedMessage(message: String): String {
-            if (SpringDetectionUtil.isSpringAvailable() && SpringDetectionUtil.isSpringMessageSourceAvailable()) {
-                return try {
-                    val source = source()
-                    val locale = locale()
-                    source.getMessage(message, null, locale)
-                } catch (e: Exception) {
-                    // If Spring is available but MessageSource is not configured, return message as-is
-                    message
-                }
-            }
-            return message
-        }
-
-        /**
-         * Retrieves the MessageSource bean from the application context.
-         * @return The MessageSource bean.
-         * @throws IllegalStateException if Spring is not available.
-         */
-        private fun source(): MessageSource {
-            return AppContextUtil.bean(MessageSource::class.java)
-        }
-
-        /**
-         * Retrieves the current locale.
-         * @return The current Locale.
-         */
-        private fun locale(): Locale {
-            return if (SpringDetectionUtil.isSpringLocaleContextHolderAvailable()) {
-                try {
-                    val localeHolderClass = Class.forName("org.springframework.context.i18n.LocaleContextHolder")
-                    val getLocaleMethod = localeHolderClass.getMethod("getLocale")
-                    @Suppress("UNCHECKED_CAST")
-                    getLocaleMethod.invoke(null) as Locale
-                } catch (e: Exception) {
-                    Locale.getDefault()
-                }
-            } else {
-                Locale.getDefault()
-            }
-        }
+        private fun getLocalizedMessage(message: String): String = AppContextUtil.localize(message)
     }
 }
 
@@ -214,8 +167,8 @@ data class GraphPageResponse(
             current = pageable.pageNumber + 1,
             size = pageable.pageSize,
             totalItems = total,
-            totalPages = if (pageable.pageSize == 0) 0 else ((total + pageable.pageSize - 1) / pageable.pageSize).toInt(),
-            hasNext = (pageable.pageNumber + 1) * pageable.pageSize < total,
+            totalPages = totalPages(pageable, total),
+            hasNext = hasNext(pageable, total),
             hasPrevious = pageable.pageNumber > 0
         )
     }

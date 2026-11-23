@@ -15,27 +15,35 @@ open class PaginationSpec {
     @Transient
     var page: Int = 1
         get() = field.coerceAtLeast(1)
+
     @Transient
     var size: Int = 10
-        get() = field.coerceAtLeast(1)
+        get() = field.coerceIn(1, maxSize.coerceAtLeast(1))
 
     /**
-     * Converts this PaginationSpec into a Pageable.
-     * @return The Pageable representing this PaginationSpec.
+     * Returns a Pageable object based on the current page and size.
+     * @return A Pageable object.
      */
-    fun ofPageable(): Pageable {
-        val page = this.page.minus(1).coerceAtLeast(0)
-        val size = this.size.coerceAtLeast(0)
-        return PageRequest.of(page, size)
-    }
+    fun ofPageable(): Pageable = PageRequest.of(pageIndex(), size)
 
     /**
-     * Converts this PaginationSpec into a Pageable with a specific sort order.
-     * @param sort The sort order to apply.
+     * Returns a Pageable object based on the current page, size and the given sort.
+     * @return A Pageable object.
      */
-    fun ofPageable(sort: Sort): Pageable {
-        val page = this.page.minus(1).coerceAtLeast(0)
-        val size = this.size.coerceAtLeast(0)
-        return PageRequest.of(page, size, sort)
+    fun ofPageable(sort: Sort): Pageable = PageRequest.of(pageIndex(), size, sort)
+
+    /** Zero-based page index, capped so that `index * size` (the row offset) still fits an Int. */
+    private fun pageIndex(): Int = (page - 1).coerceIn(0, Int.MAX_VALUE / size)
+
+    companion object {
+        const val DEFAULT_MAX_SIZE: Int = 1000
+
+        /**
+         * Upper bound applied to every requested page size, so a single request cannot load a whole
+         * table. Configured through `lubble.pagination.max-size`.
+         */
+        @JvmStatic
+        @Volatile
+        var maxSize: Int = DEFAULT_MAX_SIZE
     }
 }

@@ -2,9 +2,11 @@ package net.lubble.util.handler
 
 import jakarta.annotation.Priority
 import net.lubble.util.Response
+import net.lubble.util.config.lubble.LubbleConfig
 import net.lubble.util.config.utils.EnableLubbleUtils
 import net.lubble.util.exception.*
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_IMPLEMENTED
@@ -18,20 +20,34 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 class LubbleRestBaseExceptionHandler {
     private val log = LoggerFactory.getLogger(EnableLubbleUtils::class.java)
 
+    /** Optional so the handler can still be instantiated by hand (e.g. standalone MockMvc tests). */
+    @Autowired(required = false)
+    var config: LubbleConfig? = null
+
     init {
         log.info("Lubble Utils Exception Handlers initialized.")
     }
 
+    /**
+     * Exception class and message of an unexpected error. Only sent to the client when
+     * `lubble.expose-exception-details` is enabled; the error itself is always logged.
+     */
+    private fun details(e: Throwable): Map<String, String?>? {
+        if (config?.exposeExceptionDetails != true) return null
+        return mapOf(
+            "exception" to e.javaClass.name,
+            "message" to e.message
+        )
+    }
+
     @ExceptionHandler(RuntimeException::class)
     fun handleException(e: RuntimeException): ResponseEntity<Response> {
+        log.error("Unhandled exception", e)
         return Response(
             "global.exception.internal.error",
             INTERNAL_SERVER_ERROR,
             "0x000500-0",
-            mapOf(
-                "exception" to e.javaClass.name,
-                "message" to e.message
-            )
+            details(e)
         ).build()
     }
 
@@ -41,10 +57,7 @@ class LubbleRestBaseExceptionHandler {
             "global.exception.unsupported.operation",
             INTERNAL_SERVER_ERROR,
             "0x000500-1",
-            mapOf(
-                "exception" to e.javaClass.name,
-                "message" to e.message
-            )
+            details(e)
         ).build()
     }
 
@@ -54,10 +67,7 @@ class LubbleRestBaseExceptionHandler {
             "global.exception.unsupported.operation",
             NOT_IMPLEMENTED,
             "0x000500-2",
-            mapOf(
-                "exception" to e.javaClass.name,
-                "message" to e.message
-            )
+            details(e)
         ).build()
     }
 

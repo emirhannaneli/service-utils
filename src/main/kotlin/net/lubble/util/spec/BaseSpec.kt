@@ -1,18 +1,19 @@
 package net.lubble.util.spec
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.cfg.MapperConfig
-import com.fasterxml.jackson.databind.introspect.Annotated
-import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector
 import jakarta.persistence.Entity
-import net.lubble.util.AppContextUtil
 import net.lubble.util.model.BaseModel
 import net.lubble.util.model.ParameterModel
 import net.lubble.util.model.SpecOptions
 import net.lubble.util.spec.tool.*
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.TypeVariable
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.SerializationFeature
+import tools.jackson.databind.cfg.MapperConfig
+import tools.jackson.databind.introspect.Annotated
+import tools.jackson.databind.introspect.JacksonAnnotationIntrospector
+import tools.jackson.databind.json.JsonMapper
 import java.util.*
 
 open class BaseSpec {
@@ -171,18 +172,25 @@ open class BaseSpec {
     }
 
     companion object {
-        private fun generateCacheKey(obj: Any): String {
-            val mapper = AppContextUtil.bean(ObjectMapper::class.java).apply {
-                setAnnotationIntrospector(object : JacksonAnnotationIntrospector() {
+        /**
+         * Mapper used only for cache keys. It is owned by the library (so it never touches the
+         * application's shared mapper) and ignores `@JsonIgnoreProperties`, because paging and
+         * sorting parameters hidden from API payloads still have to be part of the key.
+         */
+        private val cacheKeyMapper: ObjectMapper by lazy {
+            JsonMapper.builder()
+                .annotationIntrospector(object : JacksonAnnotationIntrospector() {
                     override fun findPropertyIgnoralByName(
-                        config: MapperConfig<*>?,
-                        a: Annotated?
-                    ): JsonIgnoreProperties.Value {
-                        return JsonIgnoreProperties.Value.empty()
-                    }
+                        config: MapperConfig<*>,
+                        a: Annotated
+                    ): JsonIgnoreProperties.Value = JsonIgnoreProperties.Value.empty()
                 })
-            }
-            val json = mapper.writeValueAsString(obj)
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                .build()
+        }
+
+        private fun generateCacheKey(obj: Any): String {
+            val json = cacheKeyMapper.writeValueAsString(obj)
             return Base64.getEncoder().encodeToString(json.toByteArray())
         }
 

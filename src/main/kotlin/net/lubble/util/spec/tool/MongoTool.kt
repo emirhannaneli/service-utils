@@ -120,9 +120,11 @@ interface MongoTool<T : BaseModel> {
                 when (type) {
                     SearchType.EQUAL -> Criteria.where(field).`is`(term)
                     // Mongo regex aramalarında performans için dikkatli olunmalıdır.
-                    SearchType.STARTS_WITH -> Criteria.where(field).regex("^$term.*", "i")
-                    SearchType.ENDS_WITH -> Criteria.where(field).regex(".*$term$", "i")
-                    SearchType.LIKE -> Criteria.where(field).regex(".*$term.*", "i")
+                    // The term is user input: quote it so it is matched literally instead of being
+                    // interpreted as a regex (which would allow catastrophic backtracking patterns).
+                    SearchType.STARTS_WITH -> Criteria.where(field).regex("^${Regex.escape(term)}", "i")
+                    SearchType.ENDS_WITH -> Criteria.where(field).regex("${Regex.escape(term)}$", "i")
+                    SearchType.LIKE -> Criteria.where(field).regex(Regex.escape(term), "i")
                 }
             }
             Criteria().orOperator(*fieldCriterias.toTypedArray())

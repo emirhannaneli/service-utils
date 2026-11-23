@@ -113,11 +113,16 @@ interface LElasticProjection<T : BaseModel> {
     }
 
     private fun applySourceFilter(query: CriteriaQuery, fields: Collection<String>?) {
-        val requiredFields = setOf("id", "pk", "sk", "createdAt", "updatedAt")
-
-        if (!fields.isNullOrEmpty()) {
-            val combinedFields = fields.toSet().plus(requiredFields).toTypedArray()
-            query.addSourceFilter(FetchSourceFilter(null, combinedFields, arrayOf()))
-        }
+        query.addSourceFilter(elasticSourceFilter(fields))
     }
 }
+
+/**
+ * Source filter shared by the Elasticsearch projections: the identifying and audit fields are
+ * always loaded, plus whatever [fields] were asked for. Without [fields] only those are loaded;
+ * the index is meant for finding records, their content is read from the primary database.
+ */
+internal fun elasticSourceFilter(fields: Collection<String>?): FetchSourceFilter =
+    FetchSourceFilter(null, (ELASTIC_REQUIRED_FIELDS + fields.orEmpty()).toTypedArray(), arrayOf())
+
+private val ELASTIC_REQUIRED_FIELDS = setOf("id", "pk", "sk", "createdAt", "updatedAt")

@@ -62,47 +62,39 @@ interface BaseMapper<T : BaseModel, R : RBase, U : Any> {
      */
     @Suppress("UNCHECKED_CAST")
     private fun objectMap(source: Any, destination: Any) {
-        source::class.java.declaredFields.forEach { sourceField ->
-            destination::class.java.declaredFields.firstOrNull { it.name == sourceField.name }
-                ?.let { destinationField ->
-                    sourceField.isAccessible = true
-                    destinationField.isAccessible = true
+        val destinationFields = mappableFields(destination.javaClass)
+        for (sourceField in mappableFields(source.javaClass).values) {
+            val destinationField = destinationFields[sourceField.name] ?: continue
 
-                    val sourceValue = sourceField.get(source)
-                    val destinationValue = destinationField.get(destination)
+            val sourceValue = sourceField.get(source)
+            val destinationValue = destinationField.get(destination)
+            if (sourceValue == null || destinationValue == null) continue
 
-                    if (sourceValue != null && destinationValue != null) {
-                        when (sourceField.type) {
-                            destinationField.type if sourceField.type.isAssignableFrom(List::class.java) -> {
-                                // If the field is a list
-                                val sourceList = sourceValue as List<*>
-                                val destinationList = destinationValue as MutableList<Any>
-                                destinationList.clear()
-                                destinationList.addAll(sourceList.filterNotNull().map { it })
-                            }
-
-                            destinationField.type if sourceField.type.isAssignableFrom(Map::class.java) -> {
-                                // If the field is a map
-                                val sourceMap = sourceValue as Map<Any, Any>
-                                val destinationMap = destinationValue as MutableMap<Any, Any>
-                                destinationMap.clear()
-                                destinationMap.putAll(sourceMap)
-                            }
-
-                            destinationField.type if sourceField.type.isAssignableFrom(
-                                sourceValue::class.java
-                            )
-                                -> {
-                                // If the field is another class
-                                objectMap(sourceValue, destinationValue)
-                            }
-
-                            else -> {
-                                destinationField.set(destination, sourceValue)
-                            }
-                        }
-                    }
+            val sameType = sourceField.type == destinationField.type
+            when {
+                sameType && sourceField.type.isAssignableFrom(List::class.java) -> {
+                    // If the field is a list
+                    val sourceList = sourceValue as List<*>
+                    val destinationList = destinationValue as MutableList<Any>
+                    destinationList.clear()
+                    destinationList.addAll(sourceList.filterNotNull())
                 }
+
+                sameType && sourceField.type.isAssignableFrom(Map::class.java) -> {
+                    // If the field is a map
+                    val sourceMap = sourceValue as Map<Any, Any>
+                    val destinationMap = destinationValue as MutableMap<Any, Any>
+                    destinationMap.clear()
+                    destinationMap.putAll(sourceMap)
+                }
+
+                // Nested objects are merged field by field. Plain values (strings, numbers, dates,
+                // enums, ...) are assigned: reflecting into JDK types is neither possible nor wanted.
+                !isValue(sourceValue.javaClass) && !isValue(destinationValue.javaClass) ->
+                    objectMap(sourceValue, destinationValue)
+
+                else -> destinationField.set(destination, sourceValue)
+            }
         }
     }
 
@@ -212,3 +204,19 @@ fun <T : BaseModel, R : RBase, U : Any, D : BaseDocumented<T>>
 fun <T : BaseModel, R : RBase, U : Any, D : BaseDocumented<T>>
         BaseMapper<T, R, U>.map(source: Page<D>): List<R> =
     source.content.map { map(it) }
+
+private val MAPPABLE_FIELDS = object : ClassValue<Map<String, java.lang.reflect.Field>>() {
+    override fun computeValue(type: Class<*>): Map<String, java.lang.reflect.Field> =
+        type.declaredFields
+            .filter { !java.lang.reflect.Modifier.isStatic(it.modifiers) && !it.isSynthetic && it.trySetAccessible() }
+            .associateBy { it.name }
+}
+
+/** Instance fields declared by [type] itself, by name. Resolved once per class. */
+private fun mappableFields(type: Class<*>): Map<String, java.lang.reflect.Field> = MAPPABLE_FIELDS.get(type)
+
+private val VALUE_PACKAGES = arrayOf("java.", "javax.", "jakarta.", "kotlin.", "kotlinx.")
+
+/** Types that are copied as a whole instead of being merged field by field. */
+private fun isValue(type: Class<*>): Boolean =
+    type.isPrimitive || type.isEnum || type.isArray || VALUE_PACKAGES.any { type.name.startsWith(it) }

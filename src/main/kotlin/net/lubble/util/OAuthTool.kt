@@ -22,6 +22,15 @@ class OAuthTool(val config: LubbleConfig) {
     init {
         log.info("Lubble Utils OAuthTool initialized.")
     }
+
+    // Built once: the verifier caches Google's signing keys, so a new instance per call
+    // would re-download them on every login.
+    private val verifier: GoogleIdTokenVerifier by lazy {
+        GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory.getDefaultInstance())
+            .setAudience(listOf(config.oauth2.google.clientId))
+            .setIssuers(config.oauth2.google.issuers)
+            .build()
+    }
     /**
      * Retrieves the user data from Google.
      * @param credentials The credentials to verify.
@@ -37,12 +46,6 @@ class OAuthTool(val config: LubbleConfig) {
      * @throws WrongCredentials If the credentials are invalid.
      */
     fun retrieveGoogleData(credentials: String): Map<String, Any?> {
-        val factory = GsonFactory.getDefaultInstance()
-        val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), factory)
-            .setAudience(listOf(config.oauth2.google.clientId))
-            .setIssuers(config.oauth2.google.issuers)
-            .build()
-
         // Verify the credentials and get the ID token.
         // If the credentials are invalid, a WrongCredentials exception is thrown.
         val idToken = verifier.verify(credentials) ?: throw WrongCredentials()

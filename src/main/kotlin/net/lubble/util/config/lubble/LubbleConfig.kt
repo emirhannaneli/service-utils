@@ -1,30 +1,44 @@
 package net.lubble.util.config.lubble
 
+import net.lubble.util.spec.PaginationSpec
 import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "lubble")
 class LubbleConfig {
     var exceptionHandling: Boolean = true
-    lateinit var security: Security
-    lateinit var oauth2: OAuth2
+
+    /**
+     * Whether unexpected (HTTP 500) errors expose the exception class and message to the client.
+     * Off by default: those messages routinely carry SQL, class names and other internals.
+     */
+    var exposeExceptionDetails: Boolean = false
+
+    var pagination: Pagination = Pagination()
+    var security: Security = Security()
+    var oauth2: OAuth2 = OAuth2()
+
+    class Pagination {
+        /** Upper bound for the `size` request parameter; larger values are reduced to it. */
+        var maxSize: Int = PaginationSpec.DEFAULT_MAX_SIZE
+    }
 
     @ConfigurationProperties(prefix = "lubble.oauth2")
     class OAuth2 {
-        lateinit var google: OAuth2Credentials
+        var google: OAuth2Credentials = OAuth2Credentials()
     }
 
     class OAuth2Credentials {
-        lateinit var clientId: String
-        lateinit var clientSecret: String
-        lateinit var issuers: List<String>
+        var clientId: String = ""
+        var clientSecret: String = ""
+        var issuers: List<String> = listOf("accounts.google.com", "https://accounts.google.com")
     }
 
     @ConfigurationProperties(prefix = "lubble.security")
     class Security {
-        lateinit var cookie: Cookie
+        var cookie: Cookie = Cookie()
 
         class Cookie {
-            lateinit var prefix: String
+            var prefix: String = ""
         }
     }
 }

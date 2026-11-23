@@ -5,6 +5,14 @@ package net.lubble.util
  */
 class HtmlUtil {
     companion object {
+        // Compiled once; these run on every call.
+        private val ANY_TAG = Regex("<.*?>")
+        private val TAG_AND_TEXT = Regex("(<.+?>)?([^<>]*)")
+        private val EMPTY_TAG = Regex("^<\\s*(img|br|input|hr|area|base|basefont|col|frame|isindex|link|meta|param).*>$")
+        private val CLOSING_TAG = Regex("^<\\s*/\\s*([a-zA-Z]+[1-6]?)\\s*>$")
+        private val OPENING_TAG = Regex("^<\\s*([a-zA-Z]+[1-6]?).*?>$")
+        private val ENTITY = Regex("(&[0-9a-z]{2,8};|&#[0-9]{1,7};|[0-9a-f]{1,6};)")
+
         /**
          * Shortens the given HTML string to the specified length, preserving HTML tags.
          * If the length of the text content (excluding tags) is less than or equal to the specified length, the original HTML string is returned.
@@ -16,22 +24,13 @@ class HtmlUtil {
          * @return The shortened HTML string.
          */
         fun shorten(html: String, length: Int): String {
-            // Remove all HTML tags from the input string
-            val htmlWithoutTags = html.replace(Regex("<.*?>"), "")
             // If the length of the text content is less than or equal to the specified length, return the original HTML string
-            if (htmlWithoutTags.length <= length) {
+            if (html.replace(ANY_TAG, "").length <= length) {
                 return html
             }
 
-            // Define regular expressions for matching different types of HTML tags
-            val tagPattern = Regex("(<.+?>)?([^<>]*)")
-            val emptyTagPattern = Regex("^<\\s*(img|br|input|hr|area|base|basefont|col|frame|isindex|link|meta|param).*>$")
-            val closingTagPattern = Regex("^<\\s*/\\s*([a-zA-Z]+[1-6]?)\\s*>$")
-            val openingTagPattern = Regex("^<\\s*([a-zA-Z]+[1-6]?).*?>$")
-            val entityPattern = Regex("(&[0-9a-z]{2,8};|&#[0-9]{1,7};|[0-9a-f]{1,6};)")
-
             // Find all tags and text content in the HTML string
-            val tagMatcher = tagPattern.findAll(html)
+            val tagMatcher = TAG_AND_TEXT.findAll(html)
             // Keep track of open tags that need to be closed
             val openTags = mutableListOf<String>()
             // Build the shortened HTML string
@@ -50,22 +49,27 @@ class HtmlUtil {
                     // If the tag is an empty tag, ignore it
                     // If the tag is a closing tag, remove the corresponding opening tag from the list of open tags
                     // If the tag is an opening tag, add it to the list of open tags
+                    // The tag name is taken from the pattern's capture group: attributes must not leak into it.
                     when {
-                        emptyTagPattern.matches(tagText) -> {}
-                        closingTagPattern.matches(tagText) -> openTags.remove(tagText.replace(Regex("[^a-zA-Z1-6]"), "").lowercase())
-                        openingTagPattern.matches(tagText) -> openTags.add(0, tagText.replace(Regex("[^a-zA-Z1-6]"), "").lowercase())
+                        EMPTY_TAG.matches(tagText) -> {}
+                        CLOSING_TAG.matches(tagText) ->
+                            openTags.remove(CLOSING_TAG.find(tagText)!!.groupValues[1].lowercase())
+
+                        OPENING_TAG.matches(tagText) ->
+                            openTags.add(0, OPENING_TAG.find(tagText)!!.groupValues[1].lowercase())
                     }
                     // Append the tag to the result
                     result.append(tagText)
                 }
 
                 // Calculate the length of the text content, replacing entities with a single space
-                val contentLength = plainText?.replace(entityPattern, " ")?.length ?: 0
+                val contentLength = plainText?.replace(ENTITY, " ")?.length ?: 0
                 // If appending the full text content would exceed the specified length, append only a part of it
                 // Otherwise, append the full text content
                 if (result.length + contentLength > length) {
-                    val proposedChopPosition = length - result.length
-                    result.append(plainText?.substring(0, proposedChopPosition))
+                    // Tags count towards result.length, so the remaining budget can already be used up.
+                    val proposedChopPosition = (length - result.length).coerceAtLeast(0)
+                    result.append(plainText?.take(proposedChopPosition))
                     return@fold result
                 } else {
                     result.append(plainText)

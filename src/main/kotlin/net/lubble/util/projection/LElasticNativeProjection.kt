@@ -8,7 +8,6 @@ import org.springframework.data.elasticsearch.client.elc.NativeQuery
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.elasticsearch.core.SearchHitSupport
-import org.springframework.data.elasticsearch.core.query.FetchSourceFilter
 
 /**
  * Interface for performing Native Elasticsearch operations on entities of type T.
@@ -113,18 +112,6 @@ interface LElasticNativeProjection<T : BaseModel> {
      * Helper to apply source filtering (Include specific fields only).
      */
     private fun applySourceFilter(queryBuilder: NativeQueryBuilder, fields: Collection<String>?) {
-        val requiredFields = setOf("id", "pk", "sk", "createdAt", "updatedAt")
-
-        val combinedFields = if (fields.isNullOrEmpty()) {
-            requiredFields
-        } else {
-            fields.toSet().plus(requiredFields)
-        }
-
-        if (combinedFields.isNotEmpty()) {
-            queryBuilder.withSourceFilter(
-                FetchSourceFilter(null, combinedFields.toTypedArray(), arrayOf())
-            )
-        }
+        queryBuilder.withSourceFilter(elasticSourceFilter(fields))
     }
 }

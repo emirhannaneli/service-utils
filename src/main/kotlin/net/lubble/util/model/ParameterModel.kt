@@ -47,25 +47,46 @@ open class ParameterModel : PaginationSpec() {
         get() {
             if (!search.isNullOrBlank()) return true
 
-            var clazz: Class<*>? = this::class.java
-            while (clazz != null && clazz != ParameterModel::class.java && clazz != Any::class.java) {
-                for (field in clazz.declaredFields) {
-                    if (java.lang.reflect.Modifier.isStatic(field.modifiers) || field.isSynthetic || field.name.startsWith("$")) continue
-                    try {
-                        field.isAccessible = true
-                        val value = field.get(this)
-                        if (value != null) {
-                            if (value is String && value.isBlank()) continue
-                            return true
-                        }
-                    } catch (e: Exception) {
-                        // Ignore reflection errors
-                    }
-                }
-                clazz = clazz.superclass
+            return FILTER_FIELDS.get(javaClass).any { field ->
+                val value = field.get(this)
+                value != null && !(value is String && value.isBlank())
             }
-            return false
         }
+
+    /**
+     * `sortBy`/`sortOrder` as (field, descending) pairs in request order, restricted to what
+     * [options] allow. Directions map to the requested fields by position; when there are fewer directions
+     * than fields the last one applies to the rest, and anything that is not `DESC` sorts ascending.
+     */
+    internal fun sortEntries(options: SpecOptions?): List<Pair<String, Boolean>> {
+        val requested = sortBy?.split(",")?.map { it.trim() }?.filterTo(LinkedHashSet()) { it.isNotEmpty() }
+        if (requested.isNullOrEmpty()) return emptyList()
+
+        // Directions are paired with the fields as requested, before filtering, so that dropping a
+        // disallowed field does not shift the directions of the ones that remain.
+        val directions = getSortOrderValue().split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        val descending = requested.withIndex().associate { (index, field) ->
+            field to "DESC".equals(directions.getOrNull(index) ?: directions.lastOrNull(), ignoreCase = true)
+        }
+
+        val allowed = options?.sort?.filterAllowedFields(requested) ?: requested
+        return allowed.map { it to descending.getValue(it) }
+    }
+
+    private companion object {
+        /** Filter fields declared by subclasses of ParameterModel, resolved once per class. */
+        private val FILTER_FIELDS = object : ClassValue<List<java.lang.reflect.Field>>() {
+            override fun computeValue(type: Class<*>): List<java.lang.reflect.Field> =
+                generateSequence(type) { it.superclass }
+                    .takeWhile { it != ParameterModel::class.java && it != Any::class.java }
+                    .flatMap { it.declaredFields.asSequence() }
+                    .filter {
+                        !java.lang.reflect.Modifier.isStatic(it.modifiers) && !it.isSynthetic &&
+                                !it.name.startsWith("$") && it.trySetAccessible()
+                    }
+                    .toList()
+        }
+    }
 }
 
 /**

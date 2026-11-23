@@ -30,7 +30,7 @@ class LubbleRestWebExceptionHandler {
         val errors = e.bindingResult.allErrors
         val details = mutableMapOf<String, Any>()
         errors.forEach {
-            val field = it.codes?.get(1)?.split(".")?.last() ?: "unknown"
+            val field = it.codes?.getOrNull(1)?.substringAfterLast(".") ?: "unknown"
             val message = it.defaultMessage ?: "unknown"
             details[field] = message
         }
