@@ -3,7 +3,8 @@ package net.lubble.util
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.Claim
-import org.joda.time.DateTime
+import com.auth0.jwt.interfaces.DecodedJWT
+import com.auth0.jwt.interfaces.JWTVerifier
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -26,6 +27,22 @@ class JWTTool(
     constructor(secret: String) : this(Algorithm.HMAC512(secret), "", 0, arrayOf())
 
     constructor(algorithm: Algorithm) : this(algorithm, "", 0, arrayOf())
+
+    // A verifier is thread-safe once built, so one is kept until issuer or audience change
+    // instead of building a new one for every token.
+    @Volatile
+    private var verifier: JWTVerifier? = null
+
+    private fun verifier(): JWTVerifier = verifier ?: JWT.require(algorithm)
+        .withIssuer(issuer)
+        // An empty audience means "not restricted". Passing it on would make the verifier demand
+        // an `aud` claim that tokens generated without an audience do not carry.
+        .apply { if (audience.isNotEmpty()) withAudience(*audience) }
+        .build()
+        .also { verifier = it }
+
+    /** Verifies signature, issuer, audience and expiry; throws when any of them does not hold. */
+    private fun verified(token: String): DecodedJWT = verifier().verify(token)
 
     /**
      * Generates a JWT with the specified subject, expiration time, and claims.
@@ -72,93 +89,54 @@ class JWTTool(
     }
 
     /**
-     * Checks if a JWT is expired.
-     *
-     * @param token The JWT to check.
-     * @return True if the JWT is expired, false otherwise.
-     */
-    private fun isExpired(token: String): Boolean {
-        return try {
-            JWT.require(algorithm)
-                .withIssuer(issuer)
-                .withAudience(*audience)
-                .build()
-                .verify(token)
-                .expiresAt
-                .before(DateTime.now().toDate())
-        } catch (e: Exception) {
-            true
-        }
-    }
-
-    /**
      * Verifies a JWT.
      *
      * @param token The JWT to verify.
      * @return True if the JWT is valid and not expired, false otherwise.
+     *         Tokens that carry no expiry at all are rejected.
      */
     fun verify(token: String): Boolean {
         return try {
-            JWT.require(algorithm)
-                .withIssuer(issuer)
-                .withAudience(*audience)
-                .build()
-                .verify(token)
-            !isExpired(token)
-        } catch (e: Exception) {
+            verified(token).expiresAtAsInstant != null
+        } catch (_: Exception) {
             false
         }
     }
 
     /**
-     * Decodes a JWT and returns its claims as a map.
+     * Verifies a JWT and returns its claims as a map.
      *
      * @param token The JWT to decode.
      * @return A map of the claims in the JWT.
      */
     fun decode(token: String): Map<String, Claim> {
-        return JWT.require(algorithm)
-            .withIssuer(issuer)
-            .withAudience(*audience)
-            .build()
-            .verify(token)
-            .claims
-            .mapValues { it.value }
+        return verified(token).claims
     }
 
     /**
-     * Decodes a JWT and returns the value of a specific claim.
+     * Verifies a JWT and returns the value of a specific claim.
      *
      * @param token The JWT to decode.
      * @param key The key of the claim to return.
-     * @return The value of the claim, or an empty string if the claim is not present.
+     * @return The value of the claim, or null if the claim is not present.
      */
     fun decode(token: String, key: String): Claim? {
-        return JWT.require(algorithm)
-            .withIssuer(issuer)
-            .withAudience(*audience)
-            .build()
-            .verify(token)
-            .claims[key]
+        return verified(token).claims[key]
     }
 
     /**
-     * Returns the subject of a JWT.
+     * Verifies a JWT and returns its subject.
      *
      * @param token The JWT to get the subject from.
      * @return The subject of the JWT.
      */
     fun subject(token: String): String {
-        return JWT.require(algorithm)
-            .withIssuer(issuer)
-            .withAudience(*audience)
-            .build()
-            .verify(token)
-            .subject
+        return verified(token).subject
     }
 
     fun audience(audience: Array<String>): JWTTool {
         this.audience = audience
+        this.verifier = null
         return this
     }
 
@@ -174,6 +152,7 @@ class JWTTool(
 
     fun issuer(issuer: String): JWTTool {
         this.issuer = issuer
+        this.verifier = null
         return this
     }
 
@@ -182,29 +161,29 @@ class JWTTool(
         /**
          * Decodes a JWT and returns its claims as a map.
          *
+         * WARNING: the static `decode`/`subject` helpers do NOT verify the signature. Never base an
+         * authentication or authorization decision on their result; use a [JWTTool] instance for that.
+         *
          * @param token The JWT to decode.
          * @return A map of the claims in the JWT.
          */
         fun decode(token: String): Map<String, Claim> {
-            return JWT.decode(token)
-                .claims
-                .mapValues { it.value }
+            return JWT.decode(token).claims
         }
 
         /**
-         * Decodes a JWT and returns the value of a specific claim.
+         * Decodes a JWT WITHOUT verifying it and returns the value of a specific claim.
          *
          * @param token The JWT to decode.
          * @param key The key of the claim to return.
-         * @return The value of the claim, or an empty string if the claim is not present.
+         * @return The value of the claim, or null if the claim is not present.
          */
         fun decode(token: String, key: String): Claim? {
-            return JWT.decode(token)
-                .claims[key]
+            return JWT.decode(token).claims[key]
         }
 
         /**
-         * Returns the subject of a JWT.
+         * Returns the subject of a JWT WITHOUT verifying it.
          *
          * @param token The JWT to get the subject from.
          * @return The subject of the JWT.
@@ -222,13 +201,8 @@ class JWTTool(
          */
         fun verify(token: String, algorithm: Algorithm): Boolean {
             return try {
-                val expired = JWT.require(algorithm)
-                    .build()
-                    .verify(token)
-                    .expiresAt
-                    .before(DateTime.now().toDate())
-                !expired
-            } catch (e: Exception) {
+                JWT.require(algorithm).build().verify(token).expiresAtAsInstant != null
+            } catch (_: Exception) {
                 false
             }
         }
@@ -243,14 +217,8 @@ class JWTTool(
          */
         fun verify(token: String, audience: Array<String>, algorithm: Algorithm): Boolean {
             return try {
-                val expired = JWT.require(algorithm)
-                    .withAudience(*audience)
-                    .build()
-                    .verify(token)
-                    .expiresAt
-                    .before(DateTime.now().toDate())
-                !expired
-            } catch (e: Exception) {
+                JWT.require(algorithm).withAudience(*audience).build().verify(token).expiresAtAsInstant != null
+            } catch (_: Exception) {
                 false
             }
         }

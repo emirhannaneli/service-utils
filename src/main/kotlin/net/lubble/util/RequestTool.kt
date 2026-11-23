@@ -15,7 +15,7 @@ open class RequestTool(private val request: HttpServletRequest) {
         logger.info("Lubble Utils RequestTool initialized.")
     }
     fun hasHeader(header: String): Boolean {
-        return request.headerNames.toList().contains(header)
+        return request.getHeader(header) != null
     }
 
     fun header(header: String): String? {
@@ -62,27 +62,27 @@ open class RequestTool(private val request: HttpServletRequest) {
         return request.remoteHost
     }
 
-    fun userAgent(): String {
+    fun userAgent(): String? {
         return request.getHeader("User-Agent")
     }
 
-    fun referer(): String {
+    fun referer(): String? {
         return request.getHeader("Referer")
     }
 
-    fun accept(): String {
+    fun accept(): String? {
         return request.getHeader("Accept")
     }
 
-    fun acceptLanguage(): String {
+    fun acceptLanguage(): String? {
         return request.getHeader("Accept-Language")
     }
 
-    fun acceptEncoding(): String {
+    fun acceptEncoding(): String? {
         return request.getHeader("Accept-Encoding")
     }
 
-    fun acceptCharset(): String {
+    fun acceptCharset(): String? {
         return request.getHeader("Accept-Charset")
     }
 

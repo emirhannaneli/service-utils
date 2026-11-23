@@ -61,25 +61,9 @@ interface ElasticTool<T : BaseModel> {
         val query = CriteriaQuery(criteria)
         val orders = mutableListOf<Sort.Order>()
 
-        param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
-            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
-            val filteredFields = options?.sort?.filterAllowedFields(sortFields) ?: sortFields
-            val sortOrderParam = param.getSortOrderValue().uppercase()
-            val sortOrders = sortOrderParam.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-
-            filteredFields.forEachIndexed { index, sortField ->
-                val resolvedField = resolveSortField(clazz, sortField)
-
-                if (resolvedField != null) {
-                    val directionStr = if (index < sortOrders.size) sortOrders[index] else sortOrders.lastOrNull() ?: "ASC"
-                    val direction = try {
-                        Sort.Direction.valueOf(directionStr)
-                    } catch (_: IllegalArgumentException) {
-                        Sort.Direction.ASC
-                    }
-                    orders.add(Sort.Order(direction, resolvedField))
-                }
-            }
+        param.sortEntries(options).forEach { (sortField, descending) ->
+            val resolvedField = resolveSortField(clazz, sortField) ?: return@forEach
+            orders.add(Sort.Order(if (descending) Sort.Direction.DESC else Sort.Direction.ASC, resolvedField))
         }
 
         if (orders.isNotEmpty()) {

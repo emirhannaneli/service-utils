@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletResponse
 import net.lubble.util.config.utils.EnableLubbleUtils
 import net.lubble.util.enum.CookieType
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.stereotype.Component
 import java.util.*
@@ -66,29 +65,26 @@ class CookieUtil(val response: HttpServletResponse) {
      * @param cookies The names of the cookies to clear.
      */
     fun clear(cookies: Array<String>) {
-        val cleared = cookies.map { Cookie(it, null) }
-        cleared.forEach { cookie ->
-            cookie.maxAge = 0
-            cookie.path = "/"
-            cookie.isHttpOnly = true
-            domain?.let { cookie.domain = it }
-            cookie.setAttribute("SameSite", sameSite)
-            response.addCookie(cookie)
-        }
+        cookies.forEach(::expire)
     }
 
     /**
      * Clears all cookies by setting their max age to 0 and adding them to the response.
      */
     fun clearAll() {
-        val cookies = CookieType.entries
-        val cleared = cookies.map { Cookie(it.value, null) }
-        cleared.forEach {
-            it.maxAge = 0
-            it.path = "/"
-            it.isHttpOnly = true
-            it.setAttribute("SameSite", sameSite)
-            response.addCookie(it)
-        }
+        CookieType.entries.forEach { expire(it.value) }
+    }
+
+    private fun expire(name: String) {
+        val cookie = Cookie(name, null)
+        cookie.maxAge = 0
+        cookie.path = "/"
+        cookie.isHttpOnly = true
+        // A cookie is only replaced when domain and path match the original one.
+        domain?.let { cookie.domain = it }
+        // Browsers drop SameSite=None cookies that are not Secure, which would leave the original cookie alive.
+        if (sameSite.equals("None", ignoreCase = true)) cookie.secure = true
+        cookie.setAttribute("SameSite", sameSite)
+        response.addCookie(cookie)
     }
 }

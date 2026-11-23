@@ -1,0 +1,4 @@
+# Sources are stored and checked out with LF regardless of the platform they are edited on.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.jar binary

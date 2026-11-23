@@ -77,51 +77,37 @@ interface ElasticNativeTool<T : BaseModel> {
 
         val elasticSortOptions = mutableListOf<SortOptions>()
 
-        param.sortBy?.takeIf { it.isNotBlank() }?.let { sortByValue ->
-            val fields = getAllFields(clazz)
-            val sortFields = sortByValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
-            val filteredFields = options?.sort?.filterAllowedFields(sortFields) ?: sortFields
+        val fields = getAllFields(clazz)
+        param.sortEntries(options).forEach { (sortField, descending) ->
+            val rootFieldName = sortField.substringBefore(".")
+            val rootField = findField(fields, rootFieldName) ?: return@forEach
+            val order = if (descending) SortOrder.Desc else SortOrder.Asc
 
-            val sortOrderParam = param.getSortOrderValue().uppercase()
-            val sortOrders = sortOrderParam.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val isNested = isNestedField(rootField)
+            var finalSortField = sortField
 
-            filteredFields.forEachIndexed { index, sortField ->
-                val parts = sortField.split(".")
-                val rootFieldName = parts[0]
+            if (!isNested) {
+                // Derinlemesine alan bulma (Nested olmayanlar için)
+                val leafField = findDeepField(clazz, sortField)
+                val isText = leafField != null && isTextField(leafField)
 
-                val rootField = findField(fields, rootFieldName)
-
-                if (rootField != null) {
-                    val directionStr = if (index < sortOrders.size) sortOrders[index] else sortOrderParam
-                    val order = if (directionStr.equals("DESC", true)) SortOrder.Desc else SortOrder.Asc
-
-                    val isNested = isNestedField(rootField)
-                    var finalSortField = sortField
-
-                    if (!isNested) {
-                        // Derinlemesine alan bulma (Nested olmayanlar için)
-                        val leafField = findDeepField(clazz, sortField)
-                        val isText = leafField != null && isTextField(leafField)
-
-                        // Eğer alan Text ise ve .keyword yoksa ekle
-                        if (isText && !sortField.endsWith(".keyword")) {
-                            finalSortField = "$sortField.keyword"
-                        }
-                    }
-
-                    elasticSortOptions.add(
-                        SortOptions.of { s ->
-                            s.field { f ->
-                                f.field(finalSortField).order(order)
-                                if (isNested) {
-                                    f.nested { n -> n.path(rootFieldName) }
-                                }
-                                f
-                            }
-                        }
-                    )
+                // Eğer alan Text ise ve .keyword yoksa ekle
+                if (isText && !sortField.endsWith(".keyword")) {
+                    finalSortField = "$sortField.keyword"
                 }
             }
+
+            elasticSortOptions.add(
+                SortOptions.of { s ->
+                    s.field { f ->
+                        f.field(finalSortField).order(order)
+                        if (isNested) {
+                            f.nested { n -> n.path(rootFieldName) }
+                        }
+                        f
+                    }
+                }
+            )
         }
 
         if (elasticSortOptions.isNotEmpty()) {

@@ -224,7 +224,7 @@ interface LJPAProjection<T : BaseModel> {
         idQuery.select(cb.tuple(*selections.toTypedArray()))
 
         val typedIdQuery = manager.createQuery(idQuery)
-        typedIdQuery.firstResult = pageable.pageNumber * pageable.pageSize
+        typedIdQuery.firstResult = pageable.offset.toInt()
         typedIdQuery.maxResults = pageable.pageSize
 
         val fetchedTuples = typedIdQuery.resultList
@@ -464,7 +464,7 @@ interface LJPAProjection<T : BaseModel> {
         val typedQuery = manager.createQuery(tupleQuery)
 
         if (pagination) {
-            typedQuery.firstResult = pageable.pageNumber * pageable.pageSize
+            typedQuery.firstResult = pageable.offset.toInt()
             typedQuery.maxResults = pageable.pageSize
         }
 
@@ -481,7 +481,7 @@ interface LJPAProjection<T : BaseModel> {
                     try {
                         writeNestedField(entity, fieldPath, value)
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        logger.warn("Failed to set field '$fieldPath': ${e.message}")
                     }
                 }
             }
@@ -676,7 +676,7 @@ interface LJPAProjection<T : BaseModel> {
         val typedQuery = manager.createQuery(tupleQuery)
 
         if (pagination) {
-            typedQuery.firstResult = pageable.pageNumber * pageable.pageSize
+            typedQuery.firstResult = pageable.offset.toInt()
             typedQuery.maxResults = pageable.pageSize
         }
 

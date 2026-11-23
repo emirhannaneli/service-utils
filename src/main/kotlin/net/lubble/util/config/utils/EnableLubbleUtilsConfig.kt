@@ -3,7 +3,9 @@ package net.lubble.util.config.utils
 import net.lubble.util.AppContextUtil
 import net.lubble.util.LK
 import net.lubble.util.SpringDetectionUtil
+import net.lubble.util.config.lubble.LubbleConfig
 import net.lubble.util.converter.LKToStringConverter
+import net.lubble.util.spec.PaginationSpec
 import org.slf4j.LoggerFactory
 import org.springframework.beans.BeansException
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -83,6 +85,9 @@ open class EnableLubbleUtilsConfig : ApplicationContextAware {
     @Throws(BeansException::class)
     override fun setApplicationContext(applicationContext: ApplicationContext) {
         AppContextUtil.initialize(applicationContext)
+        applicationContext.getBeanProvider(LubbleConfig::class.java).ifAvailable {
+            PaginationSpec.maxSize = it.pagination.maxSize
+        }
     }
 
 }
