@@ -1,9 +1,30 @@
-build.gradle.kt
+# Service Utils
 
-```
+[![CI](https://github.com/emirhannaneli/service-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/emirhannaneli/service-utils/actions/workflows/ci.yml)
+
+Utility library for Spring Boot services: base models, specifications, repositories, mappers,
+controllers and a consistent error/response format.
+
+Built and tested against **Spring Boot 4.1**, **Kotlin 2.4** and **Java 17+**.
+
+## Installation
+
+The library is published to two registries; use whichever suits you.
+
+### GitHub Packages
+
+GitHub requires authentication for Maven packages, even public ones. Create a personal access
+token with the `read:packages` scope and expose it as `GITHUB_ACTOR` / `GITHUB_TOKEN`
+(or as `gpr.user` / `gpr.key` Gradle properties).
+
+```kotlin
 repositories {
     maven {
-        url = uri("https://repo.emirman.dev")
+        url = uri("https://maven.pkg.github.com/emirhannaneli/service-utils")
+        credentials {
+            username = providers.gradleProperty("gpr.user").orNull ?: System.getenv("GITHUB_ACTOR")
+            password = providers.gradleProperty("gpr.key").orNull ?: System.getenv("GITHUB_TOKEN")
+        }
     }
 }
 
@@ -11,6 +32,62 @@ dependencies {
     implementation("net.lubble:service-utils:<version>")
 }
 ```
+
+### repo.emirman.dev
+
+```kotlin
+repositories {
+    maven {
+        url = uri("https://repo.emirman.dev/releases/")
+    }
+}
+
+dependencies {
+    implementation("net.lubble:service-utils:<version>")
+}
+```
+
+## Usage
+
+```kotlin
+@SpringBootApplication
+@EnableLubbleUtils
+class Application
+```
+
+## Configuration
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `lubble.exception-handling` | `true` | Registers the built-in `@ControllerAdvice` exception handlers. |
+| `lubble.expose-exception-details` | `false` | Adds the exception class and message to HTTP 500 responses. Leave it off in production: those messages carry SQL, class names and other internals. The error is always logged. |
+| `lubble.pagination.max-size` | `1000` | Upper bound for the `size` request parameter, so a single request cannot load a whole table. Larger values are reduced to it. |
+| `lubble.security.cookie.prefix` | empty | Prefix of the cookie names in `CookieType`. |
+| `lubble.oauth2.enabled` | `true` | Registers `OAuthTool`. |
+| `lubble.oauth2.google.client-id` | empty | Audience expected in Google ID tokens. |
+| `lubble.oauth2.google.issuers` | Google's issuers | Accepted issuers of Google ID tokens. |
+
+## Development
+
+```shell
+./gradlew build                 # compile and run the test suite
+./gradlew publishToMavenLocal   # try a local build in another project
+```
+
+## Releasing
+
+Versions follow [Semantic Versioning](https://semver.org) and are derived from
+[Conventional Commits](https://www.conventionalcommits.org):
+
+| Commit | Version bump |
+| --- | --- |
+| `fix: ...` | patch |
+| `feat: ...` | minor |
+| `feat!: ...` or a `BREAKING CHANGE:` footer | major |
+
+Every push to `main` updates a release pull request (version bump + `CHANGELOG.md`).
+Merging it creates the tag and GitHub release and publishes the package to GitHub Packages, and to
+`repo.emirman.dev` when the `REPO_USER` / `REPO_KEY` repository secrets are set.
 
 # Service Utils ```EN```
 
