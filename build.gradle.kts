@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "net.lubble"
-version = "2.1.0" // x-release-please-version
+version = "3.0.0" // x-release-please-version
 description = "Lubble Utility Library"
 
 // Spring Boot line the library is compiled and tested against. Everything Spring manages
