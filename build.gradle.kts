@@ -10,13 +10,13 @@ description = "Lubble Utility Library"
 // Spring Boot line the library is compiled and tested against. Everything Spring manages
 // (Spring, Jackson, Reactor, Jakarta, JUnit, Mockito, ...) takes its version from this BOM, so the
 // library never compiles against an API newer than what a consumer on the same Boot line runs.
-val springBootVersion = "4.1.3"
+val springBootVersion = "4.2.0"
 
 // Published (`api`) dependencies carry explicit versions so the POM stays self-contained.
 // Jackson follows the version managed by the Spring Boot BOM above.
-val jacksonVersion = "3.1.8"
+val jacksonVersion = "3.3.0"
 val aspectjVersion = "1.9.27"
-val commonsLangVersion = "3.20.0"
+val commonsLangVersion = "3.22.0"
 val auth0JwtVersion = "4.6.2"
 val googleApiClientVersion = "2.9.2"
 val bouncyCastleVersion = "1.87"
